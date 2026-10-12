@@ -9,9 +9,9 @@
 <title>Emulador Retro</title>
 <style>
   :root { --bg:#141428; --card:#1f1f3d; --accent:#7a7aff; --text:#f0f0ff; --muted:#9a9ac0; }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overscroll-behavior: none; }
   #menu { min-height: 100%; display: flex; flex-direction: column; align-items: center;
     justify-content: center; gap: 18px; padding: 24px; text-align: center; }
   h1 { margin: 0; font-size: 1.8rem; }
@@ -21,17 +21,48 @@
   .btn:active { transform: scale(.97); }
   .systems { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   .chip { background: var(--card); border-radius: 999px; padding: 6px 14px; font-size: .85rem; color: var(--muted); }
+  #err { color: #ff8a8a; min-height: 1.2em; }
+
   #wrap { position: fixed; inset: 0; display: none; background: #000; overflow: hidden; }
   #game { position: absolute; inset: 0; width: 100%; height: 100%; }
   #game .ejs_parent, #game .ejs_game { width: 100% !important; height: 100% !important; }
   #game canvas { max-width: 100%; max-height: 100%; }
-  #safe { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); right: 8px; z-index: 9999;
-    display: none; background: rgba(0,0,0,.55); color: #fff; border: 0; border-radius: 10px;
-    padding: 8px 12px; font-size: .9rem; }
-  #back { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 8px; z-index: 9999;
-    display: none; background: rgba(0,0,0,.55); color: #fff; border: 0; border-radius: 10px;
-    padding: 8px 12px; font-size: .9rem; }
-  #err { color: #ff8a8a; min-height: 1.2em; }
+  /* esconde os botões de toque do próprio EmulatorJS: usamos os nossos */
+  .ejs_virtualGamepad_parent, .ejs_virtualGamepad_open, [class*="virtualGamepad"] { display: none !important; }
+
+  #pad { position: fixed; inset: 0; z-index: 50; pointer-events: none; display: none; }
+  .pc { position: absolute; transform: translate(-50%,-50%); pointer-events: auto; touch-action: none;
+    user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45); }
+  .pc.round { border-radius: 50%; font-size: 1.3rem; }
+  .pc.pill { border-radius: 999px; font-size: .75rem; letter-spacing: .5px; }
+  .pc.dpad { border-radius: 50%; }
+  .pc.on { background: rgba(122,122,255,.7); }
+  .pc.sel { outline: 3px dashed #ffd84a; outline-offset: 4px; }
+  .pc .ar { position: absolute; font-size: 1.2rem; opacity: .85; pointer-events: none; }
+  .editing .pc { background: rgba(255,216,74,.25); }
+
+  #menuBtn { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 8px; z-index: 9999; display: none;
+    background: rgba(0,0,0,.55); color: #fff; border: 0; border-radius: 10px; padding: 8px 14px; font-size: 1.1rem; }
+  #panel { position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.6); display: none;
+    align-items: center; justify-content: center; padding: 16px; }
+  #panel .box { background: var(--card); border-radius: 18px; padding: 18px; width: 100%; max-width: 380px;
+    max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  #panel h2 { margin: 0; font-size: 1.1rem; }
+  #panel h3 { margin: 6px 0 0; font-size: .85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > * { flex: 1; }
+  .sb { background: #2e2e5a; color: #fff; border: 0; border-radius: 12px; padding: 12px; font-size: .95rem; }
+  .sb.pri { background: var(--accent); }
+  select.sb { appearance: none; text-align: center; }
+  label.sw { display: flex; justify-content: space-between; align-items: center; font-size: .95rem; }
+  input[type=range] { width: 100%; }
+  #editbar { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 50%; transform: translateX(-50%);
+    z-index: 9999; display: none; background: rgba(0,0,0,.8); border-radius: 14px; padding: 10px 14px;
+    gap: 10px; align-items: center; font-size: .85rem; color: #fff; width: min(92vw, 460px); flex-wrap: wrap; justify-content: center; }
+  #editbar input { flex: 1; min-width: 120px; }
+  #toast { position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.8); color: #fff;
+    padding: 10px 16px; border-radius: 12px; z-index: 10001; display: none; font-size: .95rem; }
 </style>
 </head>
 <body>
@@ -41,28 +72,243 @@
     <span class="chip">Mega Drive</span>
     <span class="chip">Game Boy Advance</span>
   </div>
-  <p>Escolha o arquivo de um jogo seu (.md, .gen, .smd, .bin ou .gba). O sistema é detectado pela extensão.</p>
+  <p>Escolha o arquivo de um jogo seu (.md, .gen, .smd, .bin, .gba ou .zip). O sistema é detectado automaticamente.</p>
   <button class="btn" id="open">Abrir jogo</button>
   <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip" hidden>
   <div id="err"></div>
-  <p style="font-size:.75rem">versão 4</p>
-  <p style="font-size:.8rem">Salvar/carregar estado e controles de toque ficam no menu do emulador. Use apenas ROMs que você tem direito de usar.</p>
+  <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar.</p>
+  <p style="font-size:.75rem">versão 5</p>
 </div>
-<button id="back">⟵ Trocar jogo</button>
-<button id="safe">Sem imagem? Modo compatível</button>
+
 <div id="wrap"><div id="game"></div></div>
+<div id="pad"></div>
+<button id="menuBtn">☰</button>
+<div id="editbar">
+  <span id="editLabel">Arraste as peças</span>
+  <input type="range" id="sizeR" min="0.5" max="2.2" step="0.05" value="1">
+  <button class="sb pri" id="editDone">Concluir</button>
+</div>
+<div id="toast"></div>
+
+<div id="panel">
+  <div class="box">
+    <h2>Menu</h2>
+    <h3>Estado salvo</h3>
+    <div class="row">
+      <select class="sb" id="slot"><option value="1">Slot 1</option><option value="2">Slot 2</option><option value="3">Slot 3</option></select>
+    </div>
+    <div class="row">
+      <button class="sb pri" id="saveBtn">💾 Salvar</button>
+      <button class="sb pri" id="loadBtn">📂 Carregar</button>
+    </div>
+    <h3>Controles</h3>
+    <label class="sw"><span>Mostrar controles na tela</span><input type="checkbox" id="showCtl" checked></label>
+    <label class="sw"><span>Transparência</span></label>
+    <input type="range" id="opR" min="0.2" max="1" step="0.05" value="0.8">
+    <button class="sb" id="editBtn">✏️ Editar posição e tamanho</button>
+    <button class="sb" id="resetBtn">↺ Restaurar posições padrão</button>
+    <h3>Outros</h3>
+    <button class="sb" id="safeBtn">Sem imagem? Modo compatível</button>
+    <button class="sb" id="backBtn">⟵ Trocar jogo</button>
+    <button class="sb pri" id="closeBtn">Fechar</button>
+  </div>
+</div>
 
 <script>
+const $ = (id) => document.getElementById(id);
 const CORES = { md: "segaMD", gen: "segaMD", smd: "segaMD", bin: "segaMD", gba: "gba" };
-
-const fileInput = document.getElementById("file");
-document.getElementById("open").onclick = () => fileInput.click();
-document.getElementById("back").onclick = () => { location.href = location.pathname; };
 const SAFE = new URLSearchParams(location.search).has("safe");
-document.getElementById("safe").onclick = () => { location.href = location.pathname + (SAFE ? "" : "?safe=1"); };
-if (SAFE) document.getElementById("safe").textContent = "Voltar ao modo normal";
+if (SAFE) $("safeBtn").textContent = "Voltar ao modo normal";
 
-// Lê os nomes dentro de um .zip para descobrir se é Mega Drive ou GBA
+/* ---------- utilidades ---------- */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let toastT;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toastT); toastT = setTimeout(() => (t.style.display = "none"), 2000);
+}
+
+/* ---------- controles ---------- */
+// índices do RetroPad
+const IDX = { B:0, Y:1, SELECT:2, START:3, UP:4, DOWN:5, LEFT:6, RIGHT:7, A:8, X:9, L:10, R:11 };
+const DEFS = {
+  md: [
+    { id:"dpad", type:"dpad" },
+    { id:"a", label:"A", btn:IDX.Y, type:"round" },
+    { id:"b", label:"B", btn:IDX.B, type:"round" },
+    { id:"c", label:"C", btn:IDX.A, type:"round" },
+    { id:"start", label:"START", btn:IDX.START, type:"pill" }
+  ],
+  gba: [
+    { id:"dpad", type:"dpad" },
+    { id:"a", label:"A", btn:IDX.A, type:"round" },
+    { id:"b", label:"B", btn:IDX.B, type:"round" },
+    { id:"l", label:"L", btn:IDX.L, type:"pill" },
+    { id:"r", label:"R", btn:IDX.R, type:"pill" },
+    { id:"start", label:"START", btn:IDX.START, type:"pill" },
+    { id:"select", label:"SELECT", btn:IDX.SELECT, type:"pill" }
+  ]
+};
+const DEFAULTS = {
+  md: {
+    l: { dpad:[14,68], a:[70,76], b:[80,66], c:[90,56], start:[50,90] },
+    p: { dpad:[22,82], a:[56,90], b:[72,84], c:[88,78], start:[50,96] }
+  },
+  gba: {
+    l: { dpad:[14,68], a:[90,62], b:[79,74], l:[9,18], r:[91,18], start:[56,90], select:[44,90] },
+    p: { dpad:[22,82], a:[88,82], b:[74,90], l:[12,68], r:[88,68], start:[58,96], select:[42,96] }
+  }
+};
+const BASE = { dpad:[150,150], round:[68,68], pill:[84,34] };
+
+let SYS = "md", editing = false, selected = null, layout = {};
+const orient = () => (innerWidth > innerHeight ? "l" : "p");
+const lkey = () => "retro-layout-" + SYS + "-" + orient();
+
+function press(btn, val) {
+  try { window.EJS_emulator.gameManager.simulateInput(0, btn, val); } catch (e) {}
+}
+function buzz() { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} }
+
+function loadLayout() {
+  const def = DEFAULTS[SYS][orient()];
+  const saved = store.get(lkey(), {});
+  layout = {};
+  DEFS[SYS].forEach((d) => {
+    const s = saved[d.id];
+    layout[d.id] = s ? { x:s.x, y:s.y, s:s.s } : { x:def[d.id][0], y:def[d.id][1], s:1 };
+  });
+}
+function saveLayout() { store.set(lkey(), layout); }
+
+function applyLayout() {
+  DEFS[SYS].forEach((d) => {
+    const el = $("pc-" + d.id); if (!el) return;
+    const L = layout[d.id], b = BASE[d.type];
+    el.style.left = L.x + "%"; el.style.top = L.y + "%";
+    el.style.width = b[0] * L.s + "px"; el.style.height = b[1] * L.s + "px";
+    el.style.fontSize = (d.type === "pill" ? 0.75 : 1.3) * L.s + "rem";
+  });
+}
+
+function buildPad() {
+  const pad = $("pad"); pad.innerHTML = "";
+  DEFS[SYS].forEach((d) => {
+    const el = document.createElement("div");
+    el.id = "pc-" + d.id; el.className = "pc " + (d.type === "dpad" ? "dpad" : d.type);
+    if (d.type === "dpad") {
+      el.innerHTML = '<span class="ar" style="top:8%">▲</span><span class="ar" style="bottom:8%">▼</span>' +
+        '<span class="ar" style="left:8%">◀</span><span class="ar" style="right:8%">▶</span>';
+    } else el.textContent = d.label;
+    pad.appendChild(el);
+    wire(el, d);
+  });
+  loadLayout(); applyLayout();
+  pad.style.opacity = store.get("retro-opacity", 0.8);
+}
+
+function wire(el, d) {
+  const held = new Set();
+  const setDirs = (e) => {
+    const r = el.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const dist = Math.hypot(dx, dy), want = new Set();
+    if (dist > r.width * 0.12) {
+      if (dx > dist * 0.38) want.add(IDX.RIGHT);
+      if (dx < -dist * 0.38) want.add(IDX.LEFT);
+      if (dy > dist * 0.38) want.add(IDX.DOWN);
+      if (dy < -dist * 0.38) want.add(IDX.UP);
+    }
+    [IDX.UP, IDX.DOWN, IDX.LEFT, IDX.RIGHT].forEach((b) => {
+      if (want.has(b) && !held.has(b)) { press(b, 1); held.add(b); }
+      if (!want.has(b) && held.has(b)) { press(b, 0); held.delete(b); }
+    });
+  };
+  const releaseAll = () => { held.forEach((b) => press(b, 0)); held.clear(); el.classList.remove("on"); };
+  let drag = null;
+
+  el.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); el.setPointerCapture(e.pointerId);
+    if (editing) {
+      select(d.id);
+      drag = { px:e.clientX, py:e.clientY, x:layout[d.id].x, y:layout[d.id].y };
+      return;
+    }
+    el.classList.add("on"); buzz();
+    if (d.type === "dpad") setDirs(e); else { press(d.btn, 1); held.add(d.btn); }
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (editing && drag) {
+      layout[d.id].x = Math.min(98, Math.max(2, drag.x + ((e.clientX - drag.px) / innerWidth) * 100));
+      layout[d.id].y = Math.min(98, Math.max(2, drag.y + ((e.clientY - drag.py) / innerHeight) * 100));
+      applyLayout(); return;
+    }
+    if (!editing && d.type === "dpad" && el.hasPointerCapture(e.pointerId)) setDirs(e);
+  });
+  const up = () => {
+    if (editing) { if (drag) saveLayout(); drag = null; return; }
+    releaseAll();
+  };
+  el.addEventListener("pointerup", up);
+  el.addEventListener("pointercancel", up);
+  el.addEventListener("contextmenu", (e) => e.preventDefault());
+}
+
+function select(id) {
+  selected = id;
+  document.querySelectorAll(".pc").forEach((n) => n.classList.toggle("sel", n.id === "pc-" + id));
+  $("sizeR").value = layout[id].s;
+  $("editLabel").textContent = "Peça: " + id.toUpperCase();
+}
+function startEdit() {
+  editing = true; $("panel").style.display = "none";
+  $("pad").classList.add("editing"); $("pad").style.opacity = 1;
+  $("editbar").style.display = "flex"; $("menuBtn").style.display = "none";
+  select("dpad");
+}
+function stopEdit() {
+  editing = false; saveLayout();
+  $("pad").classList.remove("editing"); $("pad").style.opacity = store.get("retro-opacity", 0.8);
+  document.querySelectorAll(".pc").forEach((n) => n.classList.remove("sel"));
+  $("editbar").style.display = "none"; $("menuBtn").style.display = "block";
+}
+$("sizeR").oninput = (e) => { if (selected) { layout[selected].s = parseFloat(e.target.value); applyLayout(); } };
+$("editDone").onclick = stopEdit;
+$("editBtn").onclick = startEdit;
+$("resetBtn").onclick = () => { store.set(lkey(), {}); loadLayout(); applyLayout(); toast("Posições restauradas"); };
+
+/* ---------- menu ---------- */
+$("menuBtn").onclick = () => ($("panel").style.display = "flex");
+$("closeBtn").onclick = () => ($("panel").style.display = "none");
+$("panel").onclick = (e) => { if (e.target.id === "panel") $("panel").style.display = "none"; };
+$("backBtn").onclick = () => { location.href = location.pathname; };
+$("safeBtn").onclick = () => { location.href = location.pathname + (SAFE ? "" : "?safe=1"); };
+$("showCtl").checked = store.get("retro-show", true);
+$("showCtl").onchange = (e) => { store.set("retro-show", e.target.checked); $("pad").style.display = e.target.checked ? "block" : "none"; };
+$("opR").value = store.get("retro-opacity", 0.8);
+$("opR").oninput = (e) => { store.set("retro-opacity", parseFloat(e.target.value)); $("pad").style.opacity = e.target.value; };
+
+async function stateAction(kind) {
+  const gm = window.EJS_emulator && window.EJS_emulator.gameManager;
+  if (!gm) { toast("O jogo ainda está carregando"); return; }
+  const slot = parseInt($("slot").value, 10);
+  try {
+    if (kind === "save") { await gm.quickSave(slot); toast("💾 Estado salvo no slot " + slot); }
+    else { await gm.quickLoad(slot); toast("📂 Slot " + slot + " carregado"); }
+    $("panel").style.display = "none";
+  } catch (e) { toast("Não deu certo: " + (e.message || e)); }
+}
+$("saveBtn").onclick = () => stateAction("save");
+$("loadBtn").onclick = () => stateAction("load");
+
+addEventListener("resize", () => { if ($("pad").style.display !== "none" && $("pad").childElementCount) { loadLayout(); applyLayout(); if (editing && selected) select(selected); } });
+
+/* ---------- abrir jogo ---------- */
+$("open").onclick = () => $("file").click();
+
 async function extsInZip(file) {
   try {
     const tailSize = Math.min(file.size, 70000);
@@ -72,37 +318,33 @@ async function extsInZip(file) {
       if (tail.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
     }
     if (eocd < 0) return [];
-    const cdSize = tail.getUint32(eocd + 12, true);
-    const cdOff = tail.getUint32(eocd + 16, true);
+    const cdSize = tail.getUint32(eocd + 12, true), cdOff = tail.getUint32(eocd + 16, true);
     const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
-    const dec = new TextDecoder();
-    const exts = [];
+    const dec = new TextDecoder(), exts = [];
     let p = 0;
     while (p + 46 <= cd.byteLength && cd.getUint32(p, true) === 0x02014b50) {
       const n = cd.getUint16(p + 28, true), m = cd.getUint16(p + 30, true), k = cd.getUint16(p + 32, true);
-      const name = dec.decode(new Uint8Array(cd.buffer, p + 46, n));
-      exts.push(name.split(".").pop().toLowerCase());
+      exts.push(dec.decode(new Uint8Array(cd.buffer, p + 46, n)).split(".").pop().toLowerCase());
       p += 46 + n + m + k;
     }
     return exts;
   } catch (e) { return []; }
 }
 
-fileInput.onchange = async () => {
-  const f = fileInput.files[0];
+$("file").onchange = async () => {
+  const f = $("file").files[0];
   if (!f) return;
   let ext = f.name.split(".").pop().toLowerCase();
-  if (ext === "zip") {
-    const inside = await extsInZip(f);
-    ext = inside.find((x) => CORES[x]) || "";
-  }
+  if (ext === "zip") { const inside = await extsInZip(f); ext = inside.find((x) => CORES[x]) || ""; }
   const core = CORES[ext];
-  if (!core) { document.getElementById("err").textContent = "Não reconheci o sistema desse arquivo."; return; }
+  if (!core) { $("err").textContent = "Não reconheci o sistema desse arquivo."; return; }
+  SYS = core === "gba" ? "gba" : "md";
 
-  document.getElementById("menu").style.display = "none";
-  document.getElementById("wrap").style.display = "block";
-  document.getElementById("back").style.display = "block";
-  document.getElementById("safe").style.display = "block";
+  $("menu").style.display = "none";
+  $("wrap").style.display = "block";
+  $("menuBtn").style.display = "block";
+  $("pad").style.display = store.get("retro-show", true) ? "block" : "none";
+  buildPad();
 
   window.EJS_player = "#game";
   window.EJS_core = core;
