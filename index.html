@@ -45,7 +45,7 @@
   <button class="btn" id="open">Abrir jogo</button>
   <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip" hidden>
   <div id="err"></div>
-  <p style="font-size:.75rem">versão 3</p>
+  <p style="font-size:.75rem">versão 4</p>
   <p style="font-size:.8rem">Salvar/carregar estado e controles de toque ficam no menu do emulador. Use apenas ROMs que você tem direito de usar.</p>
 </div>
 <button id="back">⟵ Trocar jogo</button>
@@ -62,13 +62,42 @@ const SAFE = new URLSearchParams(location.search).has("safe");
 document.getElementById("safe").onclick = () => { location.href = location.pathname + (SAFE ? "" : "?safe=1"); };
 if (SAFE) document.getElementById("safe").textContent = "Voltar ao modo normal";
 
-fileInput.onchange = () => {
+// Lê os nomes dentro de um .zip para descobrir se é Mega Drive ou GBA
+async function extsInZip(file) {
+  try {
+    const tailSize = Math.min(file.size, 70000);
+    const tail = new DataView(await file.slice(file.size - tailSize).arrayBuffer());
+    let eocd = -1;
+    for (let i = tail.byteLength - 22; i >= 0; i--) {
+      if (tail.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) return [];
+    const cdSize = tail.getUint32(eocd + 12, true);
+    const cdOff = tail.getUint32(eocd + 16, true);
+    const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
+    const dec = new TextDecoder();
+    const exts = [];
+    let p = 0;
+    while (p + 46 <= cd.byteLength && cd.getUint32(p, true) === 0x02014b50) {
+      const n = cd.getUint16(p + 28, true), m = cd.getUint16(p + 30, true), k = cd.getUint16(p + 32, true);
+      const name = dec.decode(new Uint8Array(cd.buffer, p + 46, n));
+      exts.push(name.split(".").pop().toLowerCase());
+      p += 46 + n + m + k;
+    }
+    return exts;
+  } catch (e) { return []; }
+}
+
+fileInput.onchange = async () => {
   const f = fileInput.files[0];
   if (!f) return;
-  const ext = f.name.split(".").pop().toLowerCase();
-  let core = CORES[ext];
-  if (ext === "zip") core = "segaMD";
-  if (!core) { document.getElementById("err").textContent = "Formato não suportado: ." + ext; return; }
+  let ext = f.name.split(".").pop().toLowerCase();
+  if (ext === "zip") {
+    const inside = await extsInZip(f);
+    ext = inside.find((x) => CORES[x]) || "";
+  }
+  const core = CORES[ext];
+  if (!core) { document.getElementById("err").textContent = "Não reconheci o sistema desse arquivo."; return; }
 
   document.getElementById("menu").style.display = "none";
   document.getElementById("wrap").style.display = "block";
