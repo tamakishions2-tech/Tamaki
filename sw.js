@@ -1,4 +1,4 @@
-const CACHE = "retro-v2";
+const CACHE = "retro-v3";
 const SHELL = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -19,16 +19,29 @@ self.addEventListener("fetch", (e) => {
   const isEmu = url.hostname === "cdn.emulatorjs.org";
   const isOwn = url.origin === location.origin;
   if (!isEmu && !isOwn) return;
-  e.respondWith(
-    caches.match(req).then((hit) => {
-      if (hit) return hit;
-      return fetch(req).then((res) => {
+
+  if (isOwn) {
+    // arquivos do app: tenta a internet primeiro, cache só se estiver offline
+    e.respondWith(
+      fetch(req).then((res) => {
         if (res && res.ok) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy));
         }
         return res;
-      }).catch(() => hit);
-    })
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // emulador (CDN): cache primeiro, para funcionar offline
+  e.respondWith(
+    caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+      if (res && res.ok) {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy));
+      }
+      return res;
+    }))
   );
 });
