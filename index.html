@@ -61,6 +61,12 @@
     z-index: 9999; display: none; background: rgba(0,0,0,.8); border-radius: 14px; padding: 10px 14px;
     gap: 10px; align-items: center; font-size: .85rem; color: #fff; width: min(92vw, 460px); flex-wrap: wrap; justify-content: center; }
   #editbar input { flex: 1; min-width: 120px; }
+  #chooser { position: fixed; inset: 0; z-index: 10002; background: rgba(0,0,0,.6); display: none;
+    align-items: center; justify-content: center; padding: 16px; }
+  #chooser .box { background: var(--card); border-radius: 18px; padding: 18px; width: 100%; max-width: 380px;
+    display: flex; flex-direction: column; gap: 10px; max-height: 100%; overflow-y: auto; }
+  #chooser h2 { margin: 0 0 4px; font-size: 1.1rem; }
+  .sb:disabled { opacity: .4; }
   #toast { position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.8); color: #fff;
     padding: 10px 16px; border-radius: 12px; z-index: 10001; display: none; font-size: .95rem; }
 </style>
@@ -77,7 +83,7 @@
   <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip" hidden>
   <div id="err"></div>
   <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar.</p>
-  <p style="font-size:.75rem">versão 5</p>
+  <p style="font-size:.75rem">versão 6</p>
 </div>
 
 <div id="wrap"><div id="game"></div></div>
@@ -89,17 +95,16 @@
   <button class="sb pri" id="editDone">Concluir</button>
 </div>
 <div id="toast"></div>
+<div id="chooser"><div class="box"><h2 id="chTitle"></h2><div id="chBtns" style="display:flex;flex-direction:column;gap:10px"></div></div></div>
+<input type="file" id="stateFile" hidden>
 
 <div id="panel">
   <div class="box">
     <h2>Menu</h2>
     <h3>Estado salvo</h3>
     <div class="row">
-      <select class="sb" id="slot"><option value="1">Slot 1</option><option value="2">Slot 2</option><option value="3">Slot 3</option></select>
-    </div>
-    <div class="row">
-      <button class="sb pri" id="saveBtn">💾 Salvar</button>
-      <button class="sb pri" id="loadBtn">📂 Carregar</button>
+      <button class="sb pri" id="saveBtn">💾 Salvar…</button>
+      <button class="sb pri" id="loadBtn">📂 Carregar…</button>
     </div>
     <h3>Controles</h3>
     <label class="sw"><span>Mostrar controles na tela</span><input type="checkbox" id="showCtl" checked></label>
@@ -291,18 +296,120 @@ $("showCtl").onchange = (e) => { store.set("retro-show", e.target.checked); $("p
 $("opR").value = store.get("retro-opacity", 0.8);
 $("opR").oninput = (e) => { store.set("retro-opacity", parseFloat(e.target.value)); $("pad").style.opacity = e.target.value; };
 
-async function stateAction(kind) {
-  const gm = window.EJS_emulator && window.EJS_emulator.gameManager;
-  if (!gm) { toast("O jogo ainda está carregando"); return; }
-  const slot = parseInt($("slot").value, 10);
-  try {
-    if (kind === "save") { await gm.quickSave(slot); toast("💾 Estado salvo no slot " + slot); }
-    else { await gm.quickLoad(slot); toast("📂 Slot " + slot + " carregado"); }
-    $("panel").style.display = "none";
-  } catch (e) { toast("Não deu certo: " + (e.message || e)); }
+/* ---------- estados salvos ---------- */
+let GAME = "jogo";
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("retro-states", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("s");
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
 }
-$("saveBtn").onclick = () => stateAction("save");
-$("loadBtn").onclick = () => stateAction("load");
+async function dbGet(k) {
+  const db = await idb();
+  return new Promise((res, rej) => { const q = db.transaction("s").objectStore("s").get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+}
+async function dbSet(k, v) {
+  const db = await idb();
+  return new Promise((res, rej) => { const t = db.transaction("s", "readwrite"); t.objectStore("s").put(v, k); t.oncomplete = () => res(); t.onerror = () => rej(t.error); });
+}
+const skey = (n) => SYS + "|" + GAME + "|" + n;
+const fmtDate = (t) => new Date(t).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
+
+function choose(title, opts) {
+  $("chTitle").textContent = title;
+  const box = $("chBtns"); box.innerHTML = "";
+  opts.forEach((o) => {
+    const x = document.createElement("button");
+    x.className = "sb" + (o.pri ? " pri" : "");
+    x.textContent = o.label; x.disabled = !!o.disabled;
+    x.onclick = () => { if (!o.keep) $("chooser").style.display = "none"; if (o.fn) o.fn(); };
+    box.appendChild(x);
+  });
+  const c = document.createElement("button");
+  c.className = "sb"; c.textContent = "Cancelar";
+  c.onclick = () => ($("chooser").style.display = "none");
+  box.appendChild(c);
+  $("chooser").style.display = "flex";
+}
+function getGM() {
+  const gm = window.EJS_emulator && window.EJS_emulator.gameManager;
+  if (!gm) toast("O jogo ainda está carregando");
+  return gm || null;
+}
+function snapshot() {
+  const gm = getGM(); if (!gm) return null;
+  try { return new Uint8Array(gm.getState()); } catch (e) { toast("Não consegui ler o estado do jogo"); return null; }
+}
+async function applyState(data) {
+  const gm = getGM(); if (!gm) return;
+  try { await gm.loadState(data); toast("📂 Estado carregado"); }
+  catch (e) { toast("Não deu certo: " + (e.message || e)); }
+}
+async function slotInfo() {
+  const out = [];
+  for (let n = 1; n <= 3; n++) { let v = null; try { v = await dbGet(skey(n)); } catch (e) {} out.push(v); }
+  return out;
+}
+
+async function saveToApp() {
+  const info = await slotInfo();
+  choose("Salvar em qual slot?", info.map((v, i) => ({
+    label: "Slot " + (i + 1) + " — " + (v ? fmtDate(v.t) + " (substituir)" : "vazio"),
+    fn: async () => {
+      const d = snapshot(); if (!d) return;
+      try { await dbSet(skey(i + 1), { data: d, t: Date.now() }); toast("💾 Salvo no slot " + (i + 1)); }
+      catch (e) { toast("Não consegui salvar no app"); }
+    }
+  })));
+}
+async function saveToFile(share) {
+  const d = snapshot(); if (!d) return;
+  const d2 = new Date(), pad = (x) => String(x).padStart(2, "0");
+  const stamp = d2.getFullYear() + pad(d2.getMonth() + 1) + pad(d2.getDate()) + "-" + pad(d2.getHours()) + pad(d2.getMinutes());
+  const name = GAME + "-" + stamp + ".state.txt";
+  if (share && navigator.canShare && navigator.share) {
+    const file = new File([d], name, { type: "text/plain" });
+    if (navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: name }); toast("Estado enviado"); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([d], { type: "application/octet-stream" }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  toast("⬇️ Baixado: " + name);
+}
+async function loadFromApp() {
+  const info = await slotInfo();
+  choose("Carregar de qual slot?", info.map((v, i) => ({
+    label: "Slot " + (i + 1) + " — " + (v ? fmtDate(v.t) : "vazio"),
+    disabled: !v,
+    fn: () => applyState(v.data)
+  })));
+}
+
+$("saveBtn").onclick = () => {
+  $("panel").style.display = "none";
+  choose("Salvar onde?", [
+    { label: "📱 No app (fica guardado)", pri: true, keep: true, fn: saveToApp },
+    { label: "📤 Escolher destino (Drive, WhatsApp…)", fn: () => saveToFile(true) },
+    { label: "⬇️ Baixar no tablet", fn: () => saveToFile(false) }
+  ]);
+};
+$("loadBtn").onclick = () => {
+  $("panel").style.display = "none";
+  choose("Carregar de onde?", [
+    { label: "📱 Do app", pri: true, keep: true, fn: loadFromApp },
+    { label: "📁 De um arquivo (escolher no tablet)", fn: () => $("stateFile").click() }
+  ]);
+};
+$("stateFile").onchange = async () => {
+  const f = $("stateFile").files[0]; $("stateFile").value = "";
+  if (!f) return;
+  applyState(new Uint8Array(await f.arrayBuffer()));
+};
 
 addEventListener("resize", () => { if ($("pad").style.display !== "none" && $("pad").childElementCount) { loadLayout(); applyLayout(); if (editing && selected) select(selected); } });
 
@@ -339,6 +446,8 @@ $("file").onchange = async () => {
   const core = CORES[ext];
   if (!core) { $("err").textContent = "Não reconheci o sistema desse arquivo."; return; }
   SYS = core === "gba" ? "gba" : "md";
+  GAME = f.name.replace(/\.[^.]+$/, "");
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
 
   $("menu").style.display = "none";
   $("wrap").style.display = "block";
