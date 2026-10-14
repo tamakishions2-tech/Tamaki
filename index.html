@@ -270,4 +270,5 @@ $('#und').onclick=()=>{if(!S.undo||!confirm('Desfazer a última atualização?')
 addEventListener('beforeunload',e=>{if(pend()[0]+pend()[1]){e.preventDefault();e.returnValue=''}});
 get('s').then(v=>{if(v)S=v;render()});
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+ <script src="gerar.js"></script>
 </script></body></html>
