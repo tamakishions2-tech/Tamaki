@@ -12,16 +12,28 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text);
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overscroll-behavior: none; }
-  #menu { min-height: 100%; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 18px; padding: 24px; text-align: center; }
-  h1 { margin: 0; font-size: 1.8rem; }
-  p { margin: 0; color: var(--muted); max-width: 420px; line-height: 1.5; }
+  #menu { min-height: 100%; display: flex; flex-direction: column; gap: 14px; max-width: 900px; margin: 0 auto;
+    padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); }
+  h1 { margin: 0; font-size: 1.5rem; }
+  p { margin: 0; color: var(--muted); line-height: 1.5; }
   .btn { background: var(--accent); color: #fff; border: 0; border-radius: 14px;
-    padding: 16px 28px; font-size: 1.1rem; font-weight: 600; cursor: pointer; }
+    padding: 12px 18px; font-size: 1rem; font-weight: 600; cursor: pointer; }
   .btn:active { transform: scale(.97); }
-  .systems { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-  .chip { background: var(--card); border-radius: 999px; padding: 6px 14px; font-size: .85rem; color: var(--muted); }
-  #err { color: #ff8a8a; min-height: 1.2em; }
+  .hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #empty { display: none; text-align: center; padding: 40px 10px; }
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .gcard { background: var(--card); border-radius: 14px; padding: 8px; position: relative; cursor: pointer; }
+  .gcard:active { transform: scale(.98); }
+  .cv { aspect-ratio: 4/5; background: #0d0d20; border-radius: 10px; overflow: hidden; position: relative;
+    display: flex; align-items: center; justify-content: center; }
+  .cv img { width: 100%; height: 100%; object-fit: contain; }
+  .ph { padding: 10px; text-align: center; font-weight: 700; font-size: .95rem; color: var(--muted); word-break: break-word; }
+  .gt { margin-top: 8px; font-size: .9rem; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em; }
+  .bd { position: absolute; left: 6px; bottom: 6px; background: rgba(0,0,0,.65); border-radius: 6px;
+    padding: 2px 7px; font-size: .7rem; color: #fff; }
+  .kb { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,.6); color: #fff; border: 0;
+    border-radius: 8px; width: 34px; height: 34px; font-size: 1.1rem; }
 
   #wrap { position: fixed; inset: 0; display: none; background: #000; overflow: hidden; }
   #game { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -73,17 +85,16 @@
 </head>
 <body>
 <div id="menu">
-  <h1>🎮 Emulador Retro</h1>
-  <div class="systems">
-    <span class="chip">Mega Drive</span>
-    <span class="chip">Game Boy Advance</span>
+  <div class="hd">
+    <h1>🎮 Meus jogos</h1>
+    <button class="btn" id="open">＋ Adicionar</button>
   </div>
-  <p>Escolha o arquivo de um jogo seu (.md, .gen, .smd, .bin, .gba ou .zip). O sistema é detectado automaticamente.</p>
-  <button class="btn" id="open">Abrir jogo</button>
-  <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip" hidden>
-  <div id="err"></div>
-  <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar.</p>
-  <p style="font-size:.75rem">versão 6</p>
+  <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip" multiple hidden>
+  <input type="file" id="coverFile" accept="image/*" hidden>
+  <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive ou GBA).</p></div>
+  <div id="grid"></div>
+  <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar. Toque no ⋮ de um jogo para trocar a capa, exportar ou remover.</p>
+  <p style="font-size:.75rem">versão 7</p>
 </div>
 
 <div id="wrap"><div id="game"></div></div>
@@ -413,10 +424,31 @@ $("stateFile").onchange = async () => {
 
 addEventListener("resize", () => { if ($("pad").style.display !== "none" && $("pad").childElementCount) { loadLayout(); applyLayout(); if (editing && selected) select(selected); } });
 
-/* ---------- abrir jogo ---------- */
-$("open").onclick = () => $("file").click();
+/* ---------- biblioteca de jogos ---------- */
+function ldb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("retro-lib", 1);
+    r.onupgradeneeded = () => { r.result.createObjectStore("g", { keyPath: "id" }); r.result.createObjectStore("f"); };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function lreq(store, mode, fn) {
+  const db = await ldb();
+  return new Promise((res, rej) => {
+    const t = db.transaction(store, mode), q = fn(t.objectStore(store));
+    t.oncomplete = () => res(q && q.result);
+    t.onerror = () => rej(t.error);
+  });
+}
+const lAll = () => lreq("g", "readonly", (s) => s.getAll());
+const lGet = (id) => lreq("g", "readonly", (s) => s.get(id));
+const lPut = (g) => lreq("g", "readwrite", (s) => s.put(g));
+const fGet = (id) => lreq("f", "readonly", (s) => s.get(id));
+const fPut = (id, f) => lreq("f", "readwrite", (s) => s.put(f, id));
+async function lDel(id) { await lreq("g", "readwrite", (s) => s.delete(id)); await lreq("f", "readwrite", (s) => s.delete(id)); }
 
-async function extsInZip(file) {
+async function namesInZip(file) {
   try {
     const tailSize = Math.min(file.size, 70000);
     const tail = new DataView(await file.slice(file.size - tailSize).arrayBuffer());
@@ -427,26 +459,162 @@ async function extsInZip(file) {
     if (eocd < 0) return [];
     const cdSize = tail.getUint32(eocd + 12, true), cdOff = tail.getUint32(eocd + 16, true);
     const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
-    const dec = new TextDecoder(), exts = [];
+    const dec = new TextDecoder(), names = [];
     let p = 0;
     while (p + 46 <= cd.byteLength && cd.getUint32(p, true) === 0x02014b50) {
       const n = cd.getUint16(p + 28, true), m = cd.getUint16(p + 30, true), k = cd.getUint16(p + 32, true);
-      exts.push(dec.decode(new Uint8Array(cd.buffer, p + 46, n)).split(".").pop().toLowerCase());
+      names.push(dec.decode(new Uint8Array(cd.buffer, p + 46, n)).split("/").pop());
       p += 46 + n + m + k;
     }
-    return exts;
+    return names;
   } catch (e) { return []; }
 }
 
-$("file").onchange = async () => {
-  const f = $("file").files[0];
-  if (!f) return;
-  let ext = f.name.split(".").pop().toLowerCase();
-  if (ext === "zip") { const inside = await extsInZip(f); ext = inside.find((x) => CORES[x]) || ""; }
-  const core = CORES[ext];
-  if (!core) { $("err").textContent = "Não reconheci o sistema desse arquivo."; return; }
+const extOf = (n) => n.split(".").pop().toLowerCase();
+const baseOf = (n) => n.replace(/\.[^.]+$/, "");
+const niceTitle = (n) => baseOf(n).replace(/_+/g, " ").replace(/\s*[\(\[].*?[\)\]]/g, "").trim() || baseOf(n);
+
+/* capas: miniaturas do projeto Libretro (as mesmas usadas pelo RetroArch) */
+function probeImage(url) {
+  return new Promise((res) => { const i = new Image(); i.onload = () => res(true); i.onerror = () => res(false); i.src = url; });
+}
+async function findCover(g) {
+  const dir = g.sys === "gba" ? "Nintendo - Game Boy Advance" : "Sega - Mega Drive - Genesis";
+  const base = baseOf(g.entry);
+  const set = new Set([base, base.replace(/\s*\((Rev|Beta|Proto|Unl)[^)]*\)/gi, "").trim()]);
+  [...set].forEach((n) => ["USA", "World", "Europe", "Japan"].forEach((r) => set.add(n.replace(/\([^)]*\)/, "(" + r + ")"))));
+  const clean = (n) => n.replace(/[&*\/:`<>?\\|]/g, "_");
+  for (const n of set) {
+    const url = "https://thumbnails.libretro.com/" + encodeURIComponent(dir) + "/Named_Boxarts/" + encodeURIComponent(clean(n)) + ".png";
+    try {
+      const r = await fetch(url, { mode: "cors" });
+      if (r.ok) return { blob: await r.blob() };
+      if (r.status === 404) continue;
+    } catch (e) {
+      if (await probeImage(url)) return { url };
+    }
+  }
+  return null;
+}
+async function fetchCoverFor(id) {
+  const g = await lGet(id); if (!g) return false;
+  const c = await findCover(g);
+  if (!c) return false;
+  g.cover = c.blob || null; g.coverUrl = c.url || null;
+  await lPut(g); renderLib();
+  return true;
+}
+
+function placeholder(g) {
+  const d = document.createElement("div"); d.className = "ph"; d.textContent = g.name; return d;
+}
+async function renderLib() {
+  let games = [];
+  try { games = (await lAll()).sort((a, b) => b.added - a.added); } catch (e) {}
+  $("empty").style.display = games.length ? "none" : "block";
+  const grid = $("grid"); grid.innerHTML = "";
+  games.forEach((g) => {
+    const card = document.createElement("div"); card.className = "gcard";
+    const cv = document.createElement("div"); cv.className = "cv";
+    const src = g.cover ? URL.createObjectURL(g.cover) : g.coverUrl;
+    if (src) {
+      const im = new Image(); im.alt = g.name; im.src = src;
+      im.onerror = () => { im.remove(); cv.prepend(placeholder(g)); };
+      cv.appendChild(im);
+    } else cv.appendChild(placeholder(g));
+    const bd = document.createElement("span"); bd.className = "bd"; bd.textContent = g.sys === "gba" ? "GBA" : "MEGA DRIVE";
+    cv.appendChild(bd);
+    const kb = document.createElement("button"); kb.className = "kb"; kb.textContent = "⋮";
+    kb.onclick = (e) => { e.stopPropagation(); gameMenu(g); };
+    const t = document.createElement("div"); t.className = "gt"; t.textContent = g.name;
+    card.append(cv, t, kb);
+    card.onclick = () => playGame(g.id);
+    grid.appendChild(card);
+  });
+}
+
+async function addFiles(files) {
+  const added = [], skipped = [];
+  for (const f of files) {
+    let ext = extOf(f.name), entry = f.name;
+    if (ext === "zip") {
+      const names = await namesInZip(f);
+      entry = names.find((n) => CORES[extOf(n)]) || "";
+      ext = entry ? extOf(entry) : "";
+    }
+    if (!CORES[ext]) { skipped.push(f.name); continue; }
+    const sys = CORES[ext] === "gba" ? "gba" : "md";
+    const id = sys + "|" + f.name + "|" + f.size;
+    try {
+      const old = await lGet(id);
+      await fPut(id, f);
+      await lPut({ id, name: niceTitle(entry), fname: f.name, entry, sys, cover: old ? old.cover : null,
+        coverUrl: old ? old.coverUrl : null, added: old ? old.added : Date.now() });
+      if (!old) added.push(id);
+    } catch (e) { skipped.push(f.name); }
+  }
+  await renderLib();
+  if (added.length) toast(added.length + " jogo(s) adicionado(s). Buscando capas…");
+  else if (skipped.length) toast("Não consegui adicionar: " + skipped[0]);
+  let found = 0;
+  for (const id of added) { if (await fetchCoverFor(id)) found++; }
+  if (added.length) toast(found + " de " + added.length + " capa(s) encontrada(s)");
+}
+
+function gameMenu(g) {
+  choose(g.name, [
+    { label: "▶️ Jogar", pri: true, fn: () => playGame(g.id) },
+    { label: "🔍 Buscar capa online", fn: async () => { toast("Buscando capa…"); toast((await fetchCoverFor(g.id)) ? "Capa encontrada" : "Não achei a capa. Escolha uma do tablet."); } },
+    { label: "🖼️ Escolher capa do tablet", fn: () => { coverTarget = g.id; $("coverFile").click(); } },
+    { label: "📤 Exportar arquivo do jogo", keep: true, fn: () => exportGame(g) },
+    { label: "🗑️ Remover da biblioteca", keep: true, fn: () => confirmDelete(g) }
+  ]);
+}
+let coverTarget = null;
+$("coverFile").onchange = async () => {
+  const f = $("coverFile").files[0]; $("coverFile").value = "";
+  if (!f || !coverTarget) return;
+  const g = await lGet(coverTarget); if (!g) return;
+  g.cover = f; g.coverUrl = null; await lPut(g); renderLib(); toast("Capa atualizada");
+};
+function confirmDelete(g) {
+  choose("Remover “" + g.name + "”?", [
+    { label: "🗑️ Sim, remover (os estados salvos continuam guardados)", fn: async () => { await lDel(g.id); renderLib(); toast("Removido"); } }
+  ]);
+}
+function exportGame(g) {
+  choose("Exportar para onde?", [
+    { label: "📤 Escolher destino (Drive, etc.)", pri: true, fn: () => deliver(g, true) },
+    { label: "⬇️ Baixar no tablet", fn: () => deliver(g, false) }
+  ]);
+}
+async function deliver(g, share) {
+  const f = await fGet(g.id); if (!f) { toast("Arquivo não encontrado"); return; }
+  if (share && navigator.canShare && navigator.share) {
+    const file = new File([f], g.fname, { type: f.type || "application/octet-stream" });
+    if (navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: g.fname }); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(f); a.download = g.fname;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast("⬇️ Baixado: " + g.fname);
+}
+
+$("open").onclick = () => $("file").click();
+$("file").onchange = async () => { const fs = [...$("file").files]; $("file").value = ""; if (fs.length) addFiles(fs); };
+
+async function playGame(id) {
+  const g = await lGet(id), f = await fGet(id);
+  if (!g || !f) { toast("Não achei o arquivo desse jogo"); return; }
+  startGame(f, g.sys === "gba" ? "gba" : "segaMD", g.fname);
+}
+
+function startGame(f, core, fname) {
   SYS = core === "gba" ? "gba" : "md";
-  GAME = f.name.replace(/\.[^.]+$/, "");
+  GAME = baseOf(fname);
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
 
   $("menu").style.display = "none";
@@ -458,7 +626,7 @@ $("file").onchange = async () => {
   window.EJS_player = "#game";
   window.EJS_core = core;
   window.EJS_gameUrl = URL.createObjectURL(f);
-  window.EJS_gameName = f.name.replace(/\.[^.]+$/, "");
+  window.EJS_gameName = GAME;
   window.EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
   window.EJS_startOnLoaded = true;
   window.EJS_color = "#7a7aff";
@@ -471,7 +639,10 @@ $("file").onchange = async () => {
   const s = document.createElement("script");
   s.src = window.EJS_pathtodata + "loader.js";
   document.body.appendChild(s);
-};
+}
+
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+renderLib();
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
