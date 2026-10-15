@@ -1,650 +1,190 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#141428">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15181d">
+<title>Universo</title>
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png">
-<title>Emulador Retro</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
-  :root { --bg:#141428; --card:#1f1f3d; --accent:#7a7aff; --text:#f0f0ff; --muted:#9a9ac0; }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overscroll-behavior: none; }
-  #menu { min-height: 100%; display: flex; flex-direction: column; gap: 14px; max-width: 900px; margin: 0 auto;
-    padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px); }
-  h1 { margin: 0; font-size: 1.5rem; }
-  p { margin: 0; color: var(--muted); line-height: 1.5; }
-  .btn { background: var(--accent); color: #fff; border: 0; border-radius: 14px;
-    padding: 12px 18px; font-size: 1rem; font-weight: 600; cursor: pointer; }
-  .btn:active { transform: scale(.97); }
-  .hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  #empty { display: none; text-align: center; padding: 40px 10px; }
-  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-  .gcard { background: var(--card); border-radius: 14px; padding: 8px; position: relative; cursor: pointer; }
-  .gcard:active { transform: scale(.98); }
-  .cv { aspect-ratio: 4/5; background: #0d0d20; border-radius: 10px; overflow: hidden; position: relative;
-    display: flex; align-items: center; justify-content: center; }
-  .cv img { width: 100%; height: 100%; object-fit: contain; }
-  .ph { padding: 10px; text-align: center; font-weight: 700; font-size: .95rem; color: var(--muted); word-break: break-word; }
-  .gt { margin-top: 8px; font-size: .9rem; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical; overflow: hidden; min-height: 2.5em; }
-  .bd { position: absolute; left: 6px; bottom: 6px; background: rgba(0,0,0,.65); border-radius: 6px;
-    padding: 2px 7px; font-size: .7rem; color: #fff; }
-  .kb { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,.6); color: #fff; border: 0;
-    border-radius: 8px; width: 34px; height: 34px; font-size: 1.1rem; }
-
-  #wrap { position: fixed; inset: 0; display: none; background: #000; overflow: hidden; }
-  #game { position: absolute; inset: 0; width: 100%; height: 100%; }
-  #game .ejs_parent, #game .ejs_game { width: 100% !important; height: 100% !important; }
-  #game canvas { max-width: 100%; max-height: 100%; }
-  /* esconde os botões de toque do próprio EmulatorJS: usamos os nossos */
-  .ejs_virtualGamepad_parent, .ejs_virtualGamepad_open, [class*="virtualGamepad"] { display: none !important; }
-
-  #pad { position: fixed; inset: 0; z-index: 50; pointer-events: none; display: none; }
-  .pc { position: absolute; transform: translate(-50%,-50%); pointer-events: auto; touch-action: none;
-    user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 700; background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45); }
-  .pc.round { border-radius: 50%; font-size: 1.3rem; }
-  .pc.pill { border-radius: 999px; font-size: .75rem; letter-spacing: .5px; }
-  .pc.dpad { border-radius: 50%; }
-  .pc.on { background: rgba(122,122,255,.7); }
-  .pc.sel { outline: 3px dashed #ffd84a; outline-offset: 4px; }
-  .pc .ar { position: absolute; font-size: 1.2rem; opacity: .85; pointer-events: none; }
-  .editing .pc { background: rgba(255,216,74,.25); }
-
-  #menuBtn { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 8px; z-index: 9999; display: none;
-    background: rgba(0,0,0,.55); color: #fff; border: 0; border-radius: 10px; padding: 8px 14px; font-size: 1.1rem; }
-  #panel { position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.6); display: none;
-    align-items: center; justify-content: center; padding: 16px; }
-  #panel .box { background: var(--card); border-radius: 18px; padding: 18px; width: 100%; max-width: 380px;
-    max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-  #panel h2 { margin: 0; font-size: 1.1rem; }
-  #panel h3 { margin: 6px 0 0; font-size: .85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
-  .row { display: flex; gap: 8px; align-items: center; }
-  .row > * { flex: 1; }
-  .sb { background: #2e2e5a; color: #fff; border: 0; border-radius: 12px; padding: 12px; font-size: .95rem; }
-  .sb.pri { background: var(--accent); }
-  select.sb { appearance: none; text-align: center; }
-  label.sw { display: flex; justify-content: space-between; align-items: center; font-size: .95rem; }
-  input[type=range] { width: 100%; }
-  #editbar { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 50%; transform: translateX(-50%);
-    z-index: 9999; display: none; background: rgba(0,0,0,.8); border-radius: 14px; padding: 10px 14px;
-    gap: 10px; align-items: center; font-size: .85rem; color: #fff; width: min(92vw, 460px); flex-wrap: wrap; justify-content: center; }
-  #editbar input { flex: 1; min-width: 120px; }
-  #chooser { position: fixed; inset: 0; z-index: 10002; background: rgba(0,0,0,.6); display: none;
-    align-items: center; justify-content: center; padding: 16px; }
-  #chooser .box { background: var(--card); border-radius: 18px; padding: 18px; width: 100%; max-width: 380px;
-    display: flex; flex-direction: column; gap: 10px; max-height: 100%; overflow-y: auto; }
-  #chooser h2 { margin: 0 0 4px; font-size: 1.1rem; }
-  .sb:disabled { opacity: .4; }
-  #toast { position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.8); color: #fff;
-    padding: 10px 16px; border-radius: 12px; z-index: 10001; display: none; font-size: .95rem; }
+:root{--bg:#15181d;--sf:#1d2128;--ln:#2c323c;--tx:#eae3d6;--mt:#9a968c;--bd:#721c28;--go:#b88a3b}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:14px 16px 10px;border-bottom:1px solid var(--ln)}
+h1{margin:0 0 10px;font:600 26px/1.1 Georgia,"Times New Roman",serif;color:var(--go)}
+input,select,textarea,button{font:inherit;color:var(--tx)}
+#q{width:100%;padding:11px 14px;background:var(--sf);border:1px solid var(--ln);border-radius:10px}
+#chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.chip{flex:none;padding:6px 14px;border-radius:99px;border:1px solid var(--ln);background:none;cursor:pointer}
+.chip.on{background:var(--bd);border-color:var(--bd)}
+main{padding:14px 16px 96px;max-width:760px;margin:0 auto}
+.card{display:block;width:100%;text-align:left;background:var(--sf);border:1px solid var(--ln);border-left:3px solid var(--bd);border-radius:6px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.card b{display:block;font:600 18px/1.3 Georgia,serif}
+.card small{color:var(--go)}
+.card p{margin:4px 0 0;color:var(--mt);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.empty{color:var(--mt);text-align:center;padding:48px 12px}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));display:flex;gap:10px}
+.fab button{border:0;border-radius:99px;padding:13px 20px;background:var(--go);color:#15181d;font-weight:600;box-shadow:0 4px 14px #0008;cursor:pointer}
+.fab .sec{background:var(--sf);color:var(--tx);border:1px solid var(--ln)}
+dialog{width:min(680px,100% - 20px);max-height:92vh;margin:auto;padding:16px;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:12px}
+dialog::backdrop{background:#000b}
+dialog input,dialog select,dialog textarea{width:100%;margin-bottom:10px;padding:10px 12px;background:var(--sf);border:1px solid var(--ln);border-radius:8px}
+#tt{font:600 20px Georgia,serif}
+#tx{min-height:46vh;resize:vertical;line-height:1.7}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row button{flex:1;padding:11px;border-radius:8px;border:1px solid var(--ln);background:var(--sf);cursor:pointer}
+.row .ok{background:var(--bd);border-color:var(--bd)}
+.row .del{color:#e07a7a}
+#st{position:fixed;left:0;right:0;bottom:80px;text-align:center;color:var(--mt);font-size:13px;pointer-events:none}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--go);outline-offset:2px}
 </style>
 </head>
 <body>
-<div id="menu">
-  <div class="hd">
-    <h1>🎮 Meus jogos</h1>
-    <button class="btn" id="open">＋ Adicionar</button>
+<header>
+  <h1>Universo</h1>
+  <input id="q" type="search" placeholder="Buscar em tudo" aria-label="Buscar">
+  <div id="chips"></div>
+</header>
+<main id="list"></main>
+<div id="st"></div>
+<div class="fab">
+  <button class="sec" id="more">Mais</button>
+  <button id="add">Novo texto</button>
+</div>
+
+<dialog id="ed">
+  <input id="tt" placeholder="Título" aria-label="Título">
+  <select id="ct" aria-label="Categoria"></select>
+  <textarea id="tx" placeholder="Escreva aqui" aria-label="Texto"></textarea>
+  <div class="row">
+    <button class="ok" id="sv">Salvar</button>
+    <button id="cl">Fechar</button>
+    <button class="del" id="dl">Excluir</button>
   </div>
-  <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip" multiple hidden>
-  <input type="file" id="coverFile" accept="image/*" hidden>
-  <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive ou GBA).</p></div>
-  <div id="grid"></div>
-  <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar. Toque no ⋮ de um jogo para trocar a capa, exportar ou remover.</p>
-  <p style="font-size:.75rem">versão 7</p>
-</div>
+</dialog>
 
-<div id="wrap"><div id="game"></div></div>
-<div id="pad"></div>
-<button id="menuBtn">☰</button>
-<div id="editbar">
-  <span id="editLabel">Arraste as peças</span>
-  <input type="range" id="sizeR" min="0.5" max="2.2" step="0.05" value="1">
-  <button class="sb pri" id="editDone">Concluir</button>
-</div>
-<div id="toast"></div>
-<div id="chooser"><div class="box"><h2 id="chTitle"></h2><div id="chBtns" style="display:flex;flex-direction:column;gap:10px"></div></div></div>
-<input type="file" id="stateFile" hidden>
-
-<div id="panel">
-  <div class="box">
-    <h2>Menu</h2>
-    <h3>Estado salvo</h3>
-    <div class="row">
-      <button class="sb pri" id="saveBtn">💾 Salvar…</button>
-      <button class="sb pri" id="loadBtn">📂 Carregar…</button>
-    </div>
-    <h3>Controles</h3>
-    <label class="sw"><span>Mostrar controles na tela</span><input type="checkbox" id="showCtl" checked></label>
-    <label class="sw"><span>Transparência</span></label>
-    <input type="range" id="opR" min="0.2" max="1" step="0.05" value="0.8">
-    <button class="sb" id="editBtn">✏️ Editar posição e tamanho</button>
-    <button class="sb" id="resetBtn">↺ Restaurar posições padrão</button>
-    <h3>Outros</h3>
-    <button class="sb" id="safeBtn">Sem imagem? Modo compatível</button>
-    <button class="sb" id="backBtn">⟵ Trocar jogo</button>
-    <button class="sb pri" id="closeBtn">Fechar</button>
+<dialog id="mn">
+  <div class="row" style="flex-direction:column">
+    <button id="imp">Importar arquivo Word (.docx)</button>
+    <button id="exp">Baixar backup (.json)</button>
+    <button id="rst">Restaurar backup (.json)</button>
+    <button onclick="location.href='gerador.html'">Abrir gerador de OCs</button>
+    <button onclick="mn.close()">Fechar</button>
   </div>
-</div>
+  <input type="file" id="fi" hidden>
+</dialog>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" defer></script>
 <script>
-const $ = (id) => document.getElementById(id);
-const CORES = { md: "segaMD", gen: "segaMD", smd: "segaMD", bin: "segaMD", gba: "gba" };
-const SAFE = new URLSearchParams(location.search).has("safe");
-if (SAFE) $("safeBtn").textContent = "Voltar ao modo normal";
+/* ===== COLE AQUI sua configuração do Firebase (opcional) =====
+   Sem ela, tudo fica salvo só neste aparelho. */
+const CFG={apiKey:"",authDomain:"",projectId:"",appId:""};
+const COL="universo";
+const CATS=["Mundo","Facções","Personagens","Histórias","Notas"];
+const $=id=>document.getElementById(id);
+const LS="universo-itens";
+let items=[],cat="Todos",db=null,cur=null;
 
-/* ---------- utilidades ---------- */
-const store = {
-  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-};
-let toastT;
-function toast(msg) {
-  const t = $("toast"); t.textContent = msg; t.style.display = "block";
-  clearTimeout(toastT); toastT = setTimeout(() => (t.style.display = "none"), 2000);
+function load(){try{items=JSON.parse(localStorage.getItem(LS))||[]}catch(e){items=[]}}
+function keep(){try{localStorage.setItem(LS,JSON.stringify(items))}catch(e){}}
+function msg(t){$("st").textContent=t;setTimeout(()=>{if($("st").textContent===t)$("st").textContent=""},2500)}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+function put(it){
+  const i=items.findIndex(x=>x.id===it.id);
+  if(i<0)items.push(it);else items[i]=it;
+  keep();render();
+  if(db)db.collection(COL).doc(it.id).set(it).catch(()=>msg("Salvo só neste aparelho"));
+}
+function remove(id){
+  items=items.filter(x=>x.id!==id);keep();render();
+  if(db)db.collection(COL).doc(id).delete().catch(()=>{});
 }
 
-/* ---------- controles ---------- */
-// índices do RetroPad
-const IDX = { B:0, Y:1, SELECT:2, START:3, UP:4, DOWN:5, LEFT:6, RIGHT:7, A:8, X:9, L:10, R:11 };
-const DEFS = {
-  md: [
-    { id:"dpad", type:"dpad" },
-    { id:"a", label:"A", btn:IDX.Y, type:"round" },
-    { id:"b", label:"B", btn:IDX.B, type:"round" },
-    { id:"c", label:"C", btn:IDX.A, type:"round" },
-    { id:"start", label:"START", btn:IDX.START, type:"pill" }
-  ],
-  gba: [
-    { id:"dpad", type:"dpad" },
-    { id:"a", label:"A", btn:IDX.A, type:"round" },
-    { id:"b", label:"B", btn:IDX.B, type:"round" },
-    { id:"l", label:"L", btn:IDX.L, type:"pill" },
-    { id:"r", label:"R", btn:IDX.R, type:"pill" },
-    { id:"start", label:"START", btn:IDX.START, type:"pill" },
-    { id:"select", label:"SELECT", btn:IDX.SELECT, type:"pill" }
-  ]
-};
-const DEFAULTS = {
-  md: {
-    l: { dpad:[14,68], a:[70,76], b:[80,66], c:[90,56], start:[50,90] },
-    p: { dpad:[22,82], a:[56,90], b:[72,84], c:[88,78], start:[50,96] }
-  },
-  gba: {
-    l: { dpad:[14,68], a:[90,62], b:[79,74], l:[9,18], r:[91,18], start:[56,90], select:[44,90] },
-    p: { dpad:[22,82], a:[88,82], b:[74,90], l:[12,68], r:[88,68], start:[58,96], select:[42,96] }
+function render(){
+  const chips=$("chips");chips.innerHTML="";
+  ["Todos",...CATS].forEach(c=>{
+    const b=document.createElement("button");
+    b.className="chip"+(c===cat?" on":"");b.textContent=c;
+    b.onclick=()=>{cat=c;render()};chips.appendChild(b);
+  });
+  const q=$("q").value.trim().toLowerCase();
+  const rows=items
+    .filter(x=>(cat==="Todos"||x.cat===cat)&&(!q||(x.title+" "+x.text).toLowerCase().includes(q)))
+    .sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const L=$("list");L.innerHTML="";
+  if(!rows.length){
+    const d=document.createElement("div");d.className="empty";
+    d.textContent=items.length?"Nada encontrado.":"Ainda não há textos. Toque em Novo texto ou importe um arquivo Word.";
+    L.appendChild(d);return;
   }
+  rows.forEach(x=>{
+    const b=document.createElement("button");b.className="card";
+    const t=document.createElement("b");t.textContent=x.title||"Sem título";
+    const s=document.createElement("small");s.textContent=x.cat;
+    const p=document.createElement("p");p.textContent=x.text||"";
+    b.append(t,s,p);b.onclick=()=>open(x);L.appendChild(b);
+  });
+}
+
+function open(x){
+  cur=x||{id:uid(),title:"",cat:cat==="Todos"?CATS[0]:cat,text:""};
+  $("tt").value=cur.title;$("ct").value=cur.cat;$("tx").value=cur.text;
+  $("dl").style.display=x?"":"none";
+  $("ed").showModal();
+}
+$("ct").innerHTML=CATS.map(c=>`<option>${c}</option>`).join("");
+$("add").onclick=()=>open(null);
+$("cl").onclick=()=>$("ed").close();
+$("sv").onclick=()=>{
+  put({id:cur.id,title:$("tt").value.trim()||"Sem título",cat:$("ct").value,text:$("tx").value,ts:Date.now()});
+  $("ed").close();msg("Salvo");
 };
-const BASE = { dpad:[150,150], round:[68,68], pill:[84,34] };
+$("dl").onclick=()=>{if(confirm("Excluir este texto?")){remove(cur.id);$("ed").close()}};
+$("q").oninput=render;
+$("more").onclick=()=>$("mn").showModal();
 
-let SYS = "md", editing = false, selected = null, layout = {};
-const orient = () => (innerWidth > innerHeight ? "l" : "p");
-const lkey = () => "retro-layout-" + SYS + "-" + orient();
-
-function press(btn, val) {
-  try { window.EJS_emulator.gameManager.simulateInput(0, btn, val); } catch (e) {}
-}
-function buzz() { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} }
-
-function loadLayout() {
-  const def = DEFAULTS[SYS][orient()];
-  const saved = store.get(lkey(), {});
-  layout = {};
-  DEFS[SYS].forEach((d) => {
-    const s = saved[d.id];
-    layout[d.id] = s ? { x:s.x, y:s.y, s:s.s } : { x:def[d.id][0], y:def[d.id][1], s:1 };
-  });
-}
-function saveLayout() { store.set(lkey(), layout); }
-
-function applyLayout() {
-  DEFS[SYS].forEach((d) => {
-    const el = $("pc-" + d.id); if (!el) return;
-    const L = layout[d.id], b = BASE[d.type];
-    el.style.left = L.x + "%"; el.style.top = L.y + "%";
-    el.style.width = b[0] * L.s + "px"; el.style.height = b[1] * L.s + "px";
-    el.style.fontSize = (d.type === "pill" ? 0.75 : 1.3) * L.s + "rem";
-  });
-}
-
-function buildPad() {
-  const pad = $("pad"); pad.innerHTML = "";
-  DEFS[SYS].forEach((d) => {
-    const el = document.createElement("div");
-    el.id = "pc-" + d.id; el.className = "pc " + (d.type === "dpad" ? "dpad" : d.type);
-    if (d.type === "dpad") {
-      el.innerHTML = '<span class="ar" style="top:8%">▲</span><span class="ar" style="bottom:8%">▼</span>' +
-        '<span class="ar" style="left:8%">◀</span><span class="ar" style="right:8%">▶</span>';
-    } else el.textContent = d.label;
-    pad.appendChild(el);
-    wire(el, d);
-  });
-  loadLayout(); applyLayout();
-  pad.style.opacity = store.get("retro-opacity", 0.8);
-}
-
-function wire(el, d) {
-  const held = new Set();
-  const setDirs = (e) => {
-    const r = el.getBoundingClientRect();
-    const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-    const dist = Math.hypot(dx, dy), want = new Set();
-    if (dist > r.width * 0.12) {
-      if (dx > dist * 0.38) want.add(IDX.RIGHT);
-      if (dx < -dist * 0.38) want.add(IDX.LEFT);
-      if (dy > dist * 0.38) want.add(IDX.DOWN);
-      if (dy < -dist * 0.38) want.add(IDX.UP);
+let mode="";
+$("imp").onclick=()=>{mode="docx";$("fi").accept=".docx";$("fi").click()};
+$("rst").onclick=()=>{mode="json";$("fi").accept=".json";$("fi").click()};
+$("exp").onclick=()=>{
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(items,null,1)],{type:"application/json"}));
+  a.download="universo-backup.json";a.click();
+};
+$("fi").onchange=async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  try{
+    if(mode==="docx"){
+      const r=await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});
+      put({id:uid(),title:f.name.replace(/\.docx$/i,""),cat:cat==="Todos"?CATS[0]:cat,text:r.value.trim(),ts:Date.now()});
+      msg("Arquivo importado");
+    }else{
+      const d=JSON.parse(await f.text());
+      if(!Array.isArray(d))throw 0;
+      d.forEach(x=>x&&x.id&&put(x));msg("Backup restaurado");
     }
-    [IDX.UP, IDX.DOWN, IDX.LEFT, IDX.RIGHT].forEach((b) => {
-      if (want.has(b) && !held.has(b)) { press(b, 1); held.add(b); }
-      if (!want.has(b) && held.has(b)) { press(b, 0); held.delete(b); }
-    });
-  };
-  const releaseAll = () => { held.forEach((b) => press(b, 0)); held.clear(); el.classList.remove("on"); };
-  let drag = null;
+    $("mn").close();
+  }catch(err){msg("Não consegui ler esse arquivo")}
+};
 
-  el.addEventListener("pointerdown", (e) => {
-    e.preventDefault(); el.setPointerCapture(e.pointerId);
-    if (editing) {
-      select(d.id);
-      drag = { px:e.clientX, py:e.clientY, x:layout[d.id].x, y:layout[d.id].y };
-      return;
-    }
-    el.classList.add("on"); buzz();
-    if (d.type === "dpad") setDirs(e); else { press(d.btn, 1); held.add(d.btn); }
-  });
-  el.addEventListener("pointermove", (e) => {
-    if (editing && drag) {
-      layout[d.id].x = Math.min(98, Math.max(2, drag.x + ((e.clientX - drag.px) / innerWidth) * 100));
-      layout[d.id].y = Math.min(98, Math.max(2, drag.y + ((e.clientY - drag.py) / innerHeight) * 100));
-      applyLayout(); return;
-    }
-    if (!editing && d.type === "dpad" && el.hasPointerCapture(e.pointerId)) setDirs(e);
-  });
-  const up = () => {
-    if (editing) { if (drag) saveLayout(); drag = null; return; }
-    releaseAll();
-  };
-  el.addEventListener("pointerup", up);
-  el.addEventListener("pointercancel", up);
-  el.addEventListener("contextmenu", (e) => e.preventDefault());
-}
-
-function select(id) {
-  selected = id;
-  document.querySelectorAll(".pc").forEach((n) => n.classList.toggle("sel", n.id === "pc-" + id));
-  $("sizeR").value = layout[id].s;
-  $("editLabel").textContent = "Peça: " + id.toUpperCase();
-}
-function startEdit() {
-  editing = true; $("panel").style.display = "none";
-  $("pad").classList.add("editing"); $("pad").style.opacity = 1;
-  $("editbar").style.display = "flex"; $("menuBtn").style.display = "none";
-  select("dpad");
-}
-function stopEdit() {
-  editing = false; saveLayout();
-  $("pad").classList.remove("editing"); $("pad").style.opacity = store.get("retro-opacity", 0.8);
-  document.querySelectorAll(".pc").forEach((n) => n.classList.remove("sel"));
-  $("editbar").style.display = "none"; $("menuBtn").style.display = "block";
-}
-$("sizeR").oninput = (e) => { if (selected) { layout[selected].s = parseFloat(e.target.value); applyLayout(); } };
-$("editDone").onclick = stopEdit;
-$("editBtn").onclick = startEdit;
-$("resetBtn").onclick = () => { store.set(lkey(), {}); loadLayout(); applyLayout(); toast("Posições restauradas"); };
-
-/* ---------- menu ---------- */
-$("menuBtn").onclick = () => ($("panel").style.display = "flex");
-$("closeBtn").onclick = () => ($("panel").style.display = "none");
-$("panel").onclick = (e) => { if (e.target.id === "panel") $("panel").style.display = "none"; };
-$("backBtn").onclick = () => { location.href = location.pathname; };
-$("safeBtn").onclick = () => { location.href = location.pathname + (SAFE ? "" : "?safe=1"); };
-$("showCtl").checked = store.get("retro-show", true);
-$("showCtl").onchange = (e) => { store.set("retro-show", e.target.checked); $("pad").style.display = e.target.checked ? "block" : "none"; };
-$("opR").value = store.get("retro-opacity", 0.8);
-$("opR").oninput = (e) => { store.set("retro-opacity", parseFloat(e.target.value)); $("pad").style.opacity = e.target.value; };
-
-/* ---------- estados salvos ---------- */
-let GAME = "jogo";
-function idb() {
-  return new Promise((res, rej) => {
-    const r = indexedDB.open("retro-states", 1);
-    r.onupgradeneeded = () => r.result.createObjectStore("s");
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
-}
-async function dbGet(k) {
-  const db = await idb();
-  return new Promise((res, rej) => { const q = db.transaction("s").objectStore("s").get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
-}
-async function dbSet(k, v) {
-  const db = await idb();
-  return new Promise((res, rej) => { const t = db.transaction("s", "readwrite"); t.objectStore("s").put(v, k); t.oncomplete = () => res(); t.onerror = () => rej(t.error); });
-}
-const skey = (n) => SYS + "|" + GAME + "|" + n;
-const fmtDate = (t) => new Date(t).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
-
-function choose(title, opts) {
-  $("chTitle").textContent = title;
-  const box = $("chBtns"); box.innerHTML = "";
-  opts.forEach((o) => {
-    const x = document.createElement("button");
-    x.className = "sb" + (o.pri ? " pri" : "");
-    x.textContent = o.label; x.disabled = !!o.disabled;
-    x.onclick = () => { if (!o.keep) $("chooser").style.display = "none"; if (o.fn) o.fn(); };
-    box.appendChild(x);
-  });
-  const c = document.createElement("button");
-  c.className = "sb"; c.textContent = "Cancelar";
-  c.onclick = () => ($("chooser").style.display = "none");
-  box.appendChild(c);
-  $("chooser").style.display = "flex";
-}
-function getGM() {
-  const gm = window.EJS_emulator && window.EJS_emulator.gameManager;
-  if (!gm) toast("O jogo ainda está carregando");
-  return gm || null;
-}
-function snapshot() {
-  const gm = getGM(); if (!gm) return null;
-  try { return new Uint8Array(gm.getState()); } catch (e) { toast("Não consegui ler o estado do jogo"); return null; }
-}
-async function applyState(data) {
-  const gm = getGM(); if (!gm) return;
-  try { await gm.loadState(data); toast("📂 Estado carregado"); }
-  catch (e) { toast("Não deu certo: " + (e.message || e)); }
-}
-async function slotInfo() {
-  const out = [];
-  for (let n = 1; n <= 3; n++) { let v = null; try { v = await dbGet(skey(n)); } catch (e) {} out.push(v); }
-  return out;
-}
-
-async function saveToApp() {
-  const info = await slotInfo();
-  choose("Salvar em qual slot?", info.map((v, i) => ({
-    label: "Slot " + (i + 1) + " — " + (v ? fmtDate(v.t) + " (substituir)" : "vazio"),
-    fn: async () => {
-      const d = snapshot(); if (!d) return;
-      try { await dbSet(skey(i + 1), { data: d, t: Date.now() }); toast("💾 Salvo no slot " + (i + 1)); }
-      catch (e) { toast("Não consegui salvar no app"); }
-    }
-  })));
-}
-async function saveToFile(share) {
-  const d = snapshot(); if (!d) return;
-  const d2 = new Date(), pad = (x) => String(x).padStart(2, "0");
-  const stamp = d2.getFullYear() + pad(d2.getMonth() + 1) + pad(d2.getDate()) + "-" + pad(d2.getHours()) + pad(d2.getMinutes());
-  const name = GAME + "-" + stamp + ".state.txt";
-  if (share && navigator.canShare && navigator.share) {
-    const file = new File([d], name, { type: "text/plain" });
-    if (navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: name }); toast("Estado enviado"); return; }
-      catch (e) { if (e && e.name === "AbortError") return; }
-    }
+load();render();
+window.addEventListener("load",()=>{
+  if(CFG.apiKey&&window.firebase){
+    try{
+      firebase.initializeApp(CFG);db=firebase.firestore();
+      db.collection(COL).onSnapshot(s=>{
+        if(s.metadata.hasPendingWrites)return;
+        items=s.docs.map(d=>({id:d.id,...d.data()}));keep();render();
+      },()=>msg("Sem conexão com o Firebase"));
+    }catch(e){msg("Firebase não iniciou")}
   }
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([d], { type: "application/octet-stream" }));
-  a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  toast("⬇️ Baixado: " + name);
-}
-async function loadFromApp() {
-  const info = await slotInfo();
-  choose("Carregar de qual slot?", info.map((v, i) => ({
-    label: "Slot " + (i + 1) + " — " + (v ? fmtDate(v.t) : "vazio"),
-    disabled: !v,
-    fn: () => applyState(v.data)
-  })));
-}
-
-$("saveBtn").onclick = () => {
-  $("panel").style.display = "none";
-  choose("Salvar onde?", [
-    { label: "📱 No app (fica guardado)", pri: true, keep: true, fn: saveToApp },
-    { label: "📤 Escolher destino (Drive, WhatsApp…)", fn: () => saveToFile(true) },
-    { label: "⬇️ Baixar no tablet", fn: () => saveToFile(false) }
-  ]);
-};
-$("loadBtn").onclick = () => {
-  $("panel").style.display = "none";
-  choose("Carregar de onde?", [
-    { label: "📱 Do app", pri: true, keep: true, fn: loadFromApp },
-    { label: "📁 De um arquivo (escolher no tablet)", fn: () => $("stateFile").click() }
-  ]);
-};
-$("stateFile").onchange = async () => {
-  const f = $("stateFile").files[0]; $("stateFile").value = "";
-  if (!f) return;
-  applyState(new Uint8Array(await f.arrayBuffer()));
-};
-
-addEventListener("resize", () => { if ($("pad").style.display !== "none" && $("pad").childElementCount) { loadLayout(); applyLayout(); if (editing && selected) select(selected); } });
-
-/* ---------- biblioteca de jogos ---------- */
-function ldb() {
-  return new Promise((res, rej) => {
-    const r = indexedDB.open("retro-lib", 1);
-    r.onupgradeneeded = () => { r.result.createObjectStore("g", { keyPath: "id" }); r.result.createObjectStore("f"); };
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
-}
-async function lreq(store, mode, fn) {
-  const db = await ldb();
-  return new Promise((res, rej) => {
-    const t = db.transaction(store, mode), q = fn(t.objectStore(store));
-    t.oncomplete = () => res(q && q.result);
-    t.onerror = () => rej(t.error);
-  });
-}
-const lAll = () => lreq("g", "readonly", (s) => s.getAll());
-const lGet = (id) => lreq("g", "readonly", (s) => s.get(id));
-const lPut = (g) => lreq("g", "readwrite", (s) => s.put(g));
-const fGet = (id) => lreq("f", "readonly", (s) => s.get(id));
-const fPut = (id, f) => lreq("f", "readwrite", (s) => s.put(f, id));
-async function lDel(id) { await lreq("g", "readwrite", (s) => s.delete(id)); await lreq("f", "readwrite", (s) => s.delete(id)); }
-
-async function namesInZip(file) {
-  try {
-    const tailSize = Math.min(file.size, 70000);
-    const tail = new DataView(await file.slice(file.size - tailSize).arrayBuffer());
-    let eocd = -1;
-    for (let i = tail.byteLength - 22; i >= 0; i--) {
-      if (tail.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
-    }
-    if (eocd < 0) return [];
-    const cdSize = tail.getUint32(eocd + 12, true), cdOff = tail.getUint32(eocd + 16, true);
-    const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
-    const dec = new TextDecoder(), names = [];
-    let p = 0;
-    while (p + 46 <= cd.byteLength && cd.getUint32(p, true) === 0x02014b50) {
-      const n = cd.getUint16(p + 28, true), m = cd.getUint16(p + 30, true), k = cd.getUint16(p + 32, true);
-      names.push(dec.decode(new Uint8Array(cd.buffer, p + 46, n)).split("/").pop());
-      p += 46 + n + m + k;
-    }
-    return names;
-  } catch (e) { return []; }
-}
-
-const extOf = (n) => n.split(".").pop().toLowerCase();
-const baseOf = (n) => n.replace(/\.[^.]+$/, "");
-const niceTitle = (n) => baseOf(n).replace(/_+/g, " ").replace(/\s*[\(\[].*?[\)\]]/g, "").trim() || baseOf(n);
-
-/* capas: miniaturas do projeto Libretro (as mesmas usadas pelo RetroArch) */
-function probeImage(url) {
-  return new Promise((res) => { const i = new Image(); i.onload = () => res(true); i.onerror = () => res(false); i.src = url; });
-}
-async function findCover(g) {
-  const dir = g.sys === "gba" ? "Nintendo - Game Boy Advance" : "Sega - Mega Drive - Genesis";
-  const base = baseOf(g.entry);
-  const set = new Set([base, base.replace(/\s*\((Rev|Beta|Proto|Unl)[^)]*\)/gi, "").trim()]);
-  [...set].forEach((n) => ["USA", "World", "Europe", "Japan"].forEach((r) => set.add(n.replace(/\([^)]*\)/, "(" + r + ")"))));
-  const clean = (n) => n.replace(/[&*\/:`<>?\\|]/g, "_");
-  for (const n of set) {
-    const url = "https://thumbnails.libretro.com/" + encodeURIComponent(dir) + "/Named_Boxarts/" + encodeURIComponent(clean(n)) + ".png";
-    try {
-      const r = await fetch(url, { mode: "cors" });
-      if (r.ok) return { blob: await r.blob() };
-      if (r.status === 404) continue;
-    } catch (e) {
-      if (await probeImage(url)) return { url };
-    }
-  }
-  return null;
-}
-async function fetchCoverFor(id) {
-  const g = await lGet(id); if (!g) return false;
-  const c = await findCover(g);
-  if (!c) return false;
-  g.cover = c.blob || null; g.coverUrl = c.url || null;
-  await lPut(g); renderLib();
-  return true;
-}
-
-function placeholder(g) {
-  const d = document.createElement("div"); d.className = "ph"; d.textContent = g.name; return d;
-}
-async function renderLib() {
-  let games = [];
-  try { games = (await lAll()).sort((a, b) => b.added - a.added); } catch (e) {}
-  $("empty").style.display = games.length ? "none" : "block";
-  const grid = $("grid"); grid.innerHTML = "";
-  games.forEach((g) => {
-    const card = document.createElement("div"); card.className = "gcard";
-    const cv = document.createElement("div"); cv.className = "cv";
-    const src = g.cover ? URL.createObjectURL(g.cover) : g.coverUrl;
-    if (src) {
-      const im = new Image(); im.alt = g.name; im.src = src;
-      im.onerror = () => { im.remove(); cv.prepend(placeholder(g)); };
-      cv.appendChild(im);
-    } else cv.appendChild(placeholder(g));
-    const bd = document.createElement("span"); bd.className = "bd"; bd.textContent = g.sys === "gba" ? "GBA" : "MEGA DRIVE";
-    cv.appendChild(bd);
-    const kb = document.createElement("button"); kb.className = "kb"; kb.textContent = "⋮";
-    kb.onclick = (e) => { e.stopPropagation(); gameMenu(g); };
-    const t = document.createElement("div"); t.className = "gt"; t.textContent = g.name;
-    card.append(cv, t, kb);
-    card.onclick = () => playGame(g.id);
-    grid.appendChild(card);
-  });
-}
-
-async function addFiles(files) {
-  const added = [], skipped = [];
-  for (const f of files) {
-    let ext = extOf(f.name), entry = f.name;
-    if (ext === "zip") {
-      const names = await namesInZip(f);
-      entry = names.find((n) => CORES[extOf(n)]) || "";
-      ext = entry ? extOf(entry) : "";
-    }
-    if (!CORES[ext]) { skipped.push(f.name); continue; }
-    const sys = CORES[ext] === "gba" ? "gba" : "md";
-    const id = sys + "|" + f.name + "|" + f.size;
-    try {
-      const old = await lGet(id);
-      await fPut(id, f);
-      await lPut({ id, name: niceTitle(entry), fname: f.name, entry, sys, cover: old ? old.cover : null,
-        coverUrl: old ? old.coverUrl : null, added: old ? old.added : Date.now() });
-      if (!old) added.push(id);
-    } catch (e) { skipped.push(f.name); }
-  }
-  await renderLib();
-  if (added.length) toast(added.length + " jogo(s) adicionado(s). Buscando capas…");
-  else if (skipped.length) toast("Não consegui adicionar: " + skipped[0]);
-  let found = 0;
-  for (const id of added) { if (await fetchCoverFor(id)) found++; }
-  if (added.length) toast(found + " de " + added.length + " capa(s) encontrada(s)");
-}
-
-function gameMenu(g) {
-  choose(g.name, [
-    { label: "▶️ Jogar", pri: true, fn: () => playGame(g.id) },
-    { label: "🔍 Buscar capa online", fn: async () => { toast("Buscando capa…"); toast((await fetchCoverFor(g.id)) ? "Capa encontrada" : "Não achei a capa. Escolha uma do tablet."); } },
-    { label: "🖼️ Escolher capa do tablet", fn: () => { coverTarget = g.id; $("coverFile").click(); } },
-    { label: "📤 Exportar arquivo do jogo", keep: true, fn: () => exportGame(g) },
-    { label: "🗑️ Remover da biblioteca", keep: true, fn: () => confirmDelete(g) }
-  ]);
-}
-let coverTarget = null;
-$("coverFile").onchange = async () => {
-  const f = $("coverFile").files[0]; $("coverFile").value = "";
-  if (!f || !coverTarget) return;
-  const g = await lGet(coverTarget); if (!g) return;
-  g.cover = f; g.coverUrl = null; await lPut(g); renderLib(); toast("Capa atualizada");
-};
-function confirmDelete(g) {
-  choose("Remover “" + g.name + "”?", [
-    { label: "🗑️ Sim, remover (os estados salvos continuam guardados)", fn: async () => { await lDel(g.id); renderLib(); toast("Removido"); } }
-  ]);
-}
-function exportGame(g) {
-  choose("Exportar para onde?", [
-    { label: "📤 Escolher destino (Drive, etc.)", pri: true, fn: () => deliver(g, true) },
-    { label: "⬇️ Baixar no tablet", fn: () => deliver(g, false) }
-  ]);
-}
-async function deliver(g, share) {
-  const f = await fGet(g.id); if (!f) { toast("Arquivo não encontrado"); return; }
-  if (share && navigator.canShare && navigator.share) {
-    const file = new File([f], g.fname, { type: f.type || "application/octet-stream" });
-    if (navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: g.fname }); return; }
-      catch (e) { if (e && e.name === "AbortError") return; }
-    }
-  }
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(f); a.download = g.fname;
-  document.body.appendChild(a); a.click(); a.remove();
-  toast("⬇️ Baixado: " + g.fname);
-}
-
-$("open").onclick = () => $("file").click();
-$("file").onchange = async () => { const fs = [...$("file").files]; $("file").value = ""; if (fs.length) addFiles(fs); };
-
-async function playGame(id) {
-  const g = await lGet(id), f = await fGet(id);
-  if (!g || !f) { toast("Não achei o arquivo desse jogo"); return; }
-  startGame(f, g.sys === "gba" ? "gba" : "segaMD", g.fname);
-}
-
-function startGame(f, core, fname) {
-  SYS = core === "gba" ? "gba" : "md";
-  GAME = baseOf(fname);
-  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
-
-  $("menu").style.display = "none";
-  $("wrap").style.display = "block";
-  $("menuBtn").style.display = "block";
-  $("pad").style.display = store.get("retro-show", true) ? "block" : "none";
-  buildPad();
-
-  window.EJS_player = "#game";
-  window.EJS_core = core;
-  window.EJS_gameUrl = URL.createObjectURL(f);
-  window.EJS_gameName = GAME;
-  window.EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
-  window.EJS_startOnLoaded = true;
-  window.EJS_color = "#7a7aff";
-  window.EJS_language = "pt-BR";
-  window.EJS_defaultOptions = SAFE
-    ? { shader: "disabled", webgl2Enabled: "disabled", vsync: "disabled" }
-    : { shader: "disabled" };
-  if (SAFE) window.EJS_threads = false;
-
-  const s = document.createElement("script");
-  s.src = window.EJS_pathtodata + "loader.js";
-  document.body.appendChild(s);
-}
-
-try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
-renderLib();
-
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("service-worker.js").catch(()=>{});
 </script>
 </body>
 </html>
