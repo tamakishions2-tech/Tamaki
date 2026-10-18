@@ -7,6 +7,7 @@
 const q=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY='palco-cfg';
+const CMD=()=>{const b=new URL('.',location.href).href;return 'cd ~ && curl -fsSL '+b+'instalar-voz.sh -o instalar-voz.sh && bash instalar-voz.sh '+b};
 const DEF={url:'http://127.0.0.1:8765',motor:'termux',voice:'pf_dora',speed:1.05,pause:0.4,bg:'check',gain:4,thr:0.15,guides:1,cap:1,caph:24,capsz:3.2,text:'',layers:[],sel:null};
 const ROLES=[['always','Sempre visível'],['open','Boca aberta (só falando)'],['closed','Boca fechada (só parada)'],['eyeopen','Olho aberto (some ao piscar)'],['eyeclosed','Olho fechado (só ao piscar)']];
 const IDLE=[['none','Nenhuma'],['bob','Flutuar'],['sway','Balançar'],['breathe','Respirar'],['flicker','Cintilar (brilho)']];
@@ -169,6 +170,11 @@ function html(){return `
 <div class="ab"><button class="b" data-a="speak">Falar</button><button class="g" data-a="stop">Parar</button>
 <label class="g pk-file">Tocar áudio…<input type="file" accept="audio/*" hidden data-a="audio"></label></div>
 <p id="pk-msg" class="m"></p>
+<details><summary>Instalar ou reinstalar a voz no Termux</summary>
+<p class="m">1) Toque em Copiar. 2) Abra o Termux, segure o dedo na tela e escolha Colar. 3) Aperte Enter e espere terminar.</p>
+<textarea id="pk-cmd" readonly rows="4" style="margin:8px 0">${esc(CMD())}</textarea>
+<div class="ab"><button class="b" data-a="cmd">Copiar comando</button></div>
+<p class="m">Depois de instalado, para atualizar basta digitar <code>voz --atualizar</code> no Termux.</p></details>
 <details><summary>Voz e conexão com o Termux</summary>
 ${sel('motor','Motor de voz',[['termux','Termux (Kokoro)'],['browser','Voz do navegador']],cfg.motor,'c')}
 <label class="pk-f"><span>Endereço do servidor</span><input data-c="url" value="${esc(cfg.url)}" inputmode="url"></label>
@@ -212,6 +218,7 @@ function bind(){
     else if(a=='stop')parar();
     else if(a=='test')fake=performance.now()+4000;
     else if(a=='ping')testar();
+    else if(a=='cmd'){const t=q('#pk-cmd',root);t.focus();t.select();t.setSelectionRange(0,t.value.length);let ok=false;try{await navigator.clipboard.writeText(t.value);ok=true}catch(x){try{ok=document.execCommand('copy')}catch(y){}}aviso(ok?'Comando copiado. Cole no Termux.':'Não consegui copiar sozinho. O texto está selecionado: use Copiar no teclado.')}
     else if(a=='export')exportar();
   };
   const h=async e=>{
