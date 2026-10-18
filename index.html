@@ -38,6 +38,7 @@ a{color:var(--te);font-weight:700}
 <p class="m">Ficha viva da personagem · <span id="st">carregando</span></p>
 <div class="ab" style="margin-top:10px"><button class="b" onclick="SV()">Salvar…</button></div><div id="sp"></div>
 <nav id="nv"></nav><main id="mn"></main></div>
+<script src="palco.js"></script>
 <script>
 window.claude=window.claude||{use:async()=>null};
 const D={mods:[
@@ -70,9 +71,9 @@ function mv(i){const m=S.mods[i];return `<div class="c"><input class="ti" data-w
 function lv(){return `<div class="c">`+S.links.map((l,j)=>`<div class="r"><input class="lb" data-w="l" data-l="${j}" data-p="n" value="${esc(l.n)}" oninput="E(this)" aria-label="Nome"><button class="x" onclick="A('dell',${j})" aria-label="Remover link">×</button><input class="f" data-w="l" data-l="${j}" data-p="u" value="${esc(l.u)}" placeholder="https://" oninput="E(this)" aria-label="Endereço"><input class="f" data-w="l" data-l="${j}" data-p="d" value="${esc(l.d)}" placeholder="Para que serve" oninput="E(this)" aria-label="Uso">${/^https?:\/\//i.test(l.u)?`<a href="${esc(l.u)}" target="_blank" rel="noopener noreferrer">Abrir ${esc(l.n)}</a>`:''}</div>`).join('')+`<div class="ab"><button class="b" onclick="A('addl')">+ Link</button></div></div>`}
 function pv(){return `<div class="dlg"><span class="cap">PROMPT DA TAMAKI</span><textarea id="pr" readonly>${esc(prompt())}</textarea></div><div class="ab"><button class="b" onclick="cp($('#pr').value)">Copiar prompt</button><span>Módulos desmarcados ficam de fora.</span></div><div class="c"><b>Backup</b><p class="m">Copie este texto para guardar. Para restaurar, cole um backup aqui e toque em Restaurar.</p><textarea id="bk">${esc(JSON.stringify(S))}</textarea><div class="ab" style="margin-top:10px"><button class="g" onclick="cp($('#bk').value)">Copiar backup</button><button class="g" onclick="rs()">Restaurar do texto</button><label class="g" style="cursor:pointer;display:inline-block">Abrir arquivo .json<input type="file" accept=".json,application/json" hidden onchange="OF(this)"></label></div></div>`}
 function rs(){try{const o=JSON.parse($('#bk').value);if(!Array.isArray(o.mods)||!Array.isArray(o.links))throw 0;S=o;tab='0';save();render()}catch(e){st('backup inválido')}}
-function render(){if(tab!='L'&&tab!='P'&&!S.mods[tab])tab=S.mods.length?'0':'L';
-$('#nv').innerHTML=[...S.mods.map((m,i)=>[String(i),m.t]),['L','Links'],['P','Prompt']].map(([k,n])=>`<button class="${k==tab?'on':''}" onclick="A('tab','${k}')">${esc(n)}</button>`).join('')+`<button onclick="A('addm')">+ Módulo</button>`;
-$('#mn').innerHTML=tab=='L'?lv():tab=='P'?pv():mv(tab)}
+function render(){if(tab!='L'&&tab!='P'&&tab!='S'&&!S.mods[tab])tab=S.mods.length?'0':'L';if(tab!='S'&&window.Palco)Palco.unmount();
+$('#nv').innerHTML=[...S.mods.map((m,i)=>[String(i),m.t]),['L','Links'],['P','Prompt'],['S','Palco']].map(([k,n])=>`<button class="${k==tab?'on':''}" onclick="A('tab','${k}')">${esc(n)}</button>`).join('')+`<button onclick="A('addm')">+ Módulo</button>`;
+if(tab=='S'){$('#mn').innerHTML='';if(window.Palco)Palco.mount($('#mn'))}else $('#mn').innerHTML=tab=='L'?lv():tab=='P'?pv():mv(tab)}
 function SV(){$('#sp').innerHTML=`<div class="c"><b>Salvar ficha</b><p class="m">Nome</p><input id="sn" value="tamaki-ficha" aria-label="Nome do arquivo"><p class="m">Onde salvar</p><select id="sw" aria-label="Onde salvar"><option value="d">Neste dispositivo (arquivo .json)</option><option value="a">Dentro do app (cópia com este nome)</option><option value="t">Copiar como texto</option></select><div class="ab" style="margin-top:10px"><button class="b" onclick="DO()">Salvar</button><button class="g" onclick="$('#sp').innerHTML=''">Fechar</button></div><div id="cl"></div></div>`;LC()}
 async function DO(){const n=($('#sn').value.trim()||'tamaki-ficha').replace(/[\\/:*?"<>|]+/g,'-'),w=$('#sw').value,j=JSON.stringify(S,null,1);
 if(w=='t'){cp(j);return}
