@@ -23,11 +23,7 @@ function saveCfg(){clearTimeout(tm);tm=setTimeout(()=>{try{localStorage.setItem(
 const uid=()=>Math.random().toString(36).slice(2,9);
 const layer=()=>cfg.layers.find(l=>l.id==cfg.sel);
 
-ready=(async()=>{
-  try{const s=localStorage.getItem(KEY);if(s)cfg=Object.assign({},DEF,JSON.parse(s))}catch(e){}
-  for(const L of cfg.layers){try{const b=await idbGet(L.img);if(b&&!urls[L.img])urls[L.img]=URL.createObjectURL(b)}catch(e){}}
-  conectar();
-})();
+
 
 /* ---------- áudio + análise de volume ---------- */
 let capText='',capStart=0,capDur=1,ac,an,buf,cur=null,sp=false,fake=0,lvl=0,nextBlink=0,blinkEnd=0;
@@ -265,10 +261,18 @@ async function importar(f){
 
 /* ---------- montagem (chamada pela aba) ---------- */
 async function mount(el){
-  const tok=++T;await ready;if(tok!==T)return;
-  css();root=el;el.innerHTML=html();stage=q('#pk-st',el);
-  build();bind();drawList();drawPanel();badge();
-  cancelAnimationFrame(raf);raf=requestAnimationFrame(tick)}
+  const tok=++T;
+  try{
+    await ready;if(tok!==T)return;
+    css();root=el;el.innerHTML=html();stage=q('#pk-st',el);
+    build();bind();drawList();drawPanel();badge();
+    cancelAnimationFrame(raf);raf=requestAnimationFrame(tick)
+  }catch(e){el.innerHTML='<div class="c"><b>Erro no Palco</b><p class="m">'+esc(e&&e.message||e)+'</p></div>'}}
 function unmount(){T++;cancelAnimationFrame(raf);raf=0;root=null;stage=null;els={}}
+ready=(async()=>{
+  try{const s=localStorage.getItem(KEY);if(s)cfg=Object.assign({},DEF,JSON.parse(s))}catch(e){}
+  for(const L of cfg.layers){try{const b=await idbGet(L.img);if(b&&!urls[L.img])urls[L.img]=URL.createObjectURL(b)}catch(e){}}
+  try{conectar()}catch(e){}
+})();
 window.Palco={mount,unmount,falar,parar};
 })();
