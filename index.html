@@ -27,7 +27,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 #texto{font-size:clamp(1.05rem,2.6vw,1.5rem);line-height:1.55;max-width:70ch}
 #prox{position:absolute;right:18px;bottom:10px;color:var(--orange);animation:pisca 1.1s infinite}
 @keyframes pisca{50%{opacity:.2}}
-#menu{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px;z-index:5}
+#menu{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:12px;max-width:calc(100% - 24px);flex-wrap:wrap;justify-content:flex-end;display:flex;gap:8px;z-index:5}
 #menu button{padding:9px 14px;background:var(--box);border:1px solid #2b3347;border-radius:8px;font-size:.9rem}
 #esc{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;gap:14px;padding:20px;background:rgba(5,7,12,.55);z-index:4}
 #esc button{width:min(560px,92%);padding:16px 20px;background:var(--box);border:1px solid var(--blue);border-radius:10px;font-size:clamp(1rem,2.4vw,1.3rem)}
@@ -42,6 +42,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes fl{0%{opacity:.9}100%{opacity:0}}
 .escurecer #fxl{background:#000;animation:fl .9s reverse}
 @media (prefers-reduced-motion:reduce){.tremer,.flash #fxl,.escurecer #fxl,#prox{animation:none}}
+#edw{position:absolute;inset:0;display:none;background:var(--ink);z-index:20;overflow:auto;padding:14px 14px 40px;font-family:system-ui,sans-serif}
+#edw,#edw *{user-select:text}
+#edw .bar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+#edw button,#edw select,#edw input,#edw textarea{font:inherit;color:var(--txt);background:#0a0c13;border:1px solid #2b3347;border-radius:8px;padding:9px 12px}
+#edw label{display:grid;gap:4px;font-size:.85rem;margin-bottom:8px}
+#edw textarea{min-height:90px;resize:vertical}
+#edw .card{border:1px solid #2b3347;border-left:3px solid var(--orange);border-radius:10px;padding:12px;margin-bottom:12px;background:#0d111b}
+#edw .sub{border-left:3px solid var(--blue);padding-left:10px;margin:8px 0 12px}
 </style>
 </head>
 <body>
@@ -58,10 +66,11 @@ button{font:inherit;color:inherit;cursor:pointer}
   <div id="fxl"></div>
   <div id="menu">
     <button id="bS">Salvar</button><button id="bL">Carregar</button>
-    <button id="bR">Reiniciar</button><button id="bM">Som</button><button id="bF">Tela cheia</button>
+    <button id="bE">Editar</button><button id="bR">Reiniciar</button><button id="bM">Som</button><button id="bF">Tela cheia</button>
   </div>
   <div id="cx"><div id="nome"></div><div id="texto"></div><span id="prox">▼</span></div>
   <div id="esc"></div>
+  <div id="edw"></div>
   <div id="slots"><div id="sl"></div></div>
 </div>
 
@@ -79,6 +88,7 @@ const sha = async t => [...new Uint8Array(await crypto.subtle.digest("SHA-256", 
 const novo = () => ({cena:STORY.inicio, i:0, flags:{}, bg:"", mus:"", ch:{esq:"",meio:"",dir:""}, show:null});
 let st = novo(), tm, typing = false, mus = null, mudo = false, travado = false;
 
+try{const salvo=localStorage.getItem("vn_story");if(salvo)Object.assign(STORY,JSON.parse(salvo))}catch(e){}
 // ===== SENHA =====
 $("#tit").textContent = STORY.titulo || "Acesso privado";
 function abrir(){ $("#gate").remove(); $("#stage").hidden = false; iniciar(); }
@@ -175,13 +185,105 @@ function slots(modo){
 }
 function reiniciar(){
   if (!confirm("Recomeçar do início? O autosave será apagado (os espaços salvos continuam).")) return;
-  localStorage.removeItem("vn_save_auto"); st = novo(); travado = false;
-  setBg(""); drawCh(); setMus(""); run();
+  comecar();
 }
-for (const [id, fn] of [["#bR", reiniciar], ["#bS", () => slots("s")], ["#bL", () => slots("l")],
+for (const [id, fn] of [["#bE", abrirEd], ["#bR", reiniciar], ["#bS", () => slots("s")], ["#bL", () => slots("l")],
   ["#bM", () => { mudo = !mudo; if (mus) mus.muted = mudo; $("#bM").textContent = mudo ? "Mudo" : "Som"; }],
   ["#bF", () => { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(()=>{}); }]])
   $(id).addEventListener("click", e => { e.stopPropagation(); fn(); });
+
+// ===== EDITOR =====
+const ed = {cena: STORY.inicio};
+const h = (t, a = {}, ...c) => { const e = document.createElement(t); Object.assign(e, a); c.flat().forEach(x => e.append(x)); return e; };
+const btn = (t, f) => h("button", {textContent: t, onclick: f, type: "button"});
+const sv = () => localStorage.setItem("vn_story", JSON.stringify(STORY));
+const cp = o => JSON.parse(JSON.stringify(o));
+const FX = ["tremer", "flash", "escurecer"];
+const NOVO = {fala:{nome:"",texto:""}, bg:{bg:""}, musica:{musica:""}, sfx:{sfx:""}, char:{char:{}}, fx:{fx:"tremer"}, marca:{set:{}}, ir:{ir:""}, escolha:{escolha:[{texto:"",ir:""}]}};
+const TIPOS = {
+  fala:["Fala ou narração", [["nome","Nome (vazio = narração)"],["texto","Texto","a"],["fx","Efeito visual junto (opcional)","s",FX]]],
+  bg:["Fundo", [["bg","Arquivo da imagem (vazio = sem fundo)"]]],
+  musica:["Música", [["musica","Arquivo de áudio (vazio = parar)"]]],
+  sfx:["Efeito sonoro", [["sfx","Arquivo de áudio"]]],
+  char:["Personagens", [["char.esq","Esquerda (vazio = não muda, - = remove)"],["char.meio","Meio"],["char.dir","Direita"]]],
+  fx:["Efeito visual", [["fx","Efeito","s",FX]]],
+  marca:["Guardar marca", [["marca","Nome da marca"]]],
+  ir:["Pular para cena", [["ir","Cena","c"]]],
+  escolha:["Escolha", []]
+};
+const tipo = p => p.escolha ? "escolha" : p.ir !== undefined ? "ir" : p.texto !== undefined ? "fala" : p.char !== undefined ? "char" : p.fx !== undefined ? "fx" : p.set !== undefined ? "marca" : p.sfx !== undefined ? "sfx" : p.musica !== undefined ? "musica" : "bg";
+function get(p, k){
+  if (k == "marca") return Object.keys(p.set || {})[0] || "";
+  if (k.startsWith("char.")) { const v = (p.char || {})[k.slice(5)]; return v === "" ? "-" : v || ""; }
+  return p[k] ?? "";
+}
+function put(p, k, v){
+  if (k == "marca") p.set = v ? {[v]: true} : {};
+  else if (k.startsWith("char.")) { p.char = p.char || {}; const c = k.slice(5); if (v === "") delete p.char[c]; else p.char[c] = v == "-" ? "" : v; }
+  else p[k] = v;
+}
+function campo(rot, val, on, tp, opts){
+  let el;
+  if (tp == "s" || tp == "c") {
+    const o = ["", ...(tp == "c" ? Object.keys(STORY.cenas) : opts)];
+    el = h("select", {onchange: e => { on(e.target.value); sv(); }}, o.map(x => h("option", {value: x, textContent: x || "(nenhum)", selected: x == val})));
+  } else el = h(tp == "a" ? "textarea" : "input", {value: val, oninput: e => { on(e.target.value); sv(); }});
+  return h("label", {}, rot, el);
+}
+function card(p, i, L){
+  const t = tipo(p);
+  const mv = d => { const j = i + d; if (j < 0 || j >= L.length) return; [L[i], L[j]] = [L[j], L[i]]; sv(); edRender(); };
+  const c = h("div", {className: "card"}, h("div", {className: "bar"},
+    h("select", {onchange: e => { L[i] = cp(NOVO[e.target.value]); sv(); edRender(); }}, Object.entries(TIPOS).map(([k,[n]]) => h("option", {value: k, textContent: n, selected: k == t}))),
+    btn("↑", () => mv(-1)), btn("↓", () => mv(1)), btn("Apagar", () => { L.splice(i, 1); sv(); edRender(); })));
+  if (t == "escolha") {
+    p.escolha.forEach((o, j) => c.append(h("div", {className: "sub"},
+      campo("Texto da opção", o.texto, v => o.texto = v),
+      campo("Vai para a cena", o.ir || "", v => o.ir = v, "c"),
+      campo("Guarda a marca (opcional)", Object.keys(o.set || {})[0] || "", v => o.set = v ? {[v]: true} : {}),
+      campo("Só aparece se a marca existir (opcional)", o.se || "", v => o.se = v),
+      btn("Apagar opção", () => { p.escolha.splice(j, 1); sv(); edRender(); }))));
+    c.append(btn("+ Opção", () => { p.escolha.push({texto: "", ir: ""}); sv(); edRender(); }));
+  } else TIPOS[t][1].forEach(([k, r, tp, op]) => c.append(campo(r, get(p, k), v => put(p, k, v), tp, op)));
+  if (t != "escolha") c.append(campo("Só aparece se a marca existir (opcional)", p.se || "", v => p.se = v));
+  return c;
+}
+function edRender(){
+  const R = $("#edw"); R.innerHTML = "";
+  const cs = Object.keys(STORY.cenas);
+  if (!STORY.cenas[ed.cena]) ed.cena = cs[0];
+  const L = STORY.cenas[ed.cena];
+  R.append(
+    h("div", {className: "bar"}, btn("Fechar", () => R.style.display = "none"), btn("Testar esta cena", () => { R.style.display = "none"; comecar(ed.cena); }), btn("Exportar / importar", exp)),
+    h("div", {className: "bar"},
+      h("select", {onchange: e => { ed.cena = e.target.value; edRender(); }}, cs.map(c => h("option", {value: c, textContent: c + (c == STORY.inicio ? " (inicial)" : ""), selected: c == ed.cena}))),
+      btn("+ Cena", () => { const n = (prompt("Nome da nova cena (sem espaços):") || "").trim(); if (n && !STORY.cenas[n]) { STORY.cenas[n] = []; ed.cena = n; sv(); edRender(); } }),
+      btn("Renomear", ren), btn("Tornar inicial", () => { STORY.inicio = ed.cena; sv(); edRender(); }),
+      btn("Apagar cena", () => { if (cs.length > 1 && confirm("Apagar a cena " + ed.cena + "?")) { delete STORY.cenas[ed.cena]; if (STORY.inicio == ed.cena) STORY.inicio = Object.keys(STORY.cenas)[0]; sv(); edRender(); } })));
+  L.forEach((p, i) => R.append(card(p, i, L)));
+  const ns = h("select", {}, Object.entries(TIPOS).map(([k,[n]]) => h("option", {value: k, textContent: n})));
+  R.append(h("div", {className: "bar"}, ns, btn("+ Adicionar passo", () => { L.push(cp(NOVO[ns.value])); sv(); edRender(); R.scrollTo(0, R.scrollHeight); })));
+}
+function ren(){
+  const a = ed.cena, b = (prompt("Novo nome da cena:", a) || "").trim();
+  if (!b || b == a || STORY.cenas[b]) return;
+  const C = {}; for (const k in STORY.cenas) C[k == a ? b : k] = STORY.cenas[k];
+  STORY.cenas = C; if (STORY.inicio == a) STORY.inicio = b;
+  for (const k in C) C[k].forEach(p => { if (p.ir == a) p.ir = b; (p.escolha || []).forEach(o => { if (o.ir == a) o.ir = b; }); });
+  ed.cena = b; sv(); edRender();
+}
+function exp(){
+  const R = $("#edw"); R.innerHTML = "";
+  const ta = h("textarea", {value: "const STORY = " + JSON.stringify(STORY, null, 1) + ";", style: "width:100%;min-height:55vh"});
+  R.append(h("div", {className: "bar"}, btn("Voltar", edRender),
+    btn("Copiar", () => navigator.clipboard.writeText(ta.value).catch(() => ta.select())),
+    btn("Aplicar texto colado", () => { try { const t = ta.value, o = JSON.parse(t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1)); if (!o.cenas || !o.inicio) throw 0; Object.assign(STORY, o); sv(); edRender(); } catch (e) { alert("Texto inválido."); } }),
+    btn("Descartar edições", () => { if (confirm("Voltar para a história original do story.js?")) { localStorage.removeItem("vn_story"); location.reload(); } })),
+    h("p", {textContent: "Para publicar no GitHub, copie este texto e cole no story.js. As edições feitas aqui ficam salvas só neste navegador."}), ta);
+}
+function comecar(c){ localStorage.removeItem("vn_save_auto"); st = novo(); if (c) st.cena = c; travado = false; setBg(""); drawCh(); setMus(""); run(); }
+function abrirEd(){ $("#edw").style.display = "block"; edRender(); }
+$("#edw").addEventListener("click", e => e.stopPropagation());
 </script>
 </body>
 </html>
