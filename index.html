@@ -42,7 +42,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes fl{0%{opacity:.9}100%{opacity:0}}
 .escurecer #fxl{background:#000;animation:fl .9s reverse}
 @media (prefers-reduced-motion:reduce){.tremer,.flash #fxl,.escurecer #fxl,#prox{animation:none}}
-#edw{position:absolute;inset:0;display:none;background:var(--ink);z-index:20;overflow:auto;padding:0 12px;font-family:system-ui,sans-serif;font-size:15px}
+#edw{position:absolute;inset:0;display:none;background:var(--ink);z-index:20;flex-direction:column;overflow:hidden;padding:0 12px;font-family:system-ui,sans-serif;font-size:15px}
 #edw,#edw *{user-select:text}
 #edw .bar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
 #edw .top{position:sticky;top:0;z-index:3;background:var(--ink);padding:10px 0 4px}
@@ -65,6 +65,22 @@ button{font:inherit;color:inherit;cursor:pointer}
 #edw .lib>*{flex:none}
 #edw .lib img{height:52px;border-radius:6px;border:2px solid transparent;background:#222}
 #edw .lib .on{border-color:var(--orange)}
+#edw .main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(280px,40%) 1fr;gap:14px}
+#edw .main.um{grid-template-columns:1fr}
+#edw .pvbox,#edw .lista{overflow:auto;min-height:0}
+#edw .dica{display:block;opacity:.75;margin:2px 0 8px;font-size:.8rem}
+#edw .pv{position:relative;overflow:hidden;border-radius:10px;border:1px solid #2b3347;background:radial-gradient(circle at 50% 30%,#1d2540,#07090f);aspect-ratio:16/9;width:100%}
+#edw .pv .pb{position:absolute;inset:0;background:center/cover no-repeat}
+#edw .pv img{position:absolute;bottom:0;height:88%;max-width:42%;object-fit:contain}
+#edw .pv .esq{left:4%}#edw .pv .meio{left:50%;transform:translateX(-50%)}#edw .pv .dir{right:4%}
+#edw .pv .cx{position:absolute;left:3%;right:3%;bottom:4%;min-height:24%;padding:12px 12px 8px;background:var(--box);border:1px solid #2b3347;border-top:2px solid var(--orange);border-radius:6px;font-family:Georgia,serif;font-size:clamp(.7rem,1.5vw,.95rem);line-height:1.4}
+#edw .pv .nm{position:absolute;top:-10px;left:10px;padding:1px 10px;color:#06101d;font-weight:bold;border-radius:4px;font-size:.75rem}
+#edw .pv .pesc{position:absolute;inset:0 0 28% 0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;background:rgba(5,7,12,.5)}
+#edw .pv .pesc span{width:80%;padding:6px 10px;background:var(--box);border:1px solid var(--blue);border-radius:6px;text-align:center}
+#edw .pv .fxl{position:absolute;inset:0;pointer-events:none;opacity:0;background:#fff}
+#edw .pv.flash .fxl{animation:fl .5s}
+#edw .pv.escurecer .fxl{background:#000;animation:fl .9s reverse}
+@media (max-width:760px){#edw .main{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}#edw .pv{width:auto;height:28vh;max-width:100%}}
 #err{position:fixed;left:0;right:0;top:0;z-index:99;padding:12px 16px;background:#b3261e;color:#fff;font:14px system-ui,sans-serif}
 #ver{position:fixed;left:8px;bottom:4px;z-index:60;font:11px system-ui,sans-serif;color:#6b7390;pointer-events:none}
 </style>
@@ -92,13 +108,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 </div>
 
 <div id="err" hidden></div>
-<small id="ver">v5</small>
+<small id="ver">v6</small>
 <script>
 // mostra qualquer erro na tela (toque para fechar), para facilitar achar problemas
 window.addEventListener("error", e => { const b = document.getElementById("err"); b.hidden = false; b.textContent = "Erro: " + e.message + " (linha " + e.lineno + ") — toque para fechar"; });
 document.getElementById("err").onclick = e => e.target.hidden = true;
 </script>
-<script src="story.js?v=5" onerror="document.getElementById('err').hidden=false;document.getElementById('err').textContent='Não achei o story.js — confira se está na mesma pasta do index.html'"></script>
+<script src="story.js?v=6" onerror="document.getElementById('err').hidden=false;document.getElementById('err').textContent='Não achei o story.js — confira se está na mesma pasta do index.html'"></script>
 <script>
 // ===== CONFIG =====
 // SENHA PADRÃO: "corvo". Para trocar: abra o site, digite  gerar:suanovasenha  na tela de senha,
@@ -225,11 +241,24 @@ const AS = {}; // arquivos enviados pelo editor: nome -> {u: endereço, t: tipo}
 const ua = (t, f) => AS[f] ? AS[f].u : P[t] + f;
 const h = (t, a = {}, ...c) => { const e = document.createElement(t); Object.assign(e, a); c.flat().forEach(x => e.append(x)); return e; };
 const btn = (t, f) => h("button", {textContent: t, type: "button", onclick: e => { e.stopPropagation(); f(); }});
-const sv = () => localStorage.setItem("vn_story", JSON.stringify(HIST));
+const sv = () => { localStorage.setItem("vn_story", JSON.stringify(HIST)); pvRender(); };
 const cp = o => JSON.parse(JSON.stringify(o));
 const FX = ["tremer", "flash", "escurecer"];
 const NOVO = {fala:{nome:"",texto:""}, bg:{bg:""}, musica:{musica:""}, sfx:{sfx:""}, char:{char:{}}, fx:{fx:"tremer"}, marca:{set:{}}, ir:{ir:""}, escolha:{escolha:[{texto:"",ir:""}]}};
 const NOME = {fala:"Fala", bg:"Fundo", musica:"Música", sfx:"Som", char:"Personagens", fx:"Efeito", marca:"Marca", ir:"Ir para", escolha:"Escolha"};
+const ICO = {fala:"💬", bg:"🖼️", musica:"🎵", sfx:"🔊", char:"🧍", fx:"✨", marca:"🏷️", ir:"➡️", escolha:"🔀"};
+const DICA = {
+  fala:"Uma fala de personagem. Se o nome ficar vazio, vira narração.",
+  bg:"Troca a imagem de fundo. Ela vale até você trocar de novo.",
+  musica:"Começa uma música que repete. Deixe vazio para parar.",
+  sfx:"Toca um som uma vez (porta, passos, trovão...).",
+  char:"Mostra, troca ou tira quem aparece na tela, em cada posição.",
+  fx:"Faz a tela tremer, piscar ou escurecer neste momento.",
+  marca:"Guarda uma informação para usar depois (ex.: coragem).",
+  ir:"Pula direto para outra cena.",
+  escolha:"O jogador toca num botão e a história segue para a cena dele."
+};
+const PH = {nome:"Ex.: Aiko", texto:"Digite a fala ou a narração…", marca:"Ex.: coragem"};
 const COR = {bg:"#4cc38a", musica:"#8f7bff", sfx:"#e0709a", char:"#ff9a52", fx:"#d9b93a", marca:"#35c4c4", ir:"#ff6060", escolha:"#c9a227"};
 const PAL = ["#4aa3ff", "#ff8a3d", "#a77bff", "#4cc38a", "#ff6fa3", "#f5c542"]; // uma cor por personagem que fala
 const corDe = (p, t) => t == "fala" ? (p.nome ? PAL[[...p.nome].reduce((a, c) => a + c.charCodeAt(0), 0) % PAL.length] : "#9aa4bd") : COR[t];
@@ -290,33 +319,33 @@ function campoArq(rot, val, on, ar, tirar){
 }
 
 // ----- campos e cartões -----
-function campo(rot, val, on, tp, opts){
+function campo(rot, val, on, tp, opts, ph){
   let el;
   if (tp == "s" || tp == "c") {
     const o = ["", ...(tp == "c" ? Object.keys(HIST.cenas) : opts)];
     el = h("select", {onchange: e => { on(e.target.value); sv(); }}, o.map(x => h("option", {value: x, textContent: x || "(nenhum)", selected: x == val})));
-  } else el = h(tp == "a" ? "textarea" : "input", {value: val, oninput: e => { on(e.target.value); sv(); }});
+  } else el = h(tp == "a" ? "textarea" : "input", {value: val, placeholder: ph || "", oninput: e => { on(e.target.value); sv(); }});
   return h("label", {className: tp == "a" ? "wide" : ""}, rot, el);
 }
-const campos = (p, t) => CAMPOS[t].map(([k, r, tp, op]) => tp == "i" || tp == "u" ? campoArq(r, get(p, k), v => put(p, k, v), tp, op) : campo(r, get(p, k), v => put(p, k, v), tp, op));
+const campos = (p, t) => CAMPOS[t].map(([k, r, tp, op]) => tp == "i" || tp == "u" ? campoArq(r, get(p, k), v => put(p, k, v), tp, op) : campo(r, get(p, k), v => put(p, k, v), tp, op, PH[k]));
 function card(p, i, L){
   const t = tipo(p), aberto = ed.aberto == i;
   const mv = d => { const j = i + d; if (j < 0 || j >= L.length) return; [L[i], L[j]] = [L[j], L[i]]; if (aberto) ed.aberto = j; sv(); edRender(); };
   const resumo = t == "fala" ? p.texto : t == "escolha" ? p.escolha.map(o => o.texto || "…").join(" | ") : t == "char" ? Object.values(p.char || {}).map(x => x || "×").join(", ") : t == "marca" ? Object.keys(p.set || {})[0] : p[t];
   const c = h("div", {className: "card" + (aberto ? " open" : "")},
     h("div", {className: "hd", onclick: () => { ed.aberto = aberto ? -1 : i; edRender(); }},
-      h("span", {className: "chip", textContent: t == "fala" ? (p.nome || "Narração") : NOME[t]}),
+      h("span", {className: "chip", textContent: t == "fala" ? (p.nome ? "💬 " + p.nome : "📖 Narração") : ICO[t] + " " + NOME[t]}),
       h("span", {className: "rs", textContent: resumo || "(vazio)"}),
       btn("↑", () => mv(-1)), btn("↓", () => mv(1)), btn("✕", () => { L.splice(i, 1); ed.aberto = -1; sv(); edRender(); })));
   c.style.setProperty("--c", corDe(p, t));
   if (!aberto) return c;
   const tp = h("label", {}, "Tipo do passo", h("select", {onchange: e => { L[i] = cp(NOVO[e.target.value]); sv(); edRender(); }}, Object.keys(NOME).map(k => h("option", {value: k, textContent: NOME[k], selected: k == t}))));
-  const corpo = h("div", {className: "body"});
+  const corpo = h("div", {className: "body"}, h("small", {className: "dica", textContent: DICA[t]}));
   if (t == "escolha") {
     corpo.append(h("div", {className: "grid"}, tp));
     p.escolha.forEach((o, j) => corpo.append(h("div", {className: "sub"}, h("div", {className: "grid"},
-      campo("Texto da opção", o.texto, v => o.texto = v),
-      campo("Vai para a cena", o.ir || "", v => o.ir = v, "c"),
+      campo("Texto do botão", o.texto, v => o.texto = v, "", null, "Ex.: Entrar no ginásio"),
+      campo("Leva para a cena", o.ir || "", v => o.ir = v, "c"),
       campo("Guarda a marca (opcional)", Object.keys(o.set || {})[0] || "", v => o.set = v ? {[v]: true} : {}),
       campo("Só aparece se a marca existir", o.se || "", v => o.se = v)),
       btn("Apagar opção", () => { p.escolha.splice(j, 1); sv(); edRender(); }))));
@@ -325,24 +354,57 @@ function card(p, i, L){
   c.append(corpo);
   return c;
 }
+function pvCalc(L, ate){ // estado da cena depois de executar os passos 0..ate
+  const e = {bg: "", ch: {esq: "", meio: "", dir: ""}, nome: "", texto: "", esc: null, fx: ""};
+  for (let i = 0; i <= ate && i < L.length; i++) {
+    const p = L[i];
+    if (p.bg !== undefined) e.bg = p.bg;
+    if (p.char) Object.assign(e.ch, p.char);
+    if (p.texto !== undefined) { e.nome = p.nome || ""; e.texto = p.texto; e.esc = null; }
+    if (p.escolha) e.esc = p.escolha;
+    e.fx = i == ate ? (p.fx || "") : "";
+  }
+  return e;
+}
+function pvRender(anim){
+  const el = $("#edw .pv"); if (!el) return;
+  const L = HIST.cenas[ed.cena] || [], ate = ed.aberto >= 0 ? ed.aberto : L.length - 1, e = pvCalc(L, ate);
+  el.className = "pv" + (anim && e.fx ? " " + e.fx : ""); el.innerHTML = "";
+  el.append(h("div", {className: "pb", style: e.bg ? `background-image:url("${ua("bg", e.bg)}")` : ""}),
+    ["esq", "meio", "dir"].map(k => e.ch[k] ? h("img", {className: k, src: ua("char", e.ch[k]), onerror: ev => ev.target.remove()}) : ""),
+    e.esc ? h("div", {className: "pesc"}, e.esc.map(o => h("span", {textContent: o.texto || "…"}))) : "",
+    h("div", {className: "cx"}, e.nome ? h("div", {className: "nm", textContent: e.nome, style: "background:" + corDe({nome: e.nome}, "fala")}) : "", e.texto),
+    h("div", {className: "fxl"}));
+  const info = $("#edw .pvinfo"); if (info) info.textContent = L.length ? "Prévia até o passo " + (Math.max(ate, 0) + 1) + " de " + L.length : "";
+}
+function jogar(i){ // fecha o editor e joga a cena (do começo ou a partir de um passo)
+  const L = HIST.cenas[ed.cena]; $("#edw").style.display = "none";
+  comecar(ed.cena, i, i ? pvCalc(L, i - 1) : null);
+}
 function edRender(){
-  const R = $("#edw"), sc = R.scrollTop; R.innerHTML = "";
+  const R = $("#edw"), velho = $("#edw .lista"), sc = velho ? velho.scrollTop : 0; R.innerHTML = "";
   const cs = Object.keys(HIST.cenas);
   if (!HIST.cenas[ed.cena]) ed.cena = cs[0];
   const L = HIST.cenas[ed.cena];
   const add = h("div", {className: "add"}, Object.keys(NOME).map(k => {
-    const b = btn("+ " + NOME[k], () => { const j = ed.aberto >= 0 ? ed.aberto + 1 : L.length; L.splice(j, 0, cp(NOVO[k])); ed.aberto = j; ed.rolar = 1; sv(); edRender(); });
+    const b = btn(ICO[k] + " " + NOME[k], () => { const j = ed.aberto >= 0 ? ed.aberto + 1 : L.length; L.splice(j, 0, cp(NOVO[k])); ed.aberto = j; ed.rolar = 1; sv(); edRender(); });
     b.style.setProperty("--c", k == "fala" ? PAL[0] : COR[k]); return b; }));
+  const jd = btn("▶ Jogar daqui", () => jogar(ed.aberto)); jd.disabled = ed.aberto < 0;
+  const lista = h("div", {className: "lista"}, L.length ? L.map((p, i) => card(p, i, L)) : h("p", {textContent: "Cena vazia. Use os botões coloridos embaixo para adicionar passos."}), add);
   R.append(
     h("div", {className: "top"}, h("div", {className: "bar"},
-      btn("Fechar", () => R.style.display = "none"), btn("▶ Testar", () => { R.style.display = "none"; comecar(ed.cena); }), btn("Exportar", exp),
+      btn("Fechar", () => R.style.display = "none"), btn("Exportar", exp),
       h("select", {onchange: e => { ed.cena = e.target.value; ed.aberto = -1; edRender(); }}, cs.map(c => h("option", {value: c, textContent: c + (c == HIST.inicio ? " ★" : ""), selected: c == ed.cena}))),
       btn("+ Cena", () => { const n = (prompt("Nome da nova cena (sem espaços):") || "").trim(); if (n && !HIST.cenas[n]) { HIST.cenas[n] = []; ed.cena = n; ed.aberto = -1; sv(); edRender(); } }),
       btn("Renomear", ren), btn("★ Inicial", () => { HIST.inicio = ed.cena; sv(); edRender(); }),
       btn("Apagar cena", () => { if (cs.length > 1 && confirm("Apagar a cena " + ed.cena + "?")) { delete HIST.cenas[ed.cena]; if (HIST.inicio == ed.cena) HIST.inicio = Object.keys(HIST.cenas)[0]; ed.aberto = -1; sv(); edRender(); } }))),
-    h("div", {}, L.length ? L.map((p, i) => card(p, i, L)) : h("p", {textContent: "Cena vazia. Use os botões coloridos embaixo para adicionar passos."})),
-    add);
-  R.scrollTop = sc;
+    h("div", {className: "main"},
+      h("div", {className: "pvbox"}, h("div", {className: "pv"}),
+        h("div", {className: "bar", style: "margin-top:8px"}, btn("▶ Jogar a cena", () => jogar(0)), jd),
+        h("small", {className: "pvinfo dica"}),
+        h("small", {className: "dica", textContent: "Toque num passo para editar: a prévia mostra a cena até aquele passo e muda enquanto você digita."})),
+      lista));
+  lista.scrollTop = sc; pvRender(true);
   if (ed.rolar) { ed.rolar = 0; const o = R.querySelector(".card.open"); if (o) o.scrollIntoView({block: "center"}); }
 }
 function ren(){
@@ -360,10 +422,10 @@ function exp(){
     btn("Copiar", () => navigator.clipboard.writeText(ta.value).catch(() => ta.select())),
     btn("Aplicar texto colado", () => { try { const t = ta.value, o = JSON.parse(t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1)); if (!o.cenas || !o.inicio) throw 0; Object.assign(HIST, o); sv(); edRender(); } catch (e) { alert("Texto inválido."); } }),
     btn("Descartar edições", () => { if (confirm("Voltar para a história original do story.js?")) { localStorage.removeItem("vn_story"); location.reload(); } }))),
-    h("p", {textContent: "Para publicar no GitHub, copie este texto e cole no story.js. A história e as imagens enviadas pelo editor ficam salvas só neste navegador (as imagens não vão no texto)."}), ta);
+    h("div", {className: "main um"}, h("div", {className: "lista"}, h("p", {textContent: "Para publicar no GitHub, copie este texto e cole no story.js. A história e as imagens enviadas pelo editor ficam salvas só neste navegador (as imagens não vão no texto)."}), ta)));
 }
-function comecar(c){ localStorage.removeItem("vn_save_auto"); st = novo(); if (c) st.cena = c; travado = false; setBg(""); drawCh(); setMus(""); run(); }
-function abrirEd(){ $("#edw").style.display = "block"; edRender(); }
+function comecar(c, i, e){ localStorage.removeItem("vn_save_auto"); st = novo(); if (c) st.cena = c; if (i && e) { st.i = i; st.bg = e.bg; st.ch = {...e.ch}; } travado = false; setBg(st.bg); drawCh(); setMus(""); run(); }
+function abrirEd(){ $("#edw").style.display = "flex"; edRender(); }
 $("#edw").addEventListener("click", e => e.stopPropagation());
 if (localStorage.getItem("vn_ok") === HASH) abrir(); // por último: o resto do script já está pronto
 </script>
