@@ -42,14 +42,29 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes fl{0%{opacity:.9}100%{opacity:0}}
 .escurecer #fxl{background:#000;animation:fl .9s reverse}
 @media (prefers-reduced-motion:reduce){.tremer,.flash #fxl,.escurecer #fxl,#prox{animation:none}}
-#edw{position:absolute;inset:0;display:none;background:var(--ink);z-index:20;overflow:auto;padding:14px 14px 40px;font-family:system-ui,sans-serif}
+#edw{position:absolute;inset:0;display:none;background:var(--ink);z-index:20;overflow:auto;padding:0 12px;font-family:system-ui,sans-serif;font-size:15px}
 #edw,#edw *{user-select:text}
-#edw .bar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
-#edw button,#edw select,#edw input,#edw textarea{font:inherit;color:var(--txt);background:#0a0c13;border:1px solid #2b3347;border-radius:8px;padding:9px 12px}
-#edw label{display:grid;gap:4px;font-size:.85rem;margin-bottom:8px}
-#edw textarea{min-height:90px;resize:vertical}
-#edw .card{border:1px solid #2b3347;border-left:3px solid var(--orange);border-radius:10px;padding:12px;margin-bottom:12px;background:#0d111b}
-#edw .sub{border-left:3px solid var(--blue);padding-left:10px;margin:8px 0 12px}
+#edw .bar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+#edw .top{position:sticky;top:0;z-index:3;background:var(--ink);padding:10px 0 4px}
+#edw .add{position:sticky;bottom:0;z-index:3;display:flex;gap:6px;overflow-x:auto;background:var(--ink);padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid #2b3347}
+#edw .add button{flex:none;border-color:var(--c)}
+#edw button,#edw select,#edw input,#edw textarea{font:inherit;color:var(--txt);background:#0a0c13;border:1px solid #2b3347;border-radius:8px;padding:8px 11px}
+#edw .card{--c:#888;border:1px solid #2b3347;border-left:5px solid var(--c);border-radius:10px;margin-bottom:6px;background:#0d111b}
+#edw .card.open{background:color-mix(in srgb,var(--c) 9%,#0d111b);border-color:var(--c)}
+#edw .hd{display:flex;align-items:center;gap:6px;padding:6px 6px 6px 10px;cursor:pointer}
+#edw .hd button{padding:6px 11px;min-width:40px}
+#edw .chip{flex:none;background:var(--c);color:#0a0c13;font-weight:bold;border-radius:6px;padding:3px 10px;font-size:.85rem}
+#edw .rs{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85}
+#edw .body{padding:4px 10px 10px}
+#edw .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px}
+#edw label,#edw .lb{display:grid;gap:3px;font-size:.8rem;align-content:start}
+#edw .wide{grid-column:1/-1}
+#edw textarea{min-height:70px;resize:vertical}
+#edw .sub{border-left:3px solid var(--c);padding-left:10px;margin:8px 0}
+#edw .lib{display:flex;gap:6px;overflow-x:auto;align-items:center;padding-bottom:2px}
+#edw .lib>*{flex:none}
+#edw .lib img{height:52px;border-radius:6px;border:2px solid transparent;background:#222}
+#edw .lib .on{border-color:var(--orange)}
 #err{position:fixed;left:0;right:0;top:0;z-index:99;padding:12px 16px;background:#b3261e;color:#fff;font:14px system-ui,sans-serif}
 #ver{position:fixed;left:8px;bottom:4px;z-index:60;font:11px system-ui,sans-serif;color:#6b7390;pointer-events:none}
 </style>
@@ -77,13 +92,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 </div>
 
 <div id="err" hidden></div>
-<small id="ver">v4</small>
+<small id="ver">v5</small>
 <script>
 // mostra qualquer erro na tela (toque para fechar), para facilitar achar problemas
 window.addEventListener("error", e => { const b = document.getElementById("err"); b.hidden = false; b.textContent = "Erro: " + e.message + " (linha " + e.lineno + ") — toque para fechar"; });
 document.getElementById("err").onclick = e => e.target.hidden = true;
 </script>
-<script src="story.js?v=4" onerror="document.getElementById('err').hidden=false;document.getElementById('err').textContent='Não achei o story.js — confira se está na mesma pasta do index.html'"></script>
+<script src="story.js?v=5" onerror="document.getElementById('err').hidden=false;document.getElementById('err').textContent='Não achei o story.js — confira se está na mesma pasta do index.html'"></script>
 <script>
 // ===== CONFIG =====
 // SENHA PADRÃO: "corvo". Para trocar: abra o site, digite  gerar:suanovasenha  na tela de senha,
@@ -103,7 +118,7 @@ let st = novo(), tm, typing = false, mus = null, mudo = false, travado = false;
 try{const salvo=localStorage.getItem("vn_story");if(salvo)Object.assign(HIST,JSON.parse(salvo))}catch(e){}
 // ===== SENHA =====
 $("#tit").textContent = HIST.titulo || "Acesso privado";
-function abrir(){ $("#gate").remove(); $("#stage").hidden = false; iniciar(); }
+function abrir(){ $("#gate").remove(); $("#stage").hidden = false; assetsPronto.then(iniciar); }
 $("#f").addEventListener("submit", async e => {
   e.preventDefault();
   const v = $("#pw").value;
@@ -118,12 +133,12 @@ function setMus(f){
   st.mus = f;
   if (mus) { mus.pause(); mus = null; }
   if (!f) return;
-  mus = new Audio(P.audio + f); mus.loop = true; mus.volume = .6; mus.muted = mudo;
+  mus = new Audio(ua("audio", f)); mus.loop = true; mus.volume = .6; mus.muted = mudo;
   mus.play().catch(()=>{});
 }
-function sfx(f){ if (mudo) return; const a = new Audio(P.audio + f); a.play().catch(()=>{}); }
-function setBg(f){ st.bg = f; $("#bg").style.backgroundImage = f ? `url("${P.bg + f}")` : "none"; }
-function drawCh(){ for (const k of ["esq","meio","dir"]) { const el = $("#c-"+k), f = st.ch[k]; if (f) el.src = P.char + f; else el.removeAttribute("src"); } }
+function sfx(f){ if (mudo) return; const a = new Audio(ua("audio", f)); a.play().catch(()=>{}); }
+function setBg(f){ st.bg = f; $("#bg").style.backgroundImage = f ? `url("${ua("bg", f)}")` : "none"; }
+function drawCh(){ for (const k of ["esq","meio","dir"]) { const el = $("#c-"+k), f = st.ch[k]; if (f) el.src = ua("char", f); else el.removeAttribute("src"); } }
 function fx(n){ const s = $("#stage"); s.classList.remove("tremer","flash","escurecer"); void s.offsetWidth; s.classList.add(n); setTimeout(()=>s.classList.remove(n), 1000); }
 
 // ===== TEXTO E ESCOLHAS =====
@@ -205,23 +220,29 @@ for (const [id, fn] of [["#bE", abrirEd], ["#bR", reiniciar], ["#bS", () => slot
   $(id).addEventListener("click", e => { e.stopPropagation(); fn(); });
 
 // ===== EDITOR =====
-const ed = {cena: HIST.inicio};
+const ed = {cena: HIST.inicio, aberto: -1};
+const AS = {}; // arquivos enviados pelo editor: nome -> {u: endereço, t: tipo}
+const ua = (t, f) => AS[f] ? AS[f].u : P[t] + f;
 const h = (t, a = {}, ...c) => { const e = document.createElement(t); Object.assign(e, a); c.flat().forEach(x => e.append(x)); return e; };
-const btn = (t, f) => h("button", {textContent: t, onclick: f, type: "button"});
+const btn = (t, f) => h("button", {textContent: t, type: "button", onclick: e => { e.stopPropagation(); f(); }});
 const sv = () => localStorage.setItem("vn_story", JSON.stringify(HIST));
 const cp = o => JSON.parse(JSON.stringify(o));
 const FX = ["tremer", "flash", "escurecer"];
 const NOVO = {fala:{nome:"",texto:""}, bg:{bg:""}, musica:{musica:""}, sfx:{sfx:""}, char:{char:{}}, fx:{fx:"tremer"}, marca:{set:{}}, ir:{ir:""}, escolha:{escolha:[{texto:"",ir:""}]}};
-const TIPOS = {
-  fala:["Fala ou narração", [["nome","Nome (vazio = narração)"],["texto","Texto","a"],["fx","Efeito visual junto (opcional)","s",FX]]],
-  bg:["Fundo", [["bg","Arquivo da imagem (vazio = sem fundo)"]]],
-  musica:["Música", [["musica","Arquivo de áudio (vazio = parar)"]]],
-  sfx:["Efeito sonoro", [["sfx","Arquivo de áudio"]]],
-  char:["Personagens", [["char.esq","Esquerda (vazio = não muda, - = remove)"],["char.meio","Meio"],["char.dir","Direita"]]],
-  fx:["Efeito visual", [["fx","Efeito","s",FX]]],
-  marca:["Guardar marca", [["marca","Nome da marca"]]],
-  ir:["Pular para cena", [["ir","Cena","c"]]],
-  escolha:["Escolha", []]
+const NOME = {fala:"Fala", bg:"Fundo", musica:"Música", sfx:"Som", char:"Personagens", fx:"Efeito", marca:"Marca", ir:"Ir para", escolha:"Escolha"};
+const COR = {bg:"#4cc38a", musica:"#8f7bff", sfx:"#e0709a", char:"#ff9a52", fx:"#d9b93a", marca:"#35c4c4", ir:"#ff6060", escolha:"#c9a227"};
+const PAL = ["#4aa3ff", "#ff8a3d", "#a77bff", "#4cc38a", "#ff6fa3", "#f5c542"]; // uma cor por personagem que fala
+const corDe = (p, t) => t == "fala" ? (p.nome ? PAL[[...p.nome].reduce((a, c) => a + c.charCodeAt(0), 0) % PAL.length] : "#9aa4bd") : COR[t];
+const CAMPOS = {
+  fala:[["nome","Quem fala (vazio = narração)"],["fx","Efeito junto (opcional)","s",FX],["texto","Texto","a"]],
+  bg:[["bg","Imagem de fundo (vazio = sem fundo)","i"]],
+  musica:[["musica","Música (vazio = parar)","u"]],
+  sfx:[["sfx","Efeito sonoro","u"]],
+  char:[["char.esq","Esquerda (vazio = não muda)","i",1],["char.meio","Meio","i",1],["char.dir","Direita","i",1]],
+  fx:[["fx","Efeito","s",FX]],
+  marca:[["marca","Nome da marca"]],
+  ir:[["ir","Cena","c"]],
+  escolha:[]
 };
 const tipo = p => p.escolha ? "escolha" : p.ir !== undefined ? "ir" : p.texto !== undefined ? "fala" : p.char !== undefined ? "char" : p.fx !== undefined ? "fx" : p.set !== undefined ? "marca" : p.sfx !== undefined ? "sfx" : p.musica !== undefined ? "musica" : "bg";
 function get(p, k){
@@ -234,47 +255,95 @@ function put(p, k, v){
   else if (k.startsWith("char.")) { p.char = p.char || {}; const c = k.slice(5); if (v === "") delete p.char[c]; else p.char[c] = v == "-" ? "" : v; }
   else p[k] = v;
 }
+
+// ----- imagens e áudios enviados (ficam guardados neste navegador) -----
+const dbA = () => new Promise((ok, no) => { const r = indexedDB.open("vn_assets", 1); r.onupgradeneeded = () => r.result.createObjectStore("a"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+const tx = async (modo, f) => { const d = await dbA(); await new Promise(ok => { const t = d.transaction("a", modo); f(t.objectStore("a")); t.oncomplete = ok; }); };
+async function carregarAssets(){
+  try { const d = await dbA(); await new Promise(ok => { const c = d.transaction("a").objectStore("a").openCursor(); c.onsuccess = () => { const x = c.result; if (x) { AS[x.key] = {u: URL.createObjectURL(x.value), t: x.value.type}; x.continue(); } else ok(); }; c.onerror = ok; }); } catch (e) {}
+}
+const assetsPronto = carregarAssets();
+async function guardar(f){
+  let b = f;
+  if (f.type.startsWith("image/") && !/gif|svg/.test(f.type)) { // reduz fotos grandes para caber melhor
+    const im = await createImageBitmap(f), k = Math.min(1, 1600 / Math.max(im.width, im.height));
+    if (k < 1) { const c = h("canvas", {width: Math.round(im.width * k), height: Math.round(im.height * k)}); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); b = await new Promise(ok => c.toBlob(ok, f.type == "image/png" ? "image/png" : "image/jpeg", .88)); }
+  }
+  const n = f.name.replace(/[^\w.\-]/g, "_");
+  await tx("readwrite", s => s.put(b, n));
+  if (AS[n]) URL.revokeObjectURL(AS[n].u);
+  AS[n] = {u: URL.createObjectURL(b), t: b.type || f.type};
+  return n;
+}
+function campoArq(rot, val, on, ar, tirar){
+  const fi = h("input", {type: "file", hidden: true, accept: ar == "i" ? "image/*" : "audio/*", onchange: async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { on(await guardar(f)); sv(); edRender(); } catch (er) { alert("Não consegui guardar o arquivo neste navegador."); } }});
+  const escolher = n => () => { on(n); sv(); edRender(); };
+  const lib = Object.keys(AS).filter(n => AS[n].t.startsWith(ar == "i" ? "image" : "audio"));
+  return h("div", {className: "lb"}, rot,
+    h("input", {value: val, placeholder: "nome do arquivo (ou escolha abaixo)", oninput: e => { on(e.target.value); sv(); }}),
+    h("div", {className: "lib"}, btn("+ Enviar do tablet", () => fi.click()), fi,
+      tirar ? btn("Tirar da tela", escolher("-")) : "",
+      AS[val] ? btn("Apagar do tablet", async () => { if (confirm("Apagar " + val + " do tablet?")) { await tx("readwrite", s => s.delete(val)); URL.revokeObjectURL(AS[val].u); delete AS[val]; on(""); sv(); edRender(); } }) : "",
+      lib.map(n => ar == "i" ? h("img", {src: AS[n].u, title: n, className: n == val ? "on" : "", onclick: escolher(n)}) : (() => { const b = btn(n, escolher(n)); b.className = n == val ? "on" : ""; return b; })())));
+}
+
+// ----- campos e cartões -----
 function campo(rot, val, on, tp, opts){
   let el;
   if (tp == "s" || tp == "c") {
     const o = ["", ...(tp == "c" ? Object.keys(HIST.cenas) : opts)];
     el = h("select", {onchange: e => { on(e.target.value); sv(); }}, o.map(x => h("option", {value: x, textContent: x || "(nenhum)", selected: x == val})));
   } else el = h(tp == "a" ? "textarea" : "input", {value: val, oninput: e => { on(e.target.value); sv(); }});
-  return h("label", {}, rot, el);
+  return h("label", {className: tp == "a" ? "wide" : ""}, rot, el);
 }
+const campos = (p, t) => CAMPOS[t].map(([k, r, tp, op]) => tp == "i" || tp == "u" ? campoArq(r, get(p, k), v => put(p, k, v), tp, op) : campo(r, get(p, k), v => put(p, k, v), tp, op));
 function card(p, i, L){
-  const t = tipo(p);
-  const mv = d => { const j = i + d; if (j < 0 || j >= L.length) return; [L[i], L[j]] = [L[j], L[i]]; sv(); edRender(); };
-  const c = h("div", {className: "card"}, h("div", {className: "bar"},
-    h("select", {onchange: e => { L[i] = cp(NOVO[e.target.value]); sv(); edRender(); }}, Object.entries(TIPOS).map(([k,[n]]) => h("option", {value: k, textContent: n, selected: k == t}))),
-    btn("↑", () => mv(-1)), btn("↓", () => mv(1)), btn("Apagar", () => { L.splice(i, 1); sv(); edRender(); })));
+  const t = tipo(p), aberto = ed.aberto == i;
+  const mv = d => { const j = i + d; if (j < 0 || j >= L.length) return; [L[i], L[j]] = [L[j], L[i]]; if (aberto) ed.aberto = j; sv(); edRender(); };
+  const resumo = t == "fala" ? p.texto : t == "escolha" ? p.escolha.map(o => o.texto || "…").join(" | ") : t == "char" ? Object.values(p.char || {}).map(x => x || "×").join(", ") : t == "marca" ? Object.keys(p.set || {})[0] : p[t];
+  const c = h("div", {className: "card" + (aberto ? " open" : "")},
+    h("div", {className: "hd", onclick: () => { ed.aberto = aberto ? -1 : i; edRender(); }},
+      h("span", {className: "chip", textContent: t == "fala" ? (p.nome || "Narração") : NOME[t]}),
+      h("span", {className: "rs", textContent: resumo || "(vazio)"}),
+      btn("↑", () => mv(-1)), btn("↓", () => mv(1)), btn("✕", () => { L.splice(i, 1); ed.aberto = -1; sv(); edRender(); })));
+  c.style.setProperty("--c", corDe(p, t));
+  if (!aberto) return c;
+  const tp = h("label", {}, "Tipo do passo", h("select", {onchange: e => { L[i] = cp(NOVO[e.target.value]); sv(); edRender(); }}, Object.keys(NOME).map(k => h("option", {value: k, textContent: NOME[k], selected: k == t}))));
+  const corpo = h("div", {className: "body"});
   if (t == "escolha") {
-    p.escolha.forEach((o, j) => c.append(h("div", {className: "sub"},
+    corpo.append(h("div", {className: "grid"}, tp));
+    p.escolha.forEach((o, j) => corpo.append(h("div", {className: "sub"}, h("div", {className: "grid"},
       campo("Texto da opção", o.texto, v => o.texto = v),
       campo("Vai para a cena", o.ir || "", v => o.ir = v, "c"),
       campo("Guarda a marca (opcional)", Object.keys(o.set || {})[0] || "", v => o.set = v ? {[v]: true} : {}),
-      campo("Só aparece se a marca existir (opcional)", o.se || "", v => o.se = v),
+      campo("Só aparece se a marca existir", o.se || "", v => o.se = v)),
       btn("Apagar opção", () => { p.escolha.splice(j, 1); sv(); edRender(); }))));
-    c.append(btn("+ Opção", () => { p.escolha.push({texto: "", ir: ""}); sv(); edRender(); }));
-  } else TIPOS[t][1].forEach(([k, r, tp, op]) => c.append(campo(r, get(p, k), v => put(p, k, v), tp, op)));
-  if (t != "escolha") c.append(campo("Só aparece se a marca existir (opcional)", p.se || "", v => p.se = v));
+    corpo.append(btn("+ Opção", () => { p.escolha.push({texto: "", ir: ""}); sv(); edRender(); }));
+  } else corpo.append(h("div", {className: "grid"}, tp, campos(p, t), campo("Só aparece se a marca existir", p.se || "", v => p.se = v)));
+  c.append(corpo);
   return c;
 }
 function edRender(){
-  const R = $("#edw"); R.innerHTML = "";
+  const R = $("#edw"), sc = R.scrollTop; R.innerHTML = "";
   const cs = Object.keys(HIST.cenas);
   if (!HIST.cenas[ed.cena]) ed.cena = cs[0];
   const L = HIST.cenas[ed.cena];
+  const add = h("div", {className: "add"}, Object.keys(NOME).map(k => {
+    const b = btn("+ " + NOME[k], () => { const j = ed.aberto >= 0 ? ed.aberto + 1 : L.length; L.splice(j, 0, cp(NOVO[k])); ed.aberto = j; ed.rolar = 1; sv(); edRender(); });
+    b.style.setProperty("--c", k == "fala" ? PAL[0] : COR[k]); return b; }));
   R.append(
-    h("div", {className: "bar"}, btn("Fechar", () => R.style.display = "none"), btn("Testar esta cena", () => { R.style.display = "none"; comecar(ed.cena); }), btn("Exportar / importar", exp)),
-    h("div", {className: "bar"},
-      h("select", {onchange: e => { ed.cena = e.target.value; edRender(); }}, cs.map(c => h("option", {value: c, textContent: c + (c == HIST.inicio ? " (inicial)" : ""), selected: c == ed.cena}))),
-      btn("+ Cena", () => { const n = (prompt("Nome da nova cena (sem espaços):") || "").trim(); if (n && !HIST.cenas[n]) { HIST.cenas[n] = []; ed.cena = n; sv(); edRender(); } }),
-      btn("Renomear", ren), btn("Tornar inicial", () => { HIST.inicio = ed.cena; sv(); edRender(); }),
-      btn("Apagar cena", () => { if (cs.length > 1 && confirm("Apagar a cena " + ed.cena + "?")) { delete HIST.cenas[ed.cena]; if (HIST.inicio == ed.cena) HIST.inicio = Object.keys(HIST.cenas)[0]; sv(); edRender(); } })));
-  L.forEach((p, i) => R.append(card(p, i, L)));
-  const ns = h("select", {}, Object.entries(TIPOS).map(([k,[n]]) => h("option", {value: k, textContent: n})));
-  R.append(h("div", {className: "bar"}, ns, btn("+ Adicionar passo", () => { L.push(cp(NOVO[ns.value])); sv(); edRender(); R.scrollTo(0, R.scrollHeight); })));
+    h("div", {className: "top"}, h("div", {className: "bar"},
+      btn("Fechar", () => R.style.display = "none"), btn("▶ Testar", () => { R.style.display = "none"; comecar(ed.cena); }), btn("Exportar", exp),
+      h("select", {onchange: e => { ed.cena = e.target.value; ed.aberto = -1; edRender(); }}, cs.map(c => h("option", {value: c, textContent: c + (c == HIST.inicio ? " ★" : ""), selected: c == ed.cena}))),
+      btn("+ Cena", () => { const n = (prompt("Nome da nova cena (sem espaços):") || "").trim(); if (n && !HIST.cenas[n]) { HIST.cenas[n] = []; ed.cena = n; ed.aberto = -1; sv(); edRender(); } }),
+      btn("Renomear", ren), btn("★ Inicial", () => { HIST.inicio = ed.cena; sv(); edRender(); }),
+      btn("Apagar cena", () => { if (cs.length > 1 && confirm("Apagar a cena " + ed.cena + "?")) { delete HIST.cenas[ed.cena]; if (HIST.inicio == ed.cena) HIST.inicio = Object.keys(HIST.cenas)[0]; ed.aberto = -1; sv(); edRender(); } }))),
+    h("div", {}, L.length ? L.map((p, i) => card(p, i, L)) : h("p", {textContent: "Cena vazia. Use os botões coloridos embaixo para adicionar passos."})),
+    add);
+  R.scrollTop = sc;
+  if (ed.rolar) { ed.rolar = 0; const o = R.querySelector(".card.open"); if (o) o.scrollIntoView({block: "center"}); }
 }
 function ren(){
   const a = ed.cena, b = (prompt("Novo nome da cena:", a) || "").trim();
@@ -287,11 +356,11 @@ function ren(){
 function exp(){
   const R = $("#edw"); R.innerHTML = "";
   const ta = h("textarea", {value: "const STORY = " + JSON.stringify(HIST, null, 1) + ";", style: "width:100%;min-height:55vh"});
-  R.append(h("div", {className: "bar"}, btn("Voltar", edRender),
+  R.append(h("div", {className: "top"}, h("div", {className: "bar"}, btn("Voltar", edRender),
     btn("Copiar", () => navigator.clipboard.writeText(ta.value).catch(() => ta.select())),
     btn("Aplicar texto colado", () => { try { const t = ta.value, o = JSON.parse(t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1)); if (!o.cenas || !o.inicio) throw 0; Object.assign(HIST, o); sv(); edRender(); } catch (e) { alert("Texto inválido."); } }),
-    btn("Descartar edições", () => { if (confirm("Voltar para a história original do story.js?")) { localStorage.removeItem("vn_story"); location.reload(); } })),
-    h("p", {textContent: "Para publicar no GitHub, copie este texto e cole no story.js. As edições feitas aqui ficam salvas só neste navegador."}), ta);
+    btn("Descartar edições", () => { if (confirm("Voltar para a história original do story.js?")) { localStorage.removeItem("vn_story"); location.reload(); } }))),
+    h("p", {textContent: "Para publicar no GitHub, copie este texto e cole no story.js. A história e as imagens enviadas pelo editor ficam salvas só neste navegador (as imagens não vão no texto)."}), ta);
 }
 function comecar(c){ localStorage.removeItem("vn_save_auto"); st = novo(); if (c) st.cena = c; travado = false; setBg(""); drawCh(); setMus(""); run(); }
 function abrirEd(){ $("#edw").style.display = "block"; edRender(); }
