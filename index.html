@@ -58,7 +58,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   <div id="fxl"></div>
   <div id="menu">
     <button id="bS">Salvar</button><button id="bL">Carregar</button>
-    <button id="bM">Som</button><button id="bF">Tela cheia</button>
+    <button id="bR">Reiniciar</button><button id="bM">Som</button><button id="bF">Tela cheia</button>
   </div>
   <div id="cx"><div id="nome"></div><div id="texto"></div><span id="prox">▼</span></div>
   <div id="esc"></div>
@@ -173,7 +173,12 @@ function slots(modo){
   const x = document.createElement("button"); x.textContent = "Fechar"; x.onclick = e => { e.stopPropagation(); $("#slots").style.display = "none"; };
   box.appendChild(x); $("#slots").style.display = "grid";
 }
-for (const [id, fn] of [["#bS", () => slots("s")], ["#bL", () => slots("l")],
+function reiniciar(){
+  if (!confirm("Recomeçar do início? O autosave será apagado (os espaços salvos continuam).")) return;
+  localStorage.removeItem("vn_save_auto"); st = novo(); travado = false;
+  setBg(""); drawCh(); setMus(""); run();
+}
+for (const [id, fn] of [["#bR", reiniciar], ["#bS", () => slots("s")], ["#bL", () => slots("l")],
   ["#bM", () => { mudo = !mudo; if (mus) mus.muted = mudo; $("#bM").textContent = mudo ? "Mudo" : "Som"; }],
   ["#bF", () => { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(()=>{}); }]])
   $(id).addEventListener("click", e => { e.stopPropagation(); fn(); });
