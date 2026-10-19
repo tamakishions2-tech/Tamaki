@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Visual Novel</title>
+<style>
+:root{--ink:#10131c;--box:rgba(12,15,24,.9);--txt:#efe8d8;--blue:#4aa3ff;--orange:#ff8a3d}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:#000;color:var(--txt);font-family:Georgia,"Times New Roman",serif;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none}
+button{font:inherit;color:inherit;cursor:pointer}
+#gate{position:fixed;inset:0;display:grid;place-items:center;background:var(--ink);z-index:50;padding:20px}
+#gate form{display:grid;gap:12px;width:min(340px,100%)}
+#gate h1{font-size:1.5rem;font-weight:normal}
+#gate input{padding:14px;font:inherit;background:#0a0c13;color:var(--txt);border:1px solid #2b3347;border-radius:8px}
+#gate input:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+#gate button{padding:14px;background:var(--orange);color:#1a0f05;border:0;border-radius:8px;font-weight:bold}
+#msg{min-height:1.2em;font-size:.9rem;color:var(--orange);word-break:break-all}
+#stage{position:fixed;inset:0;overflow:hidden;background:radial-gradient(circle at 50% 30%,#1d2540,#07090f)}
+#bg{position:absolute;inset:0;background:center/cover no-repeat;transition:opacity .5s}
+.ch{position:absolute;bottom:0;height:88%;max-width:42%;object-fit:contain;transition:opacity .3s}
+#c-esq{left:4%}#c-meio{left:50%;transform:translateX(-50%)}#c-dir{right:4%}
+.ch:not([src]),.ch[src=""]{opacity:0}
+#cx{position:absolute;left:3%;right:3%;bottom:calc(3% + env(safe-area-inset-bottom,0px));min-height:26%;padding:22px 26px 18px;background:var(--box);border:1px solid #2b3347;border-top:3px solid var(--orange);border-radius:10px}
+#nome{position:absolute;top:-17px;left:22px;padding:3px 16px;background:var(--blue);color:#06101d;font-weight:bold;border-radius:6px}
+#texto{font-size:clamp(1.05rem,2.6vw,1.5rem);line-height:1.55;max-width:70ch}
+#prox{position:absolute;right:18px;bottom:10px;color:var(--orange);animation:pisca 1.1s infinite}
+@keyframes pisca{50%{opacity:.2}}
+#menu{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px;z-index:5}
+#menu button{padding:9px 14px;background:var(--box);border:1px solid #2b3347;border-radius:8px;font-size:.9rem}
+#esc{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;gap:14px;padding:20px;background:rgba(5,7,12,.55);z-index:4}
+#esc button{width:min(560px,92%);padding:16px 20px;background:var(--box);border:1px solid var(--blue);border-radius:10px;font-size:clamp(1rem,2.4vw,1.3rem)}
+#esc button:active{background:var(--blue);color:#06101d}
+#slots{position:absolute;inset:0;display:none;place-items:center;background:rgba(5,7,12,.8);z-index:6}
+#slots div{display:grid;gap:10px;width:min(420px,92%)}
+#slots button{padding:14px;background:var(--box);border:1px solid #2b3347;border-radius:8px;text-align:left}
+#fxl{position:absolute;inset:0;pointer-events:none;opacity:0;background:#fff}
+.tremer{animation:trem .5s}
+@keyframes trem{20%{transform:translate(-10px,6px)}40%{transform:translate(9px,-7px)}60%{transform:translate(-7px,-4px)}80%{transform:translate(5px,5px)}}
+.flash #fxl{animation:fl .5s}
+@keyframes fl{0%{opacity:.9}100%{opacity:0}}
+.escurecer #fxl{background:#000;animation:fl .9s reverse}
+@media (prefers-reduced-motion:reduce){.tremer,.flash #fxl,.escurecer #fxl,#prox{animation:none}}
+</style>
+</head>
+<body>
+<div id="gate"><form id="f">
+  <h1 id="tit">Acesso privado</h1>
+  <input id="pw" type="password" placeholder="Senha" autocomplete="current-password" aria-label="Senha">
+  <div id="msg" role="alert"></div>
+  <button>Entrar</button>
+</form></div>
+
+<div id="stage" hidden>
+  <div id="bg"></div>
+  <img class="ch" id="c-esq" alt=""><img class="ch" id="c-meio" alt=""><img class="ch" id="c-dir" alt="">
+  <div id="fxl"></div>
+  <div id="menu">
+    <button id="bS">Salvar</button><button id="bL">Carregar</button>
+    <button id="bM">Som</button><button id="bF">Tela cheia</button>
+  </div>
+  <div id="cx"><div id="nome"></div><div id="texto"></div><span id="prox">▼</span></div>
+  <div id="esc"></div>
+  <div id="slots"><div id="sl"></div></div>
+</div>
+
+<script src="story.js"></script>
+<script>
+// ===== CONFIG =====
+// SENHA PADRÃO: "corvo". Para trocar: abra o site, digite  gerar:suanovasenha  na tela de senha,
+// copie o código que aparecer e cole abaixo.
+const HASH = "91674405156acbd3c3666e2e395ec08d192adf49b76ad69922a1a2ae43cde6b3";
+const P = {bg:"assets/bg/", char:"assets/char/", audio:"assets/audio/"};
+const VEL = 22; // ms por letra
+
+const $ = s => document.querySelector(s);
+const sha = async t => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(b=>b.toString(16).padStart(2,"0")).join("");
+const novo = () => ({cena:STORY.inicio, i:0, flags:{}, bg:"", mus:"", ch:{esq:"",meio:"",dir:""}, show:null});
+let st = novo(), tm, typing = false, mus = null, mudo = false, travado = false;
+
+// ===== SENHA =====
+$("#tit").textContent = STORY.titulo || "Acesso privado";
+function abrir(){ $("#gate").remove(); $("#stage").hidden = false; iniciar(); }
+if (localStorage.getItem("vn_ok") === HASH) abrir();
+$("#f").addEventListener("submit", async e => {
+  e.preventDefault();
+  const v = $("#pw").value;
+  if (v.startsWith("gerar:")) { $("#msg").textContent = await sha(v.slice(6)); return; }
+  if (await sha(v) === HASH) { localStorage.setItem("vn_ok", HASH); abrir(); }
+  else { $("#msg").textContent = "Senha incorreta."; $("#pw").value = ""; }
+});
+
+// ===== AUDIO / VISUAL =====
+function setMus(f){
+  st.mus = f;
+  if (mus) { mus.pause(); mus = null; }
+  if (!f) return;
+  mus = new Audio(P.audio + f); mus.loop = true; mus.volume = .6; mus.muted = mudo;
+  mus.play().catch(()=>{});
+}
+function sfx(f){ if (mudo) return; const a = new Audio(P.audio + f); a.play().catch(()=>{}); }
+function setBg(f){ st.bg = f; $("#bg").style.backgroundImage = f ? `url("${P.bg + f}")` : "none"; }
+function drawCh(){ for (const k of ["esq","meio","dir"]) { const el = $("#c-"+k), f = st.ch[k]; if (f) el.src = P.char + f; else el.removeAttribute("src"); } }
+function fx(n){ const s = $("#stage"); s.classList.remove("tremer","flash","escurecer"); void s.offsetWidth; s.classList.add(n); setTimeout(()=>s.classList.remove(n), 1000); }
+
+// ===== TEXTO E ESCOLHAS =====
+function say(n, t, instant){
+  st.show = {n, t};
+  $("#esc").style.display = "none"; $("#cx").style.display = "";
+  const nm = $("#nome"); nm.textContent = n || ""; nm.style.display = n ? "" : "none";
+  const el = $("#texto"); el.textContent = ""; clearInterval(tm); let k = 0;
+  if (instant) { el.textContent = t; typing = false; return; }
+  typing = true;
+  tm = setInterval(() => { el.textContent = t.slice(0, ++k); if (k >= t.length) { clearInterval(tm); typing = false; } }, VEL);
+}
+function showChoices(op){
+  st.show = {escolha: op};
+  typing = false; clearInterval(tm);
+  const box = $("#esc"); box.innerHTML = "";
+  op.filter(o => !o.se || st.flags[o.se]).forEach(o => {
+    const b = document.createElement("button"); b.textContent = o.texto;
+    b.onclick = ev => { ev.stopPropagation(); if (o.set) Object.assign(st.flags, o.set); if (o.ir) { st.cena = o.ir; st.i = 0; } box.style.display = "none"; run(); };
+    box.appendChild(b);
+  });
+  box.style.display = "flex"; $("#cx").style.display = "none";
+}
+
+// ===== MOTOR =====
+function run(){
+  for (let guard = 0; guard < 500; guard++) {
+    const c = STORY.cenas[st.cena], p = c && c[st.i];
+    if (!p) { say("", "— Fim —"); travado = true; return; }
+    st.i++;
+    if (p.se && !st.flags[p.se]) continue;
+    if (p.set) Object.assign(st.flags, p.set);
+    if (p.bg !== undefined) setBg(p.bg);
+    if (p.musica !== undefined) setMus(p.musica);
+    if (p.sfx) sfx(p.sfx);
+    if (p.char) { Object.assign(st.ch, p.char); drawCh(); }
+    if (p.fx) fx(p.fx);
+    if (p.ir) { st.cena = p.ir; st.i = 0; continue; }
+    if (p.escolha) return showChoices(p.escolha);
+    if (p.texto !== undefined) return say(p.nome, p.texto);
+  }
+}
+function aplicar(s){
+  st = JSON.parse(JSON.stringify(s)); travado = false;
+  setBg(st.bg); drawCh(); setMus(st.mus);
+  const sh = st.show;
+  if (sh && sh.escolha) showChoices(sh.escolha); else if (sh) say(sh.n, sh.t, true);
+}
+function iniciar(){ st = novo(); const a = localStorage.getItem("vn_save_auto"); if (a) aplicar(JSON.parse(a)); else run(); }
+
+$("#stage").addEventListener("click", () => {
+  if ($("#esc").style.display === "flex" || $("#slots").style.display === "grid" || travado) return;
+  if (typing) { clearInterval(tm); $("#texto").textContent = st.show.t; typing = false; return; }
+  run(); localStorage.setItem("vn_save_auto", JSON.stringify(st));
+});
+
+// ===== SAVE / LOAD =====
+function slots(modo){
+  const box = $("#sl"); box.innerHTML = "";
+  for (let n = 1; n <= 3; n++) {
+    const raw = localStorage.getItem("vn_save_" + n), b = document.createElement("button");
+    b.textContent = `Espaço ${n} — ` + (raw ? JSON.parse(raw).cena + " (" + new Date(JSON.parse(raw).t).toLocaleString("pt-BR") + ")" : "vazio");
+    b.onclick = e => { e.stopPropagation();
+      if (modo === "s") { localStorage.setItem("vn_save_" + n, JSON.stringify({...st, t: Date.now()})); }
+      else if (raw) aplicar(JSON.parse(raw));
+      $("#slots").style.display = "none"; };
+    box.appendChild(b);
+  }
+  const x = document.createElement("button"); x.textContent = "Fechar"; x.onclick = e => { e.stopPropagation(); $("#slots").style.display = "none"; };
+  box.appendChild(x); $("#slots").style.display = "grid";
+}
+for (const [id, fn] of [["#bS", () => slots("s")], ["#bL", () => slots("l")],
+  ["#bM", () => { mudo = !mudo; if (mus) mus.muted = mudo; $("#bM").textContent = mudo ? "Mudo" : "Som"; }],
+  ["#bF", () => { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(()=>{}); }]])
+  $(id).addEventListener("click", e => { e.stopPropagation(); fn(); });
+</script>
+</body>
+</html>
