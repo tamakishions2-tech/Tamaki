@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#120f24">
 <meta name="color-scheme" content="dark">
 <title>Palco · Estúdio da Tamaki</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#120f24;--pn:#1b1736;--pn2:#231e45;--ln:#2e2a55;--tx:#efe9f7;--mu:#a49cc9;--or:#ff9f45;--gold:#f2b632;--te:#5fd9cf;color-scheme:dark}
 *{box-sizing:border-box}
@@ -14,62 +14,81 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-#app{height:100dvh;display:grid;grid-template-columns:270px 1fr;grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"cam palco" "cam doca"}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+fieldset:disabled{opacity:.45}
+#app{height:100dvh;display:grid;grid-template-columns:280px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"cam palco" "cam doca"}
 /* camadas */
 #cam{grid-area:cam;display:flex;flex-direction:column;background:var(--pn);border-right:1px solid var(--ln);min-height:0}
 .tit{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-weight:700;border-bottom:1px solid var(--ln)}
 .lista{flex:1;min-height:0;overflow:auto;padding:6px}
-.ly{display:grid;grid-template-columns:56px 1fr auto;gap:8px;align-items:center;padding:6px;border:1px solid transparent;border-radius:10px;margin-bottom:4px;background:var(--pn2)}
+.ly{display:flex;align-items:center;gap:6px;padding:5px;border:1px solid transparent;border-radius:10px;margin-bottom:4px;background:var(--pn2);cursor:pointer}
 .ly.on{border-color:var(--or);background:#2f2552}
-.ly img{width:56px;height:56px;object-fit:contain;border-radius:6px;background:conic-gradient(#3a3560 25%,#2a2650 0 50%,#3a3560 0 75%,#2a2650 0) 0 0/12px 12px}
-.ly .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
-.ly small{display:block;color:var(--mu);font-weight:400}
-.olho{background:none;border:0;font-size:1.2rem;width:40px;height:40px;color:var(--mu)}
-.olho.off{opacity:.35}
-.barra{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px;border-top:1px solid var(--ln)}
-.barra button,.barra label{display:grid;place-items:center;background:var(--pn2);border:1px solid var(--ln);border-radius:8px;min-height:44px;font-size:.78rem;text-align:center;cursor:pointer}
+.ly.filho{margin-left:18px}
+.ly.pasta{background:#2a2350}
+.ly .th{width:46px;height:46px;flex:none;object-fit:contain;border-radius:6px;background:conic-gradient(#3a3560 25%,#2a2650 0 50%,#3a3560 0 75%,#2a2650 0) 0 0/12px 12px}
+.fi{width:46px;height:46px;flex:none;display:grid;place-items:center;font-size:1.6rem;border-radius:8px;background:#3a3166;object-fit:cover}
+.ly .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.ly small{display:block;color:var(--mu);font-weight:400;overflow:hidden;text-overflow:ellipsis}
+.ic{flex:none;background:none;border:0;width:34px;height:40px;font-size:1.05rem;color:var(--mu);border-radius:8px}
+.ic.off{opacity:.3}
+.ic.lk{opacity:1}
+.barra{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;border-top:1px solid var(--ln)}
+.barra button,.barra label{display:grid;place-items:center;background:var(--pn2);border:1px solid var(--ln);border-radius:8px;min-height:40px;font-size:.76rem;text-align:center;cursor:pointer;padding:0 2px}
 .barra .add{background:var(--or);color:#24130a;font-weight:700;border-color:var(--or)}
-.vazio{color:var(--mu);padding:14px;text-align:center}
+.vazio{color:var(--mu);padding:12px;text-align:center;margin:0}
 /* palco */
-#palco{grid-area:palco;display:flex;flex-direction:column;min-height:0}
+#palco{grid-area:palco;display:flex;flex-direction:column;min-height:0;min-width:0}
 #topo{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--ln);background:var(--pn)}
 .bt{background:var(--pn2);border:1px solid var(--ln);border-radius:8px;padding:0 12px;min-height:40px}
 .bt.pri{background:var(--or);border-color:var(--or);color:#24130a;font-weight:700}
 .bt.rec{color:#ff6b6b}
 .bt.rec.on{background:#c62828;border-color:#c62828;color:#fff}
-.seg{display:inline-flex;border:1px solid var(--ln);border-radius:8px;overflow:hidden}
-.seg button{background:none;border:0;padding:0 10px;min-height:38px;color:var(--mu)}
-.seg button.on{background:var(--pn2);color:var(--or);font-weight:700}
-#st{margin-left:auto;color:var(--mu);font-size:.8rem}
+.bt.mini{padding:0 10px;font-size:1.1rem}
+#st{margin-left:auto;color:var(--mu);font-size:.78rem}
 #tela{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px;overflow:hidden}
 #cv{flex:none;border-radius:8px;border:1px solid var(--ln);touch-action:none;background:conic-gradient(#3a3560 25%,#2a2650 0 50%,#3a3560 0 75%,#2a2650 0) 0 0/24px 24px}
 /* doca */
-#doca{grid-area:doca;background:var(--pn);border-top:1px solid var(--ln)}
-#painel{height:190px;overflow:auto;padding:10px 12px}
+#doca{grid-area:doca;background:var(--pn);border-top:1px solid var(--ln);min-width:0}
+#painel{height:214px;overflow:auto;padding:8px 12px}
 #ferr{display:flex;border-top:1px solid var(--ln)}
-#ferr button{flex:1;background:none;border:0;border-top:3px solid transparent;min-height:50px;color:var(--mu);font-size:.85rem}
+#ferr button{flex:1;background:none;border:0;border-top:3px solid transparent;min-height:48px;color:var(--mu);font-size:.84rem;padding:0 2px}
 #ferr button.on{color:var(--or);border-top-color:var(--gold);font-weight:700}
 #ferr .so-retrato{display:none}
-.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 14px;align-items:end}
-.f{display:grid;gap:3px;font-size:.8rem;color:var(--mu)}
+.sub{display:flex;gap:4px;margin-bottom:8px}
+.sub button{background:var(--pn2);border:1px solid var(--ln);border-radius:999px;padding:4px 12px;color:var(--mu);font-size:.8rem}
+.sub button.on{border-color:var(--or);color:var(--or);font-weight:700}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px 14px;align-items:end}
+.f{display:grid;gap:3px;font-size:.78rem;color:var(--mu)}
 .f b{display:flex;justify-content:space-between;font-weight:600}
 .f b i{font-style:normal;color:var(--tx)}
 .f input[type=range]{width:100%;accent-color:var(--or)}
-.f select,.f input[type=text],textarea{background:#0b0918;border:1px solid var(--ln);border-radius:8px;padding:8px;width:100%}
-.chk{display:flex;gap:8px;align-items:center;color:var(--mu);font-size:.85rem;min-height:40px}
+.f select,.f input[type=text],textarea{background:#0b0918;border:1px solid var(--ln);border-radius:8px;padding:7px;width:100%}
+.f input[type=color]{width:100%;height:36px;border:1px solid var(--ln);border-radius:8px;background:#0b0918;padding:2px}
+.chk{display:flex;gap:8px;align-items:center;color:var(--mu);font-size:.84rem;min-height:38px}
+.btns{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.btns .bt{min-height:38px}
 .fala{display:grid;grid-template-columns:1fr auto;gap:10px;height:100%}
 .fala textarea{height:100%;min-height:0;resize:none}
 .fala .lado{display:flex;flex-direction:column;gap:6px;min-width:150px}
-.dica{color:var(--mu);font-size:.8rem;margin:0}
+.dica{color:var(--mu);font-size:.78rem;margin:4px 0 0}
+.icones{display:flex;flex-wrap:wrap;gap:4px}
+.icones button,.icones label{width:38px;height:38px;display:grid;place-items:center;background:var(--pn2);border:1px solid var(--ln);border-radius:8px;font-size:1.15rem;cursor:pointer}
+.icones .on{border-color:var(--or)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chips button{background:var(--pn2);border:1px solid var(--ln);border-radius:999px;padding:5px 10px;font-size:.8rem;color:var(--mu)}
+.chips button.on{border-color:var(--or);color:var(--tx)}
 .esc{display:none}
-/* retrato (celular em pé) */
+#toast{position:fixed;left:50%;bottom:290px;transform:translateX(-50%);background:var(--or);color:#24130a;font-weight:700;padding:8px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+#toast.on{opacity:1}
 @media (max-width:760px){
-  #app{grid-template-columns:1fr;grid-template-areas:"palco" "doca"}
+  #app{grid-template-columns:minmax(0,1fr);grid-template-areas:"palco" "doca"}
   #cam{display:none}
   #ferr .so-retrato{display:block}
-  #painel{height:220px}
-  #painel .lista{padding:0}
+  #ferr button{font-size:.72rem}
+  #painel{height:236px}
+  #painel .lista{padding:0;overflow:visible}
   #painel .barra{padding:6px 0 0}
+  #st{display:none}
 }
 </style>
 </head>
@@ -85,8 +104,10 @@ button{cursor:pointer}
       <button class="bt pri" data-a="falar">▶ Falar</button>
       <button class="bt" data-a="parar">■ Parar</button>
       <button class="bt rec" data-a="gravar" id="bRec">● Gravar</button>
-      <span class="seg" id="fmt"><button data-f="16:9">16:9</button><button data-f="9:16">9:16</button></span>
-      <span class="seg" id="fundo"><button data-b="check">Transparente</button><button data-b="chroma">Verde</button><button data-b="app">Roxo</button></span>
+      <button class="bt mini" data-a="desfazer" aria-label="Desfazer" title="Desfazer">↶</button>
+      <button class="bt mini" data-a="refazer" aria-label="Refazer" title="Refazer">↷</button>
+      <button class="bt" data-a="formato" id="bFmt">16:9</button>
+      <button class="bt" data-a="fundo" id="bFundo">Fundo</button>
       <label class="chk"><input type="checkbox" id="guias"> Guias</label>
       <span id="st">Termux: desconectado</span>
     </div>
@@ -98,38 +119,70 @@ button{cursor:pointer}
       <button class="so-retrato" data-t="camadas">Camadas</button>
       <button data-t="camada">Camada</button>
       <button data-t="anim">Animação</button>
+      <button data-t="balao">Balão</button>
       <button data-t="fala">Fala</button>
+      <button data-t="efeitos">Efeitos</button>
       <button data-t="voz">Voz</button>
     </nav>
   </section>
 </div>
+<div id="toast" role="status" aria-live="polite"></div>
 <input type="file" id="fPng" accept="image/*" multiple class="esc">
 <input type="file" id="fAud" accept="audio/*" class="esc">
 <input type="file" id="fImp" accept=".json,application/json" class="esc">
+<input type="file" id="fIco" accept="image/*" class="esc">
 
 <script>
 (() => {
 "use strict";
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-// Mesmos dados do Palco da Ficha da Tamaki (mesmo endereço do GitHub): as camadas aparecem nos dois.
-const KEY = "palco-cfg";
-const DEF = {url:"http://127.0.0.1:8765", motor:"termux", voice:"pf_dora", speed:1.05, pause:0.4, bg:"check", gain:4, thr:0.15, guides:1, cap:1, caph:24, capsz:3.2, text:"", layers:[], sel:null, fmt:"16:9"};
+const KEY = "palco-cfg"; // mesmos dados do Palco da Ficha da Tamaki
+const DEF = {url:"http://127.0.0.1:8765", motor:"termux", voice:"pf_dora", speed:1.05, pause:0.4, bg:"check", gain:4, thr:0.15, guides:1, text:"", layers:[], folders:[], sel:null, fmt:"16:9",
+  bal:{on:1, lock:0, estilo:"rpg", fundo:"#06050f", opF:1, borda:"#ffffff", texto:"#ffffff", fonte:"pixel", tam:3.2, alinh:"left", digitar:1, nome:"", nomeCor:"#ff9f45", rabo:"baixo", raboX:.25, seguir:"", cam:0,
+    pos:{"16:9":{x:50, y:82, w:94, h:28}, "9:16":{x:50, y:84, w:94, h:24}}},
+  fx:{zoom:1, px:0, py:0, rot:0, reage:0, dur:1, intro:"titulo", titulo:"TAMAKI SHION", sub:"", cor:"#ff9f45", gIntro:0, gEntrada:1, gSaida:1}};
 const PAPEIS = [["always","Sempre visível"],["open","Boca aberta (falando)"],["closed","Boca fechada (parada)"],["eyeopen","Olho aberto"],["eyeclosed","Olho fechado (piscar)"]];
 const PARADA = [["none","Nenhuma"],["bob","Flutuar"],["sway","Balançar"],["breathe","Respirar"],["flicker","Cintilar"]];
 const FALANDO = [["none","Nenhuma"],["hop","Pular"],["shake","Tremer"],["grow","Esticar"],["tilt","Inclinar"]];
-let cfg = JSON.parse(JSON.stringify(DEF)), imgs = {}, aba = "camada", tm;
+const ICONES = ["📁","⭐","🎀","👀","👄","💇","👕","🖐","🌙","🔥","🐔","🐱","🎮","📚","💬","✨"];
+const FUNDOS = {check: "Fundo: xadrez", chroma: "Fundo: verde", app: "Fundo: roxo"};
+const copia = o => JSON.parse(JSON.stringify(o));
+function normalizar(c){
+  c.folders = c.folders || []; c.layers = c.layers || [];
+  c.layers.forEach(L => { if (L.op == null) L.op = 1; L.lock = L.lock ? 1 : 0; if (L.parent && !c.folders.some(f => f.id == L.parent)) L.parent = null; });
+  const ob = c.bal ? copia(c.bal) : {}; if (!c.bal) { if (c.cap != null) ob.on = c.cap; if (c.capsz) ob.tam = c.capsz; }
+  c.bal = Object.assign(copia(DEF.bal), ob); c.bal.pos = Object.assign(copia(DEF.bal.pos), ob.pos || {});
+  c.fx = Object.assign(copia(DEF.fx), c.fx || {});
+  return c;
+}
+let cfg = normalizar(copia(DEF)), imgs = {}, aba = "camada", subB = "pos", subE = "cam", tm, hist = [], fut = [];
 const cv = $("#cv"), g = cv.getContext("2d");
 
-/* ---------- guardar ---------- */
+/* ---------- guardar e desfazer ---------- */
 const idb = () => new Promise((ok, no) => { const r = indexedDB.open("palco", 1); r.onupgradeneeded = () => r.result.createObjectStore("img"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
 const idbPut = async (k, v) => { const d = await idb(); return new Promise(ok => { const t = d.transaction("img", "readwrite"); t.objectStore("img").put(v, k); t.oncomplete = ok; }); };
 const idbGet = async k => { const d = await idb(); return new Promise(ok => { const r = d.transaction("img").objectStore("img").get(k); r.onsuccess = () => ok(r.result); r.onerror = () => ok(null); }); };
-const idbDel = async k => { const d = await idb(); return new Promise(ok => { const t = d.transaction("img", "readwrite"); t.objectStore("img").delete(k); t.oncomplete = ok; t.onerror = ok; }); };
-function salvar(){ clearTimeout(tm); tm = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) {} }, 300); }
+const foto = () => JSON.stringify(Object.assign({}, cfg, {sel: null}));
+function gravarLS(){ try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) {} }
+function salvar(){ clearTimeout(tm); tm = setTimeout(() => { gravarLS(); const s = foto(); if (hist[hist.length - 1] !== s) { hist.push(s); if (hist.length > 60) hist.shift(); fut = []; } }, 300); }
+function restaurar(s){ const sel = cfg.sel; cfg = JSON.parse(s); cfg.sel = sel; gravarLS(); tamanho(); topo(); desenharLista(); painel(); }
+function desfazer(){ if (hist.length < 2) return toast("Nada para desfazer"); fut.push(hist.pop()); restaurar(hist[hist.length - 1]); toast("Desfeito"); }
+function refazer(){ if (!fut.length) return toast("Nada para refazer"); const s = fut.pop(); hist.push(s); restaurar(s); toast("Refeito"); }
 const uid = () => Math.random().toString(36).slice(2, 9);
-const camada = () => cfg.layers.find(l => l.id == cfg.sel);
 function carregarImg(k, blob){ const im = new Image(); im.src = URL.createObjectURL(blob); imgs[k] = im; return im; }
+function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 1600); }
+function aviso(t){ const el = $("#msg"); if (el) el.textContent = t; else toast(t); }
+
+/* ---------- camadas, pastas e seleção ---------- */
+const pasta = id => cfg.folders.find(f => f.id == id);
+const fDe = L => L.parent ? pasta(L.parent) : null;
+const travada = L => !!(L.lock || (fDe(L) && fDe(L).lock));
+const visivel = L => !!(L.vis && !(fDe(L) && !fDe(L).vis));
+const tipoSel = () => cfg.sel == "balao" ? "bal" : String(cfg.sel || "").startsWith("f:") ? "pasta" : "camada";
+const camada = () => tipoSel() == "camada" ? cfg.layers.find(l => l.id == cfg.sel) : null;
+const pastaSel = () => tipoSel() == "pasta" ? pasta(cfg.sel.slice(2)) : null;
+function geo(L){ const f = fDe(L), s = f ? +f.s || 1 : 1; return {X: 50 + (L.x - 50) * s + (f ? +f.dx || 0 : 0), Y: 50 + (L.y - 50) * s + (f ? +f.dy || 0 : 0), w: L.w * s, s}; }
 
 /* ---------- áudio e voz ---------- */
 let ac, an, buf, saida, cur = null, sp = false, fake = 0, lvl = 0, piscaAte = 0, proxPisca = 0, cap = "", capIni = 0, capDur = 1;
@@ -167,7 +220,6 @@ async function dizer(t){
   }
   await vozNavegador(t);
 }
-function aviso(t){ const el = $("#msg"); if (el) el.textContent = t; }
 let es = null, esUrl = "", online = false;
 function selo(){ $("#st").textContent = online ? "Termux: conectado" : "Termux: desconectado"; $("#st").style.color = online ? "var(--te)" : "var(--mu)"; }
 function conectar(){
@@ -181,22 +233,146 @@ async function testar(){ aviso("Testando…");
   catch (e) { aviso("Não achei o servidor. Ele está rodando no Termux?"); } }
 const CMD = () => { const b = location.origin + "/Tamaki_Personagem/"; return "cd ~ && curl -fsSL " + b + "instalar-voz.sh -o instalar-voz.sh && bash instalar-voz.sh " + b; };
 
+/* ---------- efeitos: câmera, transições e intros ---------- */
+let A = [], hold = false, camAtual = {z: 1, px: 0, py: 0, rot: 0};
+const TEMPO = {impacto: 600, tremor: 700, balanco: 2000, zoomlento: 4000, pan: 4000, entrada: 1000, saida: 1000, flash: 600, cortina: 1000, iris: 1000, intro: 2500};
+function disparar(k){
+  if (k == "entrada") hold = false;
+  A.push({k, t0: performance.now(), dur: TEMPO[k] * (+cfg.fx.dur || 1), z0: +cfg.fx.zoom || 1, px0: +cfg.fx.px || 0, estilo: cfg.fx.intro});
+}
+function fim(a){
+  if (a.k == "zoomlento") { cfg.fx.zoom = +Math.min(3, a.z0 * 1.25).toFixed(2); salvar(); if (aba == "efeitos") painel(); }
+  else if (a.k == "pan") { cfg.fx.px = +Math.min(50, a.px0 + 15).toFixed(1); salvar(); if (aba == "efeitos") painel(); }
+  else if (a.k == "saida") hold = true;
+}
+function camera(now){
+  const f = cfg.fx; let z = +f.zoom || 1, px = +f.px || 0, py = +f.py || 0, rot = +f.rot || 0;
+  for (const a of A) {
+    const p = Math.min(1, (now - a.t0) / a.dur), e = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+    if (a.k == "impacto") { const q = p < .25 ? p / .25 : 1 - (p - .25) / .75; z *= 1 + .25 * q; }
+    else if (a.k == "tremor") { const q = (1 - p) * 3; px += (Math.random() - .5) * q; py += (Math.random() - .5) * q; rot += (Math.random() - .5) * q * .8; }
+    else if (a.k == "balanco") rot += Math.sin(p * Math.PI * 4) * 3 * (1 - p * .5);
+    else if (a.k == "zoomlento") z = a.z0 * (1 + .25 * e);
+    else if (a.k == "pan") px = a.px0 + 15 * e;
+  }
+  if (f.reage) z *= 1 + lvl * .06;
+  return {z, px, py, rot};
+}
+function cena(x, y, comCam){ // ponto da tela -> ponto da cena (sem a câmera)
+  if (!comCam) return [x, y];
+  const W = cv.width, H = cv.height, c = camAtual, a = -c.rot * Math.PI / 180;
+  let dx = x - W / 2, dy = y - H / 2; [dx, dy] = [dx * Math.cos(a) - dy * Math.sin(a), dx * Math.sin(a) + dy * Math.cos(a)];
+  return [dx / c.z + W / 2 + c.px / 100 * W, dy / c.z + H / 2 + c.py / 100 * H];
+}
+function sobreposicoes(now, W, H){
+  for (const a of A) {
+    const p = Math.min(1, (now - a.t0) / a.dur); g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+    if (a.k == "entrada") { g.fillStyle = `rgba(0,0,0,${1 - p})`; g.fillRect(0, 0, W, H); }
+    else if (a.k == "saida") { g.fillStyle = `rgba(0,0,0,${p})`; g.fillRect(0, 0, W, H); }
+    else if (a.k == "flash") { g.fillStyle = `rgba(255,255,255,${(1 - p) * .9})`; g.fillRect(0, 0, W, H); }
+    else if (a.k == "cortina") { g.fillStyle = "#000"; if (p < .5) g.fillRect(0, 0, W * p * 2, H); else g.fillRect(W * (p - .5) * 2, 0, W, H); }
+    else if (a.k == "iris") { const R = Math.hypot(W, H) / 2, r = p < .5 ? R * (1 - p * 2) : R * ((p - .5) * 2); g.beginPath(); g.rect(0, 0, W, H); g.arc(W / 2, H / 2, Math.max(0, r), 0, Math.PI * 2); g.fillStyle = "#000"; g.fill("evenodd"); }
+    else if (a.k == "intro") intro(a, p, W, H);
+    g.restore();
+  }
+  if (hold && !A.some(a => a.k == "entrada")) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = "#000"; g.fillRect(0, 0, W, H); }
+}
+function intro(a, p, W, H){
+  const f = cfg.fx, env = Math.max(0, Math.min(1, p / .15, (1 - p) / .15)), m = Math.min(W, H), cor = f.cor || "#ff9f45", T = f.titulo || "";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  if (a.estilo == "impacto") {
+    g.globalAlpha = env; g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+    g.translate(W / 2, H / 2); g.rotate(p * .6); g.fillStyle = cor; const R = Math.hypot(W, H);
+    for (let i = 0; i < 24; i++) { g.rotate(Math.PI * 2 / 24); g.beginPath(); g.moveTo(0, 0); g.lineTo(-m * .06, -R); g.lineTo(m * .06, -R); g.closePath(); g.fill(); }
+    g.setTransform(1, 0, 0, 1, 0, 0); const sh = (1 - p) * 10, tx = W / 2 + (Math.random() - .5) * sh, ty = H / 2 + (Math.random() - .5) * sh;
+    g.font = `${m * .08}px 'Press Start 2P', monospace`; g.lineWidth = m * .022; g.lineJoin = "round"; g.strokeStyle = "#120f24"; g.strokeText(T, tx, ty); g.fillStyle = "#fff"; g.fillText(T, tx, ty);
+  } else if (a.estilo == "faixa") {
+    const off = p < .15 ? -W * Math.pow(1 - p / .15, 3) : p > .85 ? -W * Math.pow((p - .85) / .15, 3) : 0, h = m * .15, y = H * .68;
+    g.fillStyle = cor; g.fillRect(off, y, W * .72, h); g.fillStyle = "#120f24"; g.fillRect(off, y + h, W * .72, m * .012);
+    g.textAlign = "left"; g.fillStyle = "#1a0f05"; g.font = `700 ${h * .4}px Georgia, serif`; g.fillText(T, off + m * .05, y + h * (f.sub ? .38 : .5));
+    if (f.sub) { g.font = `800 ${h * .22}px Nunito, system-ui, sans-serif`; g.fillText(f.sub, off + m * .05, y + h * .76); }
+  } else {
+    g.fillStyle = `rgba(0,0,0,${.65 * env})`; g.fillRect(0, 0, W, H); g.globalAlpha = env;
+    g.fillStyle = cor; g.font = `700 ${m * .1 * (.9 + .1 * env)}px Georgia, serif`; g.fillText(T, W / 2, H * .46);
+    if (f.sub) { g.fillStyle = "#fff"; g.font = `800 ${m * .045}px Nunito, system-ui, sans-serif`; g.fillText(f.sub, W / 2, H * .46 + m * .11); }
+  }
+}
+
+/* ---------- balão de fala ---------- */
+let balR = null, ancora = {};
+const hexA = (h, a) => { const n = parseInt(String(h || "#000000").slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+function fonte(B, fs, peso){ return B.fonte == "pixel" ? `${fs}px 'Press Start 2P', monospace` : B.fonte == "redonda" ? `800 ${fs}px Nunito, system-ui, sans-serif` : `${peso || ""} ${fs}px Georgia, serif`; }
+function rabo(B, bx, by, w, h){
+  const L = Math.min(w, h) * .4, b = Math.min(w, h) * .12, rx = bx + w * B.raboX, ry = by + h * B.raboX;
+  return {baixo: [[rx - b, by + h - 2], [rx + b, by + h - 2], [rx - b * .3, by + h + L]], cima: [[rx - b, by + 2], [rx + b, by + 2], [rx - b * .3, by - L]],
+    esquerda: [[bx + 2, ry - b], [bx + 2, ry + b], [bx - L, ry + b * .3]], direita: [[bx + w - 2, ry - b], [bx + w - 2, ry + b], [bx + w + L, ry + b * .3]]}[B.rabo] || null;
+}
+function balao(now, W, H, base){
+  const B = cfg.bal; balR = null; if (!B.on) return;
+  let txt = "", ph = false;
+  if (cap) { const el = now - capIni; if (el > capDur + 2500) cap = ""; else txt = B.digitar ? cap.slice(0, Math.floor(cap.length * Math.min(1, el / capDur))) : cap; }
+  if (!cap && cfg.guides && !rec) { txt = "A fala da Tamaki aparece aqui."; ph = true; }
+  const P = B.pos[cfg.fmt]; let cx = +P.x, cy = +P.y; const an2 = B.seguir && ancora[B.seguir]; if (an2) { cx += an2.x; cy += an2.y; }
+  const w = P.w / 100 * W, h = P.h / 100 * H, bx = cx / 100 * W - w / 2, by = cy / 100 * H - h / 2;
+  balR = {x: bx, y: by, w, h, cam: !!B.cam};
+  const marcado = cfg.sel == "balao" && cfg.guides && !rec;
+  if (!txt && !marcado) return;
+  g.save(); if (B.cam) base(); else g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalAlpha = ph ? .55 : 1;
+  const m = Math.min(W, H), pix = B.fonte == "pixel", fs = B.tam / 100 * m * (pix ? 1 : 1.35), lh = fs * (pix ? 1.8 : 1.3), fundo = hexA(B.fundo, B.opF);
+  if (B.estilo == "rpg") { g.fillStyle = fundo; g.fillRect(bx, by, w, h); g.strokeStyle = B.borda; g.lineWidth = 3; g.strokeRect(bx + 3, by + 3, w - 6, h - 6); g.strokeRect(bx + 10, by + 10, w - 20, h - 20); }
+  else if (B.estilo == "balao") {
+    const r = Math.min(h / 2, m * .045), t = rabo(B, bx, by, w, h), tri = () => { g.beginPath(); g.moveTo(...t[0]); g.lineTo(...t[2]); g.lineTo(...t[1]); g.closePath(); };
+    g.fillStyle = fundo; g.strokeStyle = B.borda; g.lineWidth = 4;
+    if (t) { tri(); g.fill(); }
+    g.beginPath(); g.roundRect ? g.roundRect(bx, by, w, h, r) : g.rect(bx, by, w, h); g.fill(); g.stroke();
+    if (t) { g.beginPath(); g.moveTo(...t[0]); g.lineTo(...t[2]); g.lineTo(...t[1]); g.stroke(); tri(); g.fill(); }
+  }
+  else if (B.estilo == "faixa") { g.fillStyle = fundo; g.fillRect(bx, by, w, h); g.fillStyle = B.nomeCor; g.fillRect(bx, by, w, m * .008); }
+  if (B.nome) {
+    g.font = fonte(B, fs * .85, 700); const tw = g.measureText(B.nome).width, pad = fs * .5, ph2 = fs * 1.7, nx = bx + fs * .6, ny = by - ph2 * .7;
+    g.fillStyle = B.nomeCor; g.fillRect(nx, ny, tw + pad * 2, ph2); g.fillStyle = "#1a0f05"; g.textBaseline = "middle"; g.textAlign = "left"; g.fillText(B.nome, nx + pad, ny + ph2 / 2);
+  }
+  if (txt) {
+    const pad = B.estilo == "rpg" ? fs * 1.3 : fs * .9, max = w - pad * 2;
+    g.font = fonte(B, fs); g.textBaseline = "top"; g.textAlign = B.alinh == "center" ? "center" : "left";
+    const lin = []; let l = "";
+    for (const p of txt.split(" ")) { const n = l ? l + " " + p : p; if (g.measureText(n).width > max && l) { lin.push(l); l = p; } else l = n; }
+    if (l) lin.push(l);
+    const x = B.alinh == "center" ? bx + w / 2 : bx + pad, nmax = Math.max(1, Math.floor((h - pad * 2 + lh - fs) / lh));
+    lin.slice(0, nmax).forEach((s, i) => {
+      const y = by + pad + i * lh;
+      if (B.estilo == "texto") { g.lineJoin = "round"; g.lineWidth = fs * .22; g.strokeStyle = B.borda; g.strokeText(s, x, y); }
+      g.fillStyle = B.texto; g.fillText(s, x, y);
+    });
+  }
+  if (marcado) { g.globalAlpha = 1; g.setLineDash([10, 8]); g.strokeStyle = "#5fd9cf"; g.lineWidth = 3; g.strokeRect(bx - 5, by - 5, w + 10, h + 10); g.setLineDash([]); }
+  g.restore();
+}
+
 /* ---------- gravar vídeo ---------- */
-let rec = null, partes = [];
+let rec = null, partes = [], parando = false;
 function gravar(){
-  if (rec) { rec.stop(); return; }
+  if (rec) {
+    if (parando) return;
+    if (cfg.fx.gSaida) { parando = true; disparar("saida"); setTimeout(() => rec && rec.stop(), TEMPO.saida * (+cfg.fx.dur || 1) + 150); }
+    else rec.stop();
+    return;
+  }
   if (!window.MediaRecorder || !cv.captureStream) { alert("Este navegador não grava vídeo. Use o Chrome."); return; }
-  audio();
+  audio(); hold = false;
   const s = cv.captureStream(30); saida.stream.getAudioTracks().forEach(t => s.addTrack(t));
   const tipo = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(m => MediaRecorder.isTypeSupported(m));
   rec = new MediaRecorder(s, tipo ? {mimeType: tipo} : {}); partes = [];
   rec.ondataavailable = e => { if (e.data.size) partes.push(e.data); };
-  rec.onstop = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(partes, {type: "video/webm"})); a.download = "palco-tamaki.webm"; a.click(); rec = null; $("#bRec").classList.remove("on"); $("#bRec").textContent = "● Gravar"; };
+  rec.onstop = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(partes, {type: "video/webm"})); a.download = "palco-tamaki.webm"; a.click(); rec = null; parando = false; hold = false; $("#bRec").classList.remove("on"); $("#bRec").textContent = "● Gravar"; };
   rec.start(); $("#bRec").classList.add("on"); $("#bRec").textContent = "■ Parar gravação";
-  if (cfg.motor == "browser") alert("A voz do navegador não entra na gravação. Para gravar com voz, use o Termux ou Tocar áudio.");
+  if (cfg.fx.gEntrada) disparar("entrada");
+  if (cfg.fx.gIntro) disparar("intro");
+  if (cfg.motor == "browser") toast("A voz do navegador não entra na gravação");
 }
 
-/* ---------- desenho do palco ---------- */
+/* ---------- desenho ---------- */
 function tamanho(){ const v = cfg.fmt == "9:16"; cv.width = v ? 720 : 1280; cv.height = v ? 1280 : 720; caber(); }
 function caber(){ const t = $("#tela"), w = t.clientWidth - 16, h = t.clientHeight - 16; if (w <= 0 || h <= 0) return;
   const k = Math.min(w / cv.width, h / cv.height); cv.style.width = Math.floor(cv.width * k) + "px"; cv.style.height = Math.floor(cv.height * k) + "px"; }
@@ -212,13 +388,15 @@ function tick(now){
   const falando = lvl > cfg.thr;
   if (now > proxPisca) { piscaAte = now + 140; proxPisca = now + 2500 + Math.random() * 3000; }
   const pisca = now < piscaAte;
+  for (const a of A.slice()) if (now > a.t0 + a.dur) { A.splice(A.indexOf(a), 1); fim(a); }
+  const c = camera(now); camAtual = c;
   g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.clearRect(0, 0, W, H);
   const bg = rec && cfg.bg == "check" ? "chroma" : cfg.bg;
   if (bg == "chroma") { g.fillStyle = "#00b140"; g.fillRect(0, 0, W, H); } else if (bg == "app") { g.fillStyle = "#120f24"; g.fillRect(0, 0, W, H); }
+  const base = () => { g.setTransform(1, 0, 0, 1, 0, 0); g.translate(W / 2, H / 2); g.rotate(c.rot * Math.PI / 180); g.scale(c.z, c.z); g.translate(-W / 2 - c.px / 100 * W, -H / 2 - c.py / 100 * H); };
+  ancora = {}; const soma = {};
   for (const L of cfg.layers) {
-    const im = imgs[L.img]; if (!L.vis || !im || !im.complete || !im.naturalWidth) continue;
-    if ((L.role == "open" && !falando) || (L.role == "closed" && falando) || (L.role == "eyeopen" && pisca) || (L.role == "eyeclosed" && !pisca)) continue;
-    let dx = 0, dy = 0, dr = 0, ds = 1, op = L.op ?? 1; const k = L.is * 2;
+    let dx = 0, dy = 0, dr = 0, ds = 1, op = L.op ?? 1; const k = L.is * 2, G = geo(L);
     if (L.idle == "bob") dy += Math.sin(t * k) * L.ia * .5;
     else if (L.idle == "sway") dr += Math.sin(t * k) * L.ia;
     else if (L.idle == "breathe") ds += Math.sin(t * k) * L.ia / 100;
@@ -227,175 +405,296 @@ function tick(now){
     else if (L.talk == "shake") dx += (Math.random() - .5) * lvl * L.ta;
     else if (L.talk == "grow") ds += lvl * L.ta / 100;
     else if (L.talk == "tilt") dr += Math.sin(t * 12) * lvl * L.ta;
-    const w = L.w / 100 * W, h = w * im.naturalHeight / im.naturalWidth;
-    g.save(); g.globalAlpha = Math.max(0, Math.min(1, op));
-    g.translate((L.x + dx) / 100 * W, (L.y + dy) / 100 * H); g.rotate((L.r + dr) * Math.PI / 180); g.scale((L.flip ? -1 : 1) * ds, ds);
+    ancora[L.id] = {x: G.X + dx, y: G.Y + dy};
+    if (L.parent) { const s = soma[L.parent] || (soma[L.parent] = {x: 0, y: 0, n: 0}); s.x += G.X + dx; s.y += G.Y + dy; s.n++; }
+    const im = imgs[L.img]; if (!visivel(L) || !im || !im.complete || !im.naturalWidth) continue;
+    if ((L.role == "open" && !falando) || (L.role == "closed" && falando) || (L.role == "eyeopen" && pisca) || (L.role == "eyeclosed" && !pisca)) continue;
+    const w = G.w / 100 * W, h = w * im.naturalHeight / im.naturalWidth;
+    base(); g.globalAlpha = Math.max(0, Math.min(1, op));
+    g.translate((G.X + dx) / 100 * W, (G.Y + dy) / 100 * H); g.rotate((L.r + dr) * Math.PI / 180); g.scale((L.flip ? -1 : 1) * ds, ds);
     g.drawImage(im, -L.px * w, -L.py * h, w, h);
-    if (cfg.guides && !rec && L.id == cfg.sel) { g.globalAlpha = 1; g.setLineDash([10, 8]); g.strokeStyle = "#5fd9cf"; g.lineWidth = 3; g.strokeRect(-L.px * w, -L.py * h, w, h); g.setLineDash([]); g.fillStyle = "#ff9f45"; g.beginPath(); g.arc(0, 0, 9, 0, 7); g.fill(); }
-    g.restore();
+    const sel = L.id == cfg.sel, daPasta = L.parent && cfg.sel == "f:" + L.parent;
+    if (cfg.guides && !rec && (sel || daPasta)) { g.globalAlpha = 1; g.setLineDash([10, 8]); g.strokeStyle = sel ? "#5fd9cf" : "#f2b632"; g.lineWidth = 3 / c.z; g.strokeRect(-L.px * w, -L.py * h, w, h); g.setLineDash([]); if (sel) { g.fillStyle = "#ff9f45"; g.beginPath(); g.arc(0, 0, 9, 0, 7); g.fill(); } }
   }
-  // legenda estilo caixa de diálogo
-  let txt = "", ph = false;
-  if (cap) { const el = now - capIni; if (el > capDur + 2500) cap = ""; else txt = cap.slice(0, Math.floor(cap.length * Math.min(1, el / capDur))); }
-  if (!cap && cfg.guides && !rec) { txt = "A fala da Tamaki aparece aqui."; ph = true; }
-  if (cfg.cap && txt) {
-    const bh = H * cfg.caph / 100, bx = W * .03, by = H - bh - H * .03, bw = W * .94, fs = W * cfg.capsz / 100 * (cfg.fmt == "16:9" ? .55 : 1);
-    g.globalAlpha = ph ? .45 : 1; g.fillStyle = "#06050f"; g.fillRect(bx, by, bw, bh);
-    g.strokeStyle = "#fff"; g.lineWidth = 3; g.strokeRect(bx + 3, by + 3, bw - 6, bh - 6); g.strokeRect(bx + 10, by + 10, bw - 20, bh - 20);
-    g.fillStyle = "#fff"; g.font = fs + "px 'Press Start 2P', monospace"; g.textBaseline = "top";
-    const lin = [], max = bw - fs * 2.4; let l = "";
-    for (const p of txt.split(" ")) { const n = l ? l + " " + p : p; if (g.measureText(n).width > max && l) { lin.push(l); l = p; } else l = n; }
-    if (l) lin.push(l);
-    lin.slice(0, Math.max(1, Math.floor((bh - fs * 2) / (fs * 1.8)))).forEach((s, i) => g.fillText(s, bx + fs * 1.2, by + fs * 1.2 + i * fs * 1.8));
-    g.globalAlpha = 1;
-  }
+  for (const k in soma) ancora["f:" + k] = {x: soma[k].x / soma[k].n, y: soma[k].y / soma[k].n};
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  balao(now, W, H, base);
+  sobreposicoes(now, W, H);
 }
 
-/* ---------- tocar no palco: escolher e arrastar ---------- */
+/* ---------- tocar no palco: escolher, arrastar e pinçar ---------- */
 const pontos = new Map(); let arr = null;
 function ponto(e){ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * cv.width, (e.clientY - r.top) / r.height * cv.height]; }
 function acertou(L, x, y){
   const im = imgs[L.img]; if (!im || !im.naturalWidth) return false;
-  const W = cv.width, H = cv.height, w = L.w / 100 * W, h = w * im.naturalHeight / im.naturalWidth, a = -L.r * Math.PI / 180;
-  let px = x - L.x / 100 * W, py = y - L.y / 100 * H; [px, py] = [px * Math.cos(a) - py * Math.sin(a), px * Math.sin(a) + py * Math.cos(a)];
+  const W = cv.width, H = cv.height, G = geo(L), w = G.w / 100 * W, h = w * im.naturalHeight / im.naturalWidth, a = -L.r * Math.PI / 180;
+  let px = x - G.X / 100 * W, py = y - G.Y / 100 * H; [px, py] = [px * Math.cos(a) - py * Math.sin(a), px * Math.sin(a) + py * Math.cos(a)];
   if (L.flip) px = -px; px += L.px * w; py += L.py * h; return px >= 0 && py >= 0 && px <= w && py <= h;
+}
+function inicioArraste(){
+  const tp = tipoSel();
+  if (tp == "bal") { if (cfg.bal.lock) return toast("Balão travado 🔒"), null; const P = cfg.bal.pos[cfg.fmt]; return {o: P, x0: +P.x, y0: +P.y, w0: +P.w, h0: +P.h, cam: !!cfg.bal.cam}; }
+  if (tp == "pasta") { const f = pastaSel(); if (!f) return null; if (f.lock) return toast("Pasta travada 🔒"), null; return {o: f, x0: +f.dx || 0, y0: +f.dy || 0, s0: +f.s || 1, cam: true}; }
+  const L = camada(); if (!L) return null; if (travada(L)) return toast("Camada travada 🔒"), null;
+  return {o: L, x0: L.x, y0: L.y, w0: L.w, cam: true, s: geo(L).s};
 }
 cv.addEventListener("pointerdown", e => {
   cv.setPointerCapture(e.pointerId); pontos.set(e.pointerId, [e.clientX, e.clientY]);
-  if (pontos.size == 1) { const [x, y] = ponto(e), alvo = [...cfg.layers].reverse().find(L => L.vis && acertou(L, x, y)); if (alvo && alvo.id != cfg.sel) selecionar(alvo.id); }
-  const L = camada(); if (!L) return;
-  arr = {x: e.clientX, y: e.clientY, lx: L.x, ly: L.y, w: L.w, d: 0};
+  if (pontos.size == 1) {
+    const [x, y] = ponto(e); let alvo = null;
+    if (cfg.bal.on && !cfg.bal.lock && balR) { const [bx, by] = cena(x, y, balR.cam); if (bx >= balR.x && by >= balR.y && bx <= balR.x + balR.w && by <= balR.y + balR.h) alvo = "balao"; }
+    if (!alvo) { const [sx, sy] = cena(x, y, true), L = [...cfg.layers].reverse().find(L => visivel(L) && !travada(L) && acertou(L, sx, sy)); if (L) alvo = L.parent && cfg.sel == "f:" + L.parent ? cfg.sel : L.id; }
+    if (alvo && alvo != cfg.sel) selecionar(alvo, true);
+  }
+  const it = inicioArraste(); if (!it) { arr = null; return; }
+  arr = Object.assign(it, {cx: e.clientX, cy: e.clientY, d: 0});
   if (pontos.size == 2) { const [a, b] = [...pontos.values()]; arr.d = Math.hypot(a[0] - b[0], a[1] - b[1]); }
 });
 cv.addEventListener("pointermove", e => {
   if (!arr || !pontos.has(e.pointerId)) return; pontos.set(e.pointerId, [e.clientX, e.clientY]);
-  const L = camada(); if (!L) return; const r = cv.getBoundingClientRect();
-  if (pontos.size == 2 && arr.d) { const [a, b] = [...pontos.values()]; L.w = +Math.max(2, Math.min(300, arr.w * Math.hypot(a[0] - b[0], a[1] - b[1]) / arr.d)).toFixed(1); }
-  else if (pontos.size == 1) { L.x = +(arr.lx + (e.clientX - arr.x) / r.width * 100).toFixed(1); L.y = +(arr.ly + (e.clientY - arr.y) / r.height * 100).toFixed(1); }
+  const r = cv.getBoundingClientRect(), z = arr.cam ? camAtual.z : 1, tp = tipoSel(), o = arr.o;
+  if (pontos.size == 2 && arr.d) {
+    const [a, b] = [...pontos.values()], k = Math.hypot(a[0] - b[0], a[1] - b[1]) / arr.d;
+    if (tp == "bal") { o.w = +Math.max(10, Math.min(100, arr.w0 * k)).toFixed(1); o.h = +Math.max(5, Math.min(70, arr.h0 * k)).toFixed(1); }
+    else if (tp == "pasta") o.s = +Math.max(.2, Math.min(3, arr.s0 * k)).toFixed(2);
+    else o.w = +Math.max(2, Math.min(300, arr.w0 * k)).toFixed(1);
+  } else if (pontos.size == 1) {
+    const dx = (e.clientX - arr.cx) / r.width * 100 / z, dy = (e.clientY - arr.cy) / r.height * 100 / z;
+    if (tp == "pasta") { o.dx = +(arr.x0 + dx).toFixed(1); o.dy = +(arr.y0 + dy).toFixed(1); }
+    else if (tp == "bal") { o.x = +(arr.x0 + dx).toFixed(1); o.y = +(arr.y0 + dy).toFixed(1); }
+    else { o.x = +(arr.x0 + dx / arr.s).toFixed(1); o.y = +(arr.y0 + dy / arr.s).toFixed(1); }
+  }
   sincronizar();
 });
 const solta = e => { pontos.delete(e.pointerId); if (!pontos.size && arr) { arr = null; salvar(); } };
 cv.addEventListener("pointerup", solta); cv.addEventListener("pointercancel", solta);
 
-/* ---------- camadas ---------- */
-function listaHTML(){
-  if (!cfg.layers.length) return '<p class="vazio">Nenhuma peça ainda. Toque em + PNG e escolha as partes da Tamaki: corpo, cabeça, olhos, bocas, fundo…</p>';
-  return [...cfg.layers].reverse().map(L => `<div class="ly${L.id == cfg.sel ? " on" : ""}" data-sel="${L.id}">
-    <img src="${imgs[L.img] ? imgs[L.img].src : ""}" alt=""><div class="nm">${esc(L.name)}<small>${(PAPEIS.find(p => p[0] == L.role) || PAPEIS[0])[1]} · ${Math.round((L.op ?? 1) * 100)}%</small></div>
-    <button class="olho${L.vis ? "" : " off"}" data-vis="${L.id}" aria-label="Mostrar ou esconder">👁</button></div>`).join("");
+/* ---------- lista de camadas ---------- */
+const icone = f => f.iconImg && imgs[f.iconImg] ? `<img class="fi" src="${imgs[f.iconImg].src}" alt="">` : `<span class="fi">${esc(f.icon || "📁")}</span>`;
+const cad = (id, on) => `<button class="ic${on ? " lk" : " off"}" data-lock="${id}" aria-label="${on ? "Destravar" : "Travar"}">${on ? "🔒" : "🔓"}</button>`;
+const olho = (id, on) => `<button class="ic${on ? "" : " off"}" data-vis="${id}" aria-label="Mostrar ou esconder">👁</button>`;
+function linhaCamada(L, filho){
+  return `<div class="ly${filho ? " filho" : ""}${L.id == cfg.sel ? " on" : ""}" data-sel="${L.id}"><img class="th" src="${imgs[L.img] ? imgs[L.img].src : ""}" alt="">
+    <div class="nm">${esc(L.name)}<small>${(PAPEIS.find(p => p[0] == L.role) || PAPEIS[0])[1]} · ${Math.round((L.op ?? 1) * 100)}%</small></div>${cad(L.id, L.lock)}${olho(L.id, L.vis)}</div>`;
 }
-const BARRA = '<label class="add" for="fPng">+ PNG</label><button data-a="dup">Duplicar</button><button data-a="sobe">▲ Frente</button><button data-a="desce">▼ Atrás</button><button data-a="apaga">Apagar</button>';
+function linhaPasta(f){
+  const n = cfg.layers.filter(l => l.parent == f.id).length;
+  return `<div class="ly pasta${cfg.sel == "f:" + f.id ? " on" : ""}" data-sel="f:${f.id}">${icone(f)}<div class="nm">${esc(f.name)}<small>${n} ${n == 1 ? "camada" : "camadas"}</small></div>
+    <button class="ic" data-abre="${f.id}" aria-label="Abrir ou fechar a pasta">${f.open === 0 ? "▸" : "▾"}</button>${cad("f:" + f.id, f.lock)}${olho("f:" + f.id, f.vis)}</div>`;
+}
+function listaHTML(){
+  const B = cfg.bal, out = [`<div class="ly${cfg.sel == "balao" ? " on" : ""}" data-sel="balao"><span class="fi">💬</span><div class="nm">Balão de fala<small>${{rpg: "Caixa RPG", balao: "Balão com rabinho", faixa: "Faixa", texto: "Só texto"}[B.estilo]}${B.seguir ? " · seguindo" : ""}</small></div>${cad("balao", B.lock)}${olho("balao", B.on)}</div>`];
+  const feitas = new Set();
+  for (const L of [...cfg.layers].reverse()) {
+    const f = fDe(L);
+    if (f) { if (feitas.has(f.id)) continue; feitas.add(f.id); out.push(linhaPasta(f)); if (f.open !== 0) [...cfg.layers].reverse().filter(x => x.parent == f.id).forEach(x => out.push(linhaCamada(x, true))); }
+    else out.push(linhaCamada(L, false));
+  }
+  cfg.folders.filter(f => !feitas.has(f.id)).forEach(f => out.push(linhaPasta(f)));
+  if (!cfg.layers.length) out.push('<p class="vazio">Toque em + PNG e escolha as partes da Tamaki: corpo, cabeça, olhos, bocas, fundo…</p>');
+  return out.join("");
+}
+const BARRA = '<label class="add" for="fPng">+ PNG</label><button data-a="novapasta">+ Pasta</button><button data-a="renomear">Renomear</button><button data-a="dup">Duplicar</button><button data-a="sobe">▲ Frente</button><button data-a="desce">▼ Atrás</button><button data-a="apaga">Apagar</button>';
 function desenharLista(){ $("#lista").innerHTML = listaHTML(); $("#barra").innerHTML = BARRA; if (aba == "camadas") painel(); }
-function selecionar(id){ cfg.sel = id; salvar(); desenharLista(); if (aba != "camadas" && aba != "fala" && aba != "voz") painel(); }
+function selecionar(id, doPalco){
+  cfg.sel = id; desenharLista(); gravarLS();
+  const tp = tipoSel();
+  if (tp == "bal" && (aba == "camada" || aba == "anim")) aba = "balao";
+  else if (tp != "bal" && aba == "balao" && doPalco) aba = "camada";
+  if (aba != "camadas" && aba != "fala" && aba != "voz" && aba != "efeitos") painel();
+}
 async function adicionar(files){
-  for (const f of files) { if (!/^image\//.test(f.type)) continue; const id = uid(), img = uid(); await idbPut(img, f); carregarImg(img, f);
-    cfg.layers.push({id, img, name: f.name.replace(/\.[^.]+$/, ""), x: 50, y: 50, w: 50, r: 0, px: .5, py: .5, vis: 1, flip: 0, op: 1, role: "always", idle: "none", ia: 3, is: 1, talk: "none", ta: 5}); cfg.sel = id; }
+  const f = pastaSel();
+  for (const fl of files) { if (!/^image\//.test(fl.type)) continue; const id = uid(), img = uid(); await idbPut(img, fl); carregarImg(img, fl);
+    cfg.layers.push({id, img, name: fl.name.replace(/\.[^.]+$/, ""), x: 50, y: 50, w: 50, r: 0, px: .5, py: .5, vis: 1, flip: 0, op: 1, lock: 0, parent: f ? f.id : null, role: "always", idle: "none", ia: 3, is: 1, talk: "none", ta: 5}); cfg.sel = id; }
   salvar(); desenharLista(); painel();
 }
+
+/* ---------- ações ---------- */
 async function acao(a, el){
-  const L = camada();
-  if (a == "falar") { audio(); falar(cfg.text); }
-  else if (a == "parar") parar();
-  else if (a == "gravar") gravar();
-  else if (a == "teste") fake = performance.now() + 4000;
-  else if (a == "ping") testar();
-  else if (a == "audio") $("#fAud").click();
-  else if (a == "cmd") { try { await navigator.clipboard.writeText(CMD()); aviso("Comando copiado. Cole no Termux."); } catch (e) { prompt("Copie o comando:", CMD()); } }
-  else if (a == "exp") exportar();
-  else if (a == "imp") $("#fImp").click();
-  else if (!L) return;
-  else if (a == "dup") { const n = Object.assign({}, L, {id: uid(), name: L.name + " 2", x: L.x + 3, y: L.y + 3}); cfg.layers.splice(cfg.layers.indexOf(L) + 1, 0, n); cfg.sel = n.id; salvar(); desenharLista(); painel(); }
+  const L = camada(), f = pastaSel(), tp = tipoSel();
+  const sempre = {
+    falar: () => { audio(); falar(cfg.text); }, parar: () => parar(), gravar, desfazer, refazer,
+    formato: () => { cfg.fmt = cfg.fmt == "16:9" ? "9:16" : "16:9"; tamanho(); topo(); salvar(); if (aba == "balao") painel(); },
+    fundo: () => { const o = Object.keys(FUNDOS); cfg.bg = o[(o.indexOf(cfg.bg) + 1) % o.length]; topo(); salvar(); },
+    teste: () => { fake = performance.now() + 4000; }, ping: testar, audio: () => $("#fAud").click(), exp: exportar, imp: () => $("#fImp").click(),
+    cmd: async () => { try { await navigator.clipboard.writeText(CMD()); aviso("Comando copiado. Cole no Termux."); } catch (e) { prompt("Copie o comando:", CMD()); } },
+    testebal: () => legenda("Gente, nem te conto! Este é um teste do balão de fala.", 3000),
+    balpadrao: () => { cfg.bal.pos[cfg.fmt] = copia(DEF.bal.pos[cfg.fmt]); cfg.bal.seguir = ""; salvar(); painel(); desenharLista(); },
+    camcentro: () => { Object.assign(cfg.fx, {zoom: 1, px: 0, py: 0, rot: 0}); salvar(); painel(); },
+    limpar: () => { A = []; hold = false; },
+    novapasta: () => { const n = (prompt("Nome da pasta:", "Pasta " + (cfg.folders.length + 1)) || "").trim(); if (!n) return;
+      const nf = {id: uid(), name: n, icon: "📁", iconImg: null, vis: 1, lock: 0, open: 1, dx: 0, dy: 0, s: 1}; cfg.folders.push(nf);
+      if (L && !L.parent) L.parent = nf.id; cfg.sel = "f:" + nf.id; aba = "camada"; salvar(); desenharLista(); painel(); toast(L ? "Pasta criada com a camada selecionada" : "Pasta criada"); },
+    renomear: () => { const o = L || f; if (!o) return toast("Escolha uma camada ou pasta"); const n = (prompt("Novo nome:", o.name) || "").trim(); if (!n) return; o.name = n; salvar(); desenharLista(); painel(); }
+  };
+  if (sempre[a]) return sempre[a]();
+  if (tp == "pasta" && f) {
+    if (a == "apaga") { if (!el.dataset.s) { el.dataset.s = 1; el.textContent = "Confirmar"; return; }
+      cfg.layers.forEach(x => { if (x.parent == f.id) x.parent = null; }); cfg.folders = cfg.folders.filter(x => x != f); cfg.sel = null; salvar(); desenharLista(); painel(); toast("Pasta apagada; as camadas ficaram na lista"); }
+    else if (a == "dup" || a == "sobe" || a == "desce") toast("Faça isso nas camadas da pasta");
+    return;
+  }
+  if (tp == "bal") { if (a == "apaga" || a == "dup" || a == "sobe" || a == "desce") toast("O balão fica sempre na frente; use o olho para esconder"); return; }
+  if (!L) return toast("Escolha uma camada");
+  if (a == "dup") { const n = Object.assign({}, L, {id: uid(), name: L.name + " 2", x: L.x + 3, y: L.y + 3, lock: 0}); cfg.layers.splice(cfg.layers.indexOf(L) + 1, 0, n); cfg.sel = n.id; salvar(); desenharLista(); painel(); }
   else if (a == "sobe" || a == "desce") { const i = cfg.layers.indexOf(L), j = i + (a == "sobe" ? 1 : -1); if (j < 0 || j >= cfg.layers.length) return; [cfg.layers[i], cfg.layers[j]] = [cfg.layers[j], cfg.layers[i]]; salvar(); desenharLista(); }
   else if (a == "apaga") { if (!el.dataset.s) { el.dataset.s = 1; el.textContent = "Confirmar"; return; }
-    cfg.layers = cfg.layers.filter(x => x != L); if (!cfg.layers.some(x => x.img == L.img)) { await idbDel(L.img); delete imgs[L.img]; }
-    cfg.sel = cfg.layers.length ? cfg.layers[cfg.layers.length - 1].id : null; salvar(); desenharLista(); painel(); }
+    cfg.layers = cfg.layers.filter(x => x != L); if (cfg.bal.seguir == L.id) cfg.bal.seguir = ""; cfg.sel = null; salvar(); desenharLista(); painel(); }
   else if (a == "centro") { L.x = 50; L.y = 50; sincronizar(); salvar(); }
 }
 
-/* ---------- painel de baixo ---------- */
+/* ---------- painéis de baixo ---------- */
 const opt = (a, v) => a.map(([k, n]) => `<option value="${k}"${k == v ? " selected" : ""}>${n}</option>`).join("");
-const rg = (k, rot, min, max, st, v, at = "k") => `<label class="f"><b>${rot}<i data-v="${k}">${v}</i></b><input type="range" data-${at}="${k}" min="${min}" max="${max}" step="${st}" value="${v}"></label>`;
-const sel = (k, rot, a, v, at = "k") => `<label class="f"><b>${rot}</b><select data-${at}="${k}">${opt(a, v)}</select></label>`;
-const semCamada = '<p class="vazio">Escolha uma camada na lista ou toque nela no palco.</p>';
+const rg = (at, k, rot, min, max, st, v) => `<label class="f"><b>${rot}<i>${v}</i></b><input type="range" data-${at}="${k}" min="${min}" max="${max}" step="${st}" value="${v}"></label>`;
+const sl = (at, k, rot, a, v) => `<label class="f"><b>${rot}</b><select data-${at}="${k}">${opt(a, v)}</select></label>`;
+const tx = (at, k, rot, v, ph) => `<label class="f"><b>${rot}</b><input type="text" data-${at}="${k}" value="${esc(v)}" placeholder="${esc(ph || "")}"></label>`;
+const co = (at, k, rot, v) => `<label class="f"><b>${rot}</b><input type="color" data-${at}="${k}" value="${esc(v)}"></label>`;
+const ck = (at, k, rot, v) => `<label class="chk"><input type="checkbox" data-${at}="${k}" ${v ? "checked" : ""}> ${rot}</label>`;
+const subs = (nome, atual, op) => `<div class="sub">${op.map(([k, n]) => `<button data-sub="${nome}:${k}" class="${k == atual ? "on" : ""}">${n}</button>`).join("")}</div>`;
+const semNada = '<p class="vazio">Escolha uma camada ou pasta na lista, ou toque nela no palco.</p>';
+function painelPasta(f){
+  const tem = cfg.layers.filter(l => l.parent == f.id || !l.parent);
+  return `<fieldset class="g"${f.lock ? " disabled" : ""}>${tx("p", "name", "Nome da pasta", f.name)}
+    ${rg("p", "dx", "Mover horizontal (%)", -60, 60, .1, +f.dx || 0)}${rg("p", "dy", "Mover vertical (%)", -60, 60, .1, +f.dy || 0)}${rg("p", "s", "Escala", .2, 3, .01, +f.s || 1)}</fieldset>
+    ${f.lock ? `<p class="dica">🔒 Pasta travada. <button class="bt" data-lock="f:${f.id}">Destravar</button></p>` : ""}
+    <div class="g" style="margin-top:8px"><div class="f"><b>Ícone da pasta</b><div class="icones">${ICONES.map(i => `<button data-icone="${i}" class="${!f.iconImg && f.icon == i ? "on" : ""}">${i}</button>`).join("")}<label for="fIco" title="Usar uma imagem">🖼</label></div></div>
+    <div class="f"><b>Camadas nesta pasta (toque para pôr ou tirar)</b><div class="chips">${tem.length ? tem.slice().reverse().map(l => `<button data-membro="${l.id}" class="${l.parent == f.id ? "on" : ""}">${esc(l.name)}</button>`).join("") : '<span class="dica">Nenhuma camada livre.</span>'}</div></div></div>`;
+}
 const PAINEIS = {
-  camadas: () => `<div class="lista" id="lista2">${listaHTML()}</div><div class="barra">${BARRA}</div>`,
-  camada: L => !L ? semCamada : `<div class="g">
-    <label class="f"><b>Nome</b><input type="text" data-k="name" value="${esc(L.name)}"></label>
-    ${sel("role", "Papel da peça", PAPEIS, L.role)}
-    ${rg("op", "Opacidade", 0, 1, .01, L.op ?? 1)}${rg("w", "Tamanho (%)", 2, 300, .5, L.w)}
-    ${rg("x", "Horizontal (%)", -20, 120, .1, L.x)}${rg("y", "Vertical (%)", -20, 120, .1, L.y)}
-    ${rg("r", "Rotação (°)", -180, 180, 1, L.r)}
-    <div class="chk"><label class="chk"><input type="checkbox" data-k="flip" ${L.flip ? "checked" : ""}> Espelhar</label><button class="bt" data-a="centro">Centralizar</button></div></div>`,
-  anim: L => !L ? semCamada : `<div class="g">
-    ${sel("idle", "Parada", PARADA, L.idle)}${rg("ia", "Intensidade parada", 0, 10, .1, L.ia)}${rg("is", "Velocidade parada", .2, 4, .1, L.is)}
-    ${sel("talk", "Falando", FALANDO, L.talk)}${rg("ta", "Intensidade falando", 0, 20, .5, L.ta)}
-    ${rg("px", "Pivô horizontal", 0, 1, .01, L.px)}${rg("py", "Pivô vertical", 0, 1, .01, L.py)}
-    <div class="chk"><button class="bt" data-a="teste">Testar movimento</button></div></div>
-    <p class="dica">O pivô é a bolinha laranja: o ponto onde a peça gira. Para a cabeça, coloque no pescoço.</p>`,
+  camadas: () => `<div class="lista">${listaHTML()}</div><div class="barra">${BARRA}</div>`,
+  camada: () => {
+    const tp = tipoSel(); if (tp == "bal") return PAINEIS.balao(); if (tp == "pasta") return pastaSel() ? painelPasta(pastaSel()) : semNada;
+    const L = camada(); if (!L) return semNada; const tr = travada(L);
+    return `<fieldset class="g"${tr ? " disabled" : ""}>${tx("k", "name", "Nome", L.name)}
+      ${sl("k", "parent", "Pasta", [["", "(sem pasta)"], ...cfg.folders.map(f => [f.id, (f.icon || "📁") + " " + f.name])], L.parent || "")}
+      ${sl("k", "role", "Papel da peça", PAPEIS, L.role)}
+      ${rg("k", "op", "Opacidade", 0, 1, .01, L.op ?? 1)}${rg("k", "w", "Tamanho (%)", 2, 300, .5, L.w)}
+      ${rg("k", "x", "Horizontal (%)", -20, 120, .1, L.x)}${rg("k", "y", "Vertical (%)", -20, 120, .1, L.y)}${rg("k", "r", "Rotação (°)", -180, 180, 1, L.r)}
+      <div class="btns">${ck("k", "flip", "Espelhar", L.flip)}<button class="bt" data-a="centro">Centralizar</button></div></fieldset>
+      ${tr ? `<p class="dica">🔒 Travada${L.lock ? "" : " pela pasta"}. <button class="bt" data-lock="${L.lock ? L.id : "f:" + L.parent}">Destravar</button></p>` : ""}`;
+  },
+  anim: () => {
+    const L = camada(); if (!L) return tipoSel() == "camada" ? semNada : '<p class="vazio">A animação é por camada. Escolha uma camada.</p>';
+    return `<fieldset class="g"${travada(L) ? " disabled" : ""}>
+      ${sl("k", "idle", "Parada", PARADA, L.idle)}${rg("k", "ia", "Intensidade parada", 0, 10, .1, L.ia)}${rg("k", "is", "Velocidade parada", .2, 4, .1, L.is)}
+      ${sl("k", "talk", "Falando", FALANDO, L.talk)}${rg("k", "ta", "Intensidade falando", 0, 20, .5, L.ta)}
+      ${rg("k", "px", "Pivô horizontal", 0, 1, .01, L.px)}${rg("k", "py", "Pivô vertical", 0, 1, .01, L.py)}
+      <div class="btns"><button class="bt" data-a="teste">Testar movimento</button></div></fieldset>
+      <p class="dica">O pivô é a bolinha laranja, o ponto onde a peça gira. Para a cabeça, coloque no pescoço.</p>`;
+  },
+  balao: () => {
+    const B = cfg.bal, P = B.pos[cfg.fmt];
+    const alvos = [["", "Não seguir (fica parado)"], ...cfg.folders.map(f => ["f:" + f.id, "Pasta: " + f.name]), ...cfg.layers.slice().reverse().map(l => [l.id, "Camada: " + l.name])];
+    let c = subs("b", subB, [["pos", "Posição"], ["estilo", "Estilo"], ["texto", "Texto"]]);
+    if (subB == "pos") c += `<fieldset class="g"${B.lock ? " disabled" : ""}>
+      ${rg("bp", "x", "Horizontal (%)", -60, 160, .1, P.x)}${rg("bp", "y", "Vertical (%)", -60, 160, .1, P.y)}
+      ${rg("bp", "w", "Largura (%)", 10, 100, .5, P.w)}${rg("bp", "h", "Altura (%)", 5, 70, .5, P.h)}
+      ${sl("b", "seguir", "Acompanhar", alvos, B.seguir)}
+      <div class="btns">${ck("b", "cam", "Acompanha a câmera", B.cam)}<button class="bt" data-a="balpadrao">Voltar ao padrão</button></div></fieldset>
+      <div class="btns">${ck("b", "on", "Mostrar balão", B.on)}${ck("b", "lock", "Travar 🔒", B.lock)}<span class="dica">Posição guardada para o formato ${cfg.fmt}. Arraste no palco ou use dois dedos para o tamanho.</span></div>`;
+    else if (subB == "estilo") c += `<div class="g">${sl("b", "estilo", "Estilo", [["rpg", "Caixa RPG"], ["balao", "Balão com rabinho"], ["faixa", "Faixa"], ["texto", "Só texto"]], B.estilo)}
+      ${co("b", "fundo", "Cor do fundo", B.fundo)}${rg("b", "opF", "Opacidade do fundo", 0, 1, .01, B.opF)}${co("b", "borda", "Cor da borda / contorno", B.borda)}
+      ${sl("b", "rabo", "Rabinho", [["baixo", "Embaixo"], ["cima", "Em cima"], ["esquerda", "À esquerda"], ["direita", "À direita"], ["nenhum", "Sem rabinho"]], B.rabo)}
+      ${rg("b", "raboX", "Posição do rabinho", 0, 1, .01, B.raboX)}</div><p class="dica">O rabinho aparece no estilo "Balão com rabinho".</p>`;
+    else c += `<div class="g">${sl("b", "fonte", "Fonte", [["pixel", "Pixel (jogo)"], ["redonda", "Arredondada"], ["classica", "Clássica"]], B.fonte)}
+      ${rg("b", "tam", "Tamanho da letra", 1.5, 7, .1, B.tam)}${co("b", "texto", "Cor do texto", B.texto)}
+      ${sl("b", "alinh", "Alinhamento", [["left", "À esquerda"], ["center", "Centralizado"]], B.alinh)}
+      ${tx("b", "nome", "Plaquinha com nome", B.nome, "Ex.: Tamaki")}${co("b", "nomeCor", "Cor da plaquinha", B.nomeCor)}
+      <div class="btns">${ck("b", "digitar", "Letra por letra", B.digitar)}<button class="bt" data-a="testebal">Testar balão</button></div></div>`;
+    return c;
+  },
   fala: () => `<div class="fala"><textarea data-c="text" placeholder="O que a Tamaki vai falar. Uma frase por linha.">${esc(cfg.text)}</textarea>
-    <div class="lado"><button class="bt pri" data-a="falar">▶ Falar</button><button class="bt" data-a="audio">Tocar áudio…</button>
-    <label class="chk"><input type="checkbox" data-c="cap" ${cfg.cap ? "checked" : ""}> Legenda</label>
-    ${rg("caph", "Altura da caixa", 8, 45, 1, cfg.caph, "c")}${rg("capsz", "Tamanho da letra", 1.5, 6, .1, cfg.capsz, "c")}<p class="dica" id="msg"></p></div></div>`,
+    <div class="lado"><button class="bt pri" data-a="falar">▶ Falar</button><button class="bt" data-a="audio">Tocar áudio…</button><button class="bt" data-a="testebal">Testar balão</button><p class="dica" id="msg">Cada linha vira uma fala no balão.</p></div></div>`,
+  efeitos: () => {
+    const F = cfg.fx, bot = (k, n) => `<button class="bt" data-fx="${k}">${n}</button>`;
+    let c = subs("e", subE, [["cam", "Câmera"], ["trans", "Transições"], ["intro", "Intros"], ["grav", "Ao gravar"]]);
+    if (subE == "cam") c += `<div class="g">${rg("x", "zoom", "Zoom", .5, 3, .01, F.zoom)}${rg("x", "px", "Mover horizontal", -50, 50, .1, F.px)}${rg("x", "py", "Mover vertical", -50, 50, .1, F.py)}${rg("x", "rot", "Girar (°)", -45, 45, .5, F.rot)}</div>
+      <div class="btns" style="margin-top:6px">${bot("zoomlento", "Zoom lento")}${bot("impacto", "Impacto")}${bot("tremor", "Tremor")}${bot("pan", "Panorâmica")}${bot("balanco", "Balanço")}<button class="bt" data-a="camcentro">Centralizar</button>${ck("x", "reage", "Zoom reage à voz", F.reage)}</div>
+      <div class="g">${rg("x", "dur", "Duração dos efeitos", .3, 4, .1, F.dur)}</div>`;
+    else if (subE == "trans") c += `<div class="btns">${bot("entrada", "Entrada (do preto)")}${bot("saida", "Saída (para o preto)")}${bot("flash", "Flash")}${bot("cortina", "Cortina")}${bot("iris", "Círculo")}<button class="bt" data-a="limpar">Limpar tela</button></div>
+      <div class="g" style="margin-top:6px">${rg("x", "dur", "Duração", .3, 4, .1, F.dur)}</div><p class="dica">Toque durante a gravação para entrar no vídeo.</p>`;
+    else if (subE == "intro") c += `<div class="g">${sl("x", "intro", "Estilo da intro", [["titulo", "Cartão de título"], ["impacto", "Impacto (linhas)"], ["faixa", "Faixa com nome"]], F.intro)}
+      ${tx("x", "titulo", "Título", F.titulo)}${tx("x", "sub", "Subtítulo", F.sub, "Ex.: Episódio 1")}${co("x", "cor", "Cor", F.cor)}
+      ${rg("x", "dur", "Duração", .3, 4, .1, F.dur)}<div class="btns"><button class="bt pri" data-fx="intro">▶ Tocar intro</button></div></div>`;
+    else c += `<div class="btns">${ck("x", "gIntro", "Começar com a intro", F.gIntro)}${ck("x", "gEntrada", "Começar com a entrada (do preto)", F.gEntrada)}${ck("x", "gSaida", "Terminar com a saída (para o preto)", F.gSaida)}</div>
+      <p class="dica">Ao tocar em ● Gravar, a central faz isso sozinha. Com fundo xadrez, o vídeo sai em verde chroma para recortar no CapCut.</p>`;
+    return c;
+  },
   voz: () => `<div class="g">
-    ${sel("motor", "Motor de voz", [["termux", "Termux (Kokoro)"], ["browser", "Voz do navegador"]], cfg.motor, "c")}
-    <label class="f"><b>Voz (id do Kokoro)</b><input type="text" data-c="voice" value="${esc(cfg.voice)}"></label>
-    ${rg("speed", "Velocidade", .6, 1.5, .05, cfg.speed, "c")}${rg("pause", "Pausa entre frases (s)", 0, 1.5, .05, cfg.pause, "c")}
-    ${rg("thr", "Limiar da boca", .02, .6, .01, cfg.thr, "c")}${rg("gain", "Ganho do volume", 1, 12, .5, cfg.gain, "c")}
-    <label class="f"><b>Endereço do Termux</b><input type="text" data-c="url" value="${esc(cfg.url)}" inputmode="url"></label>
-    <div class="chk"><button class="bt" data-a="ping">Testar conexão</button><button class="bt" data-a="cmd">Copiar instalação</button></div>
-    <div class="chk"><button class="bt" data-a="exp">Exportar palco</button><button class="bt" data-a="imp">Importar palco</button></div></div>
+    ${sl("c", "motor", "Motor de voz", [["termux", "Termux (Kokoro)"], ["browser", "Voz do navegador"]], cfg.motor)}${tx("c", "voice", "Voz (id do Kokoro)", cfg.voice)}
+    ${rg("c", "speed", "Velocidade", .6, 1.5, .05, cfg.speed)}${rg("c", "pause", "Pausa entre frases (s)", 0, 1.5, .05, cfg.pause)}
+    ${rg("c", "thr", "Limiar da boca", .02, .6, .01, cfg.thr)}${rg("c", "gain", "Ganho do volume", 1, 12, .5, cfg.gain)}
+    ${tx("c", "url", "Endereço do Termux", cfg.url)}
+    <div class="btns"><button class="bt" data-a="ping">Testar conexão</button><button class="bt" data-a="cmd">Copiar instalação</button></div>
+    <div class="btns"><button class="bt" data-a="exp">Exportar palco</button><button class="bt" data-a="imp">Importar palco</button></div></div>
     <p class="dica" id="msg">No Termux: <code>palco</code> liga a voz aqui; <code>falar "oi gente"</code> faz a Tamaki falar.</p>`
 };
-function painel(){ $("#painel").innerHTML = PAINEIS[aba](camada()); document.querySelectorAll("#ferr button").forEach(b => b.classList.toggle("on", b.dataset.t == aba)); }
-function sincronizar(){ const L = camada(); if (!L) return; ["x", "y", "w"].forEach(k => { const i = $(`#painel input[data-k="${k}"]`); if (i) i.value = L[k]; const v = $(`#painel i[data-v="${k}"]`); if (v) v.textContent = L[k]; }); }
+function painel(){ $("#painel").innerHTML = PAINEIS[aba](); document.querySelectorAll("#ferr button").forEach(b => b.classList.toggle("on", b.dataset.t == aba)); }
+function alvoDe(d){
+  if (d.k) return [camada(), d.k]; if (d.p) return [pastaSel(), d.p]; if (d.bp) return [cfg.bal.pos[cfg.fmt], d.bp];
+  if (d.b) return [cfg.bal, d.b]; if (d.x) return [cfg.fx, d.x]; if (d.c) return [cfg, d.c]; return [null];
+}
+function sincronizar(){ document.querySelectorAll("#painel input[type=range]").forEach(i => { const [o, k] = alvoDe(i.dataset); if (o && o[k] != null) { i.value = o[k]; const l = i.closest(".f").querySelector("i"); if (l) l.textContent = o[k]; } }); }
 function entrada(e){
-  const t = e.target, d = t.dataset; if (t.type == "file") return;
-  const v = t.type == "checkbox" ? (t.checked ? 1 : 0) : t.type == "range" ? parseFloat(t.value) : t.value;
-  if (d.c) { cfg[d.c] = v; if (d.c == "url") { clearTimeout(entrada.u); entrada.u = setTimeout(conectar, 600); } }
-  else if (d.k) { const L = camada(); if (!L) return; L[d.k] = v; if (d.k == "name" || d.k == "role" || d.k == "op") $("#lista").innerHTML = listaHTML(); }
-  else return;
-  const lab = t.closest(".f") && t.closest(".f").querySelector("i[data-v]"); if (lab) lab.textContent = v;
+  const t = e.target, d = t.dataset; if (t.type == "file" || !t.closest("#painel")) return;
+  const [o, k] = alvoDe(d); if (!o) return;
+  let v = t.type == "checkbox" ? (t.checked ? 1 : 0) : t.type == "range" ? parseFloat(t.value) : t.value;
+  if (d.k == "parent") v = v || null;
+  if (d.b == "seguir") { // mantém o balão no mesmo lugar ao trocar quem ele acompanha
+    for (const fm in cfg.bal.pos) { const P = cfg.bal.pos[fm], ve = cfg.bal.seguir && ancora[cfg.bal.seguir], no = v && ancora[v];
+      if (ve) { P.x = +(+P.x + ve.x).toFixed(1); P.y = +(+P.y + ve.y).toFixed(1); } if (no) { P.x = +(P.x - no.x).toFixed(1); P.y = +(P.y - no.y).toFixed(1); } }
+  }
+  o[k] = v;
+  const l = t.closest(".f") && t.closest(".f").querySelector("b i"); if (l) l.textContent = v;
+  if (d.c == "url") { clearTimeout(entrada.u); entrada.u = setTimeout(conectar, 600); }
+  if (["name", "role", "op", "parent", "estilo", "seguir", "on", "lock"].includes(k) && (d.k || d.p || d.b)) { $("#lista").innerHTML = listaHTML(); if (e.type == "change" && (k == "parent" || k == "lock" || k == "seguir")) painel(); }
   salvar();
 }
 document.addEventListener("input", entrada); document.addEventListener("change", entrada);
 document.addEventListener("click", e => {
-  const b = e.target.closest("[data-a]"); if (b && b.tagName == "BUTTON") return acao(b.dataset.a, b);
-  const o = e.target.closest("[data-vis]"); if (o) { const L = cfg.layers.find(l => l.id == o.dataset.vis); L.vis = L.vis ? 0 : 1; salvar(); desenharLista(); return; }
-  const s = e.target.closest("[data-sel]"); if (s) return selecionar(s.dataset.sel);
-  const tb = e.target.closest("[data-t]"); if (tb) { aba = tb.dataset.t; painel(); return; }
-  const f = e.target.closest("[data-f]"); if (f) { cfg.fmt = f.dataset.f; tamanho(); topo(); salvar(); return; }
-  const fb = e.target.closest("[data-b]"); if (fb) { cfg.bg = fb.dataset.b; topo(); salvar(); }
+  const q = s => e.target.closest(s);
+  let b;
+  if ((b = q("button[data-a]"))) return acao(b.dataset.a, b);
+  if ((b = q("[data-fx]"))) return disparar(b.dataset.fx);
+  if ((b = q("[data-icone]"))) { const f = pastaSel(); if (f) { f.icon = b.dataset.icone; f.iconImg = null; salvar(); desenharLista(); painel(); } return; }
+  if ((b = q("[data-membro]"))) { const f = pastaSel(), L = cfg.layers.find(l => l.id == b.dataset.membro); if (f && L) { L.parent = L.parent == f.id ? null : f.id; salvar(); desenharLista(); painel(); } return; }
+  if ((b = q("[data-lock]"))) { const id = b.dataset.lock, o = id == "balao" ? cfg.bal : id.startsWith("f:") ? pasta(id.slice(2)) : cfg.layers.find(l => l.id == id); if (o) { o.lock = o.lock ? 0 : 1; toast(o.lock ? "Travado 🔒" : "Destravado 🔓"); salvar(); desenharLista(); painel(); } return; }
+  if ((b = q("[data-vis]"))) { const id = b.dataset.vis; if (id == "balao") cfg.bal.on = cfg.bal.on ? 0 : 1; else { const o = id.startsWith("f:") ? pasta(id.slice(2)) : cfg.layers.find(l => l.id == id); if (o) o.vis = o.vis ? 0 : 1; } salvar(); desenharLista(); if (aba == "balao") painel(); return; }
+  if ((b = q("[data-abre]"))) { const f = pasta(b.dataset.abre); f.open = f.open === 0 ? 1 : 0; salvar(); desenharLista(); return; }
+  if ((b = q("[data-sel]"))) return selecionar(b.dataset.sel);
+  if ((b = q("[data-t]"))) { aba = b.dataset.t; painel(); return; }
+  if ((b = q("[data-sub]"))) { const [n, v] = b.dataset.sub.split(":"); if (n == "b") subB = v; else subE = v; painel(); }
 });
-function topo(){
-  document.querySelectorAll("#fmt button").forEach(b => b.classList.toggle("on", b.dataset.f == cfg.fmt));
-  document.querySelectorAll("#fundo button").forEach(b => b.classList.toggle("on", b.dataset.b == cfg.bg));
-  $("#guias").checked = !!cfg.guides;
-}
+function topo(){ $("#bFmt").textContent = cfg.fmt; $("#bFundo").textContent = FUNDOS[cfg.bg] || FUNDOS.check; $("#guias").checked = !!cfg.guides; }
 $("#guias").onchange = e => { cfg.guides = e.target.checked ? 1 : 0; salvar(); };
 $("#fPng").onchange = async e => { await adicionar(e.target.files); e.target.value = ""; };
 $("#fAud").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; audio(); try { await tocar(f, ""); } catch (x) { aviso("Não consegui tocar esse arquivo."); } };
 $("#fImp").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (f) importar(f); };
+$("#fIco").onchange = async e => { const fl = e.target.files[0], f = pastaSel(); e.target.value = ""; if (!fl || !f) return; const k = uid(); await idbPut(k, fl); const im = carregarImg(k, fl); f.iconImg = k; im.onload = () => { desenharLista(); painel(); }; salvar(); };
 
 /* ---------- cópia de segurança (mesmo formato do Palco da ficha) ---------- */
 const paraTexto = b => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(b); });
 async function exportar(){
-  const im = {}; for (const L of cfg.layers) if (!im[L.img]) { const b = await idbGet(L.img); if (b) im[L.img] = await paraTexto(b); }
+  const im = {}, chaves = [...cfg.layers.map(L => L.img), ...cfg.folders.map(f => f.iconImg).filter(Boolean)];
+  for (const k of chaves) if (!im[k]) { const b = await idbGet(k); if (b) im[k] = await paraTexto(b); }
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify({palco: 1, cfg: Object.assign({}, cfg, {url: undefined, motor: undefined}), imgs: im})], {type: "application/json"}));
   a.download = "palco-tamaki.json"; a.click(); aviso("Palco exportado.");
 }
 async function importar(f){
   try { const o = JSON.parse(await f.text()); if (!o.palco || !Array.isArray(o.cfg.layers)) throw 0;
     for (const k in o.imgs) { const b = await (await fetch(o.imgs[k])).blob(); await idbPut(k, b); carregarImg(k, b); }
-    cfg = Object.assign({}, DEF, o.cfg, {url: cfg.url, motor: cfg.motor}); salvar(); tamanho(); topo(); desenharLista(); painel(); aviso("Palco importado.");
+    cfg = normalizar(Object.assign({}, copia(DEF), o.cfg, {url: cfg.url, motor: cfg.motor})); salvar(); tamanho(); topo(); desenharLista(); painel(); aviso("Palco importado.");
   } catch (e) { aviso("Arquivo inválido."); }
 }
 
 /* ---------- início ---------- */
 (async () => {
-  try { const s = localStorage.getItem(KEY); if (s) cfg = Object.assign({}, DEF, JSON.parse(s)); } catch (e) {}
-  for (const L of cfg.layers) { try { const b = await idbGet(L.img); if (b && !imgs[L.img]) carregarImg(L.img, b); } catch (e) {} }
+  try { const s = localStorage.getItem(KEY); if (s) cfg = normalizar(Object.assign(copia(DEF), JSON.parse(s))); } catch (e) {}
+  const chaves = [...cfg.layers.map(L => L.img), ...cfg.folders.map(f => f.iconImg).filter(Boolean)];
+  for (const k of chaves) { try { const b = await idbGet(k); if (b && !imgs[k]) carregarImg(k, b); } catch (e) {} }
   const prontas = Object.values(imgs).map(im => new Promise(ok => { im.onload = im.onerror = ok; }));
-  tamanho(); topo(); desenharLista(); painel(); selo(); requestAnimationFrame(tick);
+  tamanho(); topo(); desenharLista(); painel(); selo(); hist = [foto()]; requestAnimationFrame(tick);
   await Promise.all(prontas); desenharLista();
   try { conectar(); } catch (e) {}
 })();
