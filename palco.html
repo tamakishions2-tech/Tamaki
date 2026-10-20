@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#120f24">
+<meta name="color-scheme" content="dark">
+<title>Palco · Estúdio da Tamaki</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#120f24;--pn:#1b1736;--pn2:#231e45;--ln:#2e2a55;--tx:#efe9f7;--mu:#a49cc9;--or:#ff9f45;--gold:#f2b632;--te:#5fd9cf;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--tx);font:14px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#app{height:100dvh;display:grid;grid-template-columns:270px 1fr;grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"cam palco" "cam doca"}
+/* camadas */
+#cam{grid-area:cam;display:flex;flex-direction:column;background:var(--pn);border-right:1px solid var(--ln);min-height:0}
+.tit{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-weight:700;border-bottom:1px solid var(--ln)}
+.lista{flex:1;min-height:0;overflow:auto;padding:6px}
+.ly{display:grid;grid-template-columns:56px 1fr auto;gap:8px;align-items:center;padding:6px;border:1px solid transparent;border-radius:10px;margin-bottom:4px;background:var(--pn2)}
+.ly.on{border-color:var(--or);background:#2f2552}
+.ly img{width:56px;height:56px;object-fit:contain;border-radius:6px;background:conic-gradient(#3a3560 25%,#2a2650 0 50%,#3a3560 0 75%,#2a2650 0) 0 0/12px 12px}
+.ly .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.ly small{display:block;color:var(--mu);font-weight:400}
+.olho{background:none;border:0;font-size:1.2rem;width:40px;height:40px;color:var(--mu)}
+.olho.off{opacity:.35}
+.barra{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px;border-top:1px solid var(--ln)}
+.barra button,.barra label{display:grid;place-items:center;background:var(--pn2);border:1px solid var(--ln);border-radius:8px;min-height:44px;font-size:.78rem;text-align:center;cursor:pointer}
+.barra .add{background:var(--or);color:#24130a;font-weight:700;border-color:var(--or)}
+.vazio{color:var(--mu);padding:14px;text-align:center}
+/* palco */
+#palco{grid-area:palco;display:flex;flex-direction:column;min-height:0}
+#topo{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--ln);background:var(--pn)}
+.bt{background:var(--pn2);border:1px solid var(--ln);border-radius:8px;padding:0 12px;min-height:40px}
+.bt.pri{background:var(--or);border-color:var(--or);color:#24130a;font-weight:700}
+.bt.rec{color:#ff6b6b}
+.bt.rec.on{background:#c62828;border-color:#c62828;color:#fff}
+.seg{display:inline-flex;border:1px solid var(--ln);border-radius:8px;overflow:hidden}
+.seg button{background:none;border:0;padding:0 10px;min-height:38px;color:var(--mu)}
+.seg button.on{background:var(--pn2);color:var(--or);font-weight:700}
+#st{margin-left:auto;color:var(--mu);font-size:.8rem}
+#tela{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px;overflow:hidden}
+#cv{flex:none;border-radius:8px;border:1px solid var(--ln);touch-action:none;background:conic-gradient(#3a3560 25%,#2a2650 0 50%,#3a3560 0 75%,#2a2650 0) 0 0/24px 24px}
+/* doca */
+#doca{grid-area:doca;background:var(--pn);border-top:1px solid var(--ln)}
+#painel{height:190px;overflow:auto;padding:10px 12px}
+#ferr{display:flex;border-top:1px solid var(--ln)}
+#ferr button{flex:1;background:none;border:0;border-top:3px solid transparent;min-height:50px;color:var(--mu);font-size:.85rem}
+#ferr button.on{color:var(--or);border-top-color:var(--gold);font-weight:700}
+#ferr .so-retrato{display:none}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 14px;align-items:end}
+.f{display:grid;gap:3px;font-size:.8rem;color:var(--mu)}
+.f b{display:flex;justify-content:space-between;font-weight:600}
+.f b i{font-style:normal;color:var(--tx)}
+.f input[type=range]{width:100%;accent-color:var(--or)}
+.f select,.f input[type=text],textarea{background:#0b0918;border:1px solid var(--ln);border-radius:8px;padding:8px;width:100%}
+.chk{display:flex;gap:8px;align-items:center;color:var(--mu);font-size:.85rem;min-height:40px}
+.fala{display:grid;grid-template-columns:1fr auto;gap:10px;height:100%}
+.fala textarea{height:100%;min-height:0;resize:none}
+.fala .lado{display:flex;flex-direction:column;gap:6px;min-width:150px}
+.dica{color:var(--mu);font-size:.8rem;margin:0}
+.esc{display:none}
+/* retrato (celular em pé) */
+@media (max-width:760px){
+  #app{grid-template-columns:1fr;grid-template-areas:"palco" "doca"}
+  #cam{display:none}
+  #ferr .so-retrato{display:block}
+  #painel{height:220px}
+  #painel .lista{padding:0}
+  #painel .barra{padding:6px 0 0}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="cam">
+    <div class="tit">Camadas <small class="dica">a de cima fica na frente</small></div>
+    <div class="lista" id="lista"></div>
+    <div class="barra" id="barra"></div>
+  </aside>
+  <section id="palco">
+    <div id="topo">
+      <button class="bt pri" data-a="falar">▶ Falar</button>
+      <button class="bt" data-a="parar">■ Parar</button>
+      <button class="bt rec" data-a="gravar" id="bRec">● Gravar</button>
+      <span class="seg" id="fmt"><button data-f="16:9">16:9</button><button data-f="9:16">9:16</button></span>
+      <span class="seg" id="fundo"><button data-b="check">Transparente</button><button data-b="chroma">Verde</button><button data-b="app">Roxo</button></span>
+      <label class="chk"><input type="checkbox" id="guias"> Guias</label>
+      <span id="st">Termux: desconectado</span>
+    </div>
+    <div id="tela"><canvas id="cv"></canvas></div>
+  </section>
+  <section id="doca">
+    <div id="painel"></div>
+    <nav id="ferr">
+      <button class="so-retrato" data-t="camadas">Camadas</button>
+      <button data-t="camada">Camada</button>
+      <button data-t="anim">Animação</button>
+      <button data-t="fala">Fala</button>
+      <button data-t="voz">Voz</button>
+    </nav>
+  </section>
+</div>
+<input type="file" id="fPng" accept="image/*" multiple class="esc">
+<input type="file" id="fAud" accept="audio/*" class="esc">
+<input type="file" id="fImp" accept=".json,application/json" class="esc">
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// Mesmos dados do Palco da Ficha da Tamaki (mesmo endereço do GitHub): as camadas aparecem nos dois.
+const KEY = "palco-cfg";
+const DEF = {url:"http://127.0.0.1:8765", motor:"termux", voice:"pf_dora", speed:1.05, pause:0.4, bg:"check", gain:4, thr:0.15, guides:1, cap:1, caph:24, capsz:3.2, text:"", layers:[], sel:null, fmt:"16:9"};
+const PAPEIS = [["always","Sempre visível"],["open","Boca aberta (falando)"],["closed","Boca fechada (parada)"],["eyeopen","Olho aberto"],["eyeclosed","Olho fechado (piscar)"]];
+const PARADA = [["none","Nenhuma"],["bob","Flutuar"],["sway","Balançar"],["breathe","Respirar"],["flicker","Cintilar"]];
+const FALANDO = [["none","Nenhuma"],["hop","Pular"],["shake","Tremer"],["grow","Esticar"],["tilt","Inclinar"]];
+let cfg = JSON.parse(JSON.stringify(DEF)), imgs = {}, aba = "camada", tm;
+const cv = $("#cv"), g = cv.getContext("2d");
+
+/* ---------- guardar ---------- */
+const idb = () => new Promise((ok, no) => { const r = indexedDB.open("palco", 1); r.onupgradeneeded = () => r.result.createObjectStore("img"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+const idbPut = async (k, v) => { const d = await idb(); return new Promise(ok => { const t = d.transaction("img", "readwrite"); t.objectStore("img").put(v, k); t.oncomplete = ok; }); };
+const idbGet = async k => { const d = await idb(); return new Promise(ok => { const r = d.transaction("img").objectStore("img").get(k); r.onsuccess = () => ok(r.result); r.onerror = () => ok(null); }); };
+const idbDel = async k => { const d = await idb(); return new Promise(ok => { const t = d.transaction("img", "readwrite"); t.objectStore("img").delete(k); t.oncomplete = ok; t.onerror = ok; }); };
+function salvar(){ clearTimeout(tm); tm = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) {} }, 300); }
+const uid = () => Math.random().toString(36).slice(2, 9);
+const camada = () => cfg.layers.find(l => l.id == cfg.sel);
+function carregarImg(k, blob){ const im = new Image(); im.src = URL.createObjectURL(blob); imgs[k] = im; return im; }
+
+/* ---------- áudio e voz ---------- */
+let ac, an, buf, saida, cur = null, sp = false, fake = 0, lvl = 0, piscaAte = 0, proxPisca = 0, cap = "", capIni = 0, capDur = 1;
+function audio(){
+  if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); an = ac.createAnalyser(); an.fftSize = 512; buf = new Uint8Array(an.fftSize); an.connect(ac.destination); saida = ac.createMediaStreamDestination(); an.connect(saida); }
+  if (ac.state == "suspended") ac.resume(); return ac;
+}
+document.addEventListener("pointerdown", () => { try { audio(); } catch (e) {} }, {passive: true});
+function legenda(t, ms){ cap = t || ""; capIni = performance.now(); capDur = Math.max(ms, 500); }
+function pararAtual(){ if (cur) { const s = cur; cur = null; try { s.stop(); } catch (e) {} } if (window.speechSynthesis) speechSynthesis.cancel(); sp = false; }
+function parar(){ fila.length = 0; cap = ""; pararAtual(); }
+function tocar(blob, txt){ return new Promise(async (ok, no) => { try {
+  const c = audio(), ab = await c.decodeAudioData(await blob.arrayBuffer()); pararAtual(); legenda(txt, ab.duration * 1000);
+  const s = c.createBufferSource(); s.buffer = ab; s.connect(an); cur = s; s.onended = () => { if (cur === s) cur = null; ok(); }; s.start();
+} catch (e) { no(e); } }); }
+function vozNavegador(t){ return new Promise(ok => {
+  if (!window.speechSynthesis) return ok();
+  const u = new SpeechSynthesisUtterance(t); u.lang = "pt-BR";
+  const v = speechSynthesis.getVoices().find(v => /pt[-_]BR/i.test(v.lang)); if (v) u.voice = v;
+  u.rate = cfg.speed || 1; u.onstart = () => { sp = true; legenda(t, t.length * 70 / (cfg.speed || 1)); }; u.onend = u.onerror = () => { sp = false; ok(); };
+  speechSynthesis.speak(u);
+}); }
+const fila = []; let ocupado = false;
+function falar(texto){ (texto || "").split(/\n+/).map(s => s.trim()).filter(Boolean).forEach(t => fila.push(t)); bomba(); }
+async function bomba(){ if (ocupado) return; ocupado = true;
+  while (fila.length) { const t = fila.shift(); try { await dizer(t); } catch (e) { aviso("Erro: " + (e.message || e)); } }
+  ocupado = false; }
+async function dizer(t){
+  if (cfg.motor == "termux") {
+    try {
+      const r = await fetch(cfg.url + "/tts", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text: t, voice: cfg.voice, speed: cfg.speed, pause: cfg.pause})});
+      if (!r.ok) throw new Error("servidor " + r.status);
+      return await tocar(await r.blob(), t);
+    } catch (e) { aviso("Termux sem voz, usando a voz do navegador."); }
+  }
+  await vozNavegador(t);
+}
+function aviso(t){ const el = $("#msg"); if (el) el.textContent = t; }
+let es = null, esUrl = "", online = false;
+function selo(){ $("#st").textContent = online ? "Termux: conectado" : "Termux: desconectado"; $("#st").style.color = online ? "var(--te)" : "var(--mu)"; }
+function conectar(){
+  if (es && esUrl == cfg.url) return; if (es) es.close(); esUrl = cfg.url; online = false; selo();
+  try { es = new EventSource(cfg.url + "/events"); } catch (e) { return; }
+  es.onopen = () => { online = true; selo(); }; es.onerror = () => { online = false; selo(); };
+  es.onmessage = e => { try { const d = JSON.parse(e.data); if (d.cmd == "stop") parar(); else if (d.text) falar(d.text); } catch (_) {} };
+}
+async function testar(){ aviso("Testando…");
+  try { const d = await (await fetch(cfg.url + "/ping")).json(); aviso(d.kokoro ? "Servidor ok, voz Kokoro pronta." : "Servidor ok, mas sem Kokoro: vai usar a voz do navegador."); }
+  catch (e) { aviso("Não achei o servidor. Ele está rodando no Termux?"); } }
+const CMD = () => { const b = location.origin + "/Tamaki_Personagem/"; return "cd ~ && curl -fsSL " + b + "instalar-voz.sh -o instalar-voz.sh && bash instalar-voz.sh " + b; };
+
+/* ---------- gravar vídeo ---------- */
+let rec = null, partes = [];
+function gravar(){
+  if (rec) { rec.stop(); return; }
+  if (!window.MediaRecorder || !cv.captureStream) { alert("Este navegador não grava vídeo. Use o Chrome."); return; }
+  audio();
+  const s = cv.captureStream(30); saida.stream.getAudioTracks().forEach(t => s.addTrack(t));
+  const tipo = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(m => MediaRecorder.isTypeSupported(m));
+  rec = new MediaRecorder(s, tipo ? {mimeType: tipo} : {}); partes = [];
+  rec.ondataavailable = e => { if (e.data.size) partes.push(e.data); };
+  rec.onstop = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(partes, {type: "video/webm"})); a.download = "palco-tamaki.webm"; a.click(); rec = null; $("#bRec").classList.remove("on"); $("#bRec").textContent = "● Gravar"; };
+  rec.start(); $("#bRec").classList.add("on"); $("#bRec").textContent = "■ Parar gravação";
+  if (cfg.motor == "browser") alert("A voz do navegador não entra na gravação. Para gravar com voz, use o Termux ou Tocar áudio.");
+}
+
+/* ---------- desenho do palco ---------- */
+function tamanho(){ const v = cfg.fmt == "9:16"; cv.width = v ? 720 : 1280; cv.height = v ? 1280 : 720; caber(); }
+function caber(){ const t = $("#tela"), w = t.clientWidth - 16, h = t.clientHeight - 16; if (w <= 0 || h <= 0) return;
+  const k = Math.min(w / cv.width, h / cv.height); cv.style.width = Math.floor(cv.width * k) + "px"; cv.style.height = Math.floor(cv.height * k) + "px"; }
+new ResizeObserver(caber).observe(document.querySelector("#tela"));
+function tick(now){
+  requestAnimationFrame(tick);
+  const t = now / 1000, W = cv.width, H = cv.height;
+  let alvo = 0;
+  if (cur && an) { an.getByteTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) { const d = (buf[i] - 128) / 128; s += d * d; } alvo = Math.min(1, Math.sqrt(s / buf.length) * cfg.gain); }
+  else if (sp) alvo = .45 + .4 * Math.abs(Math.sin(t * 13));
+  else if (now < fake) alvo = .5 + .5 * Math.sin(t * 9);
+  lvl += (alvo - lvl) * .45;
+  const falando = lvl > cfg.thr;
+  if (now > proxPisca) { piscaAte = now + 140; proxPisca = now + 2500 + Math.random() * 3000; }
+  const pisca = now < piscaAte;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.clearRect(0, 0, W, H);
+  const bg = rec && cfg.bg == "check" ? "chroma" : cfg.bg;
+  if (bg == "chroma") { g.fillStyle = "#00b140"; g.fillRect(0, 0, W, H); } else if (bg == "app") { g.fillStyle = "#120f24"; g.fillRect(0, 0, W, H); }
+  for (const L of cfg.layers) {
+    const im = imgs[L.img]; if (!L.vis || !im || !im.complete || !im.naturalWidth) continue;
+    if ((L.role == "open" && !falando) || (L.role == "closed" && falando) || (L.role == "eyeopen" && pisca) || (L.role == "eyeclosed" && !pisca)) continue;
+    let dx = 0, dy = 0, dr = 0, ds = 1, op = L.op ?? 1; const k = L.is * 2;
+    if (L.idle == "bob") dy += Math.sin(t * k) * L.ia * .5;
+    else if (L.idle == "sway") dr += Math.sin(t * k) * L.ia;
+    else if (L.idle == "breathe") ds += Math.sin(t * k) * L.ia / 100;
+    else if (L.idle == "flicker") op *= 1 - (L.ia / 10) * (.5 + .5 * Math.sin(t * k * 3 + Math.sin(t * k * 7)));
+    if (L.talk == "hop") dy -= lvl * L.ta;
+    else if (L.talk == "shake") dx += (Math.random() - .5) * lvl * L.ta;
+    else if (L.talk == "grow") ds += lvl * L.ta / 100;
+    else if (L.talk == "tilt") dr += Math.sin(t * 12) * lvl * L.ta;
+    const w = L.w / 100 * W, h = w * im.naturalHeight / im.naturalWidth;
+    g.save(); g.globalAlpha = Math.max(0, Math.min(1, op));
+    g.translate((L.x + dx) / 100 * W, (L.y + dy) / 100 * H); g.rotate((L.r + dr) * Math.PI / 180); g.scale((L.flip ? -1 : 1) * ds, ds);
+    g.drawImage(im, -L.px * w, -L.py * h, w, h);
+    if (cfg.guides && !rec && L.id == cfg.sel) { g.globalAlpha = 1; g.setLineDash([10, 8]); g.strokeStyle = "#5fd9cf"; g.lineWidth = 3; g.strokeRect(-L.px * w, -L.py * h, w, h); g.setLineDash([]); g.fillStyle = "#ff9f45"; g.beginPath(); g.arc(0, 0, 9, 0, 7); g.fill(); }
+    g.restore();
+  }
+  // legenda estilo caixa de diálogo
+  let txt = "", ph = false;
+  if (cap) { const el = now - capIni; if (el > capDur + 2500) cap = ""; else txt = cap.slice(0, Math.floor(cap.length * Math.min(1, el / capDur))); }
+  if (!cap && cfg.guides && !rec) { txt = "A fala da Tamaki aparece aqui."; ph = true; }
+  if (cfg.cap && txt) {
+    const bh = H * cfg.caph / 100, bx = W * .03, by = H - bh - H * .03, bw = W * .94, fs = W * cfg.capsz / 100 * (cfg.fmt == "16:9" ? .55 : 1);
+    g.globalAlpha = ph ? .45 : 1; g.fillStyle = "#06050f"; g.fillRect(bx, by, bw, bh);
+    g.strokeStyle = "#fff"; g.lineWidth = 3; g.strokeRect(bx + 3, by + 3, bw - 6, bh - 6); g.strokeRect(bx + 10, by + 10, bw - 20, bh - 20);
+    g.fillStyle = "#fff"; g.font = fs + "px 'Press Start 2P', monospace"; g.textBaseline = "top";
+    const lin = [], max = bw - fs * 2.4; let l = "";
+    for (const p of txt.split(" ")) { const n = l ? l + " " + p : p; if (g.measureText(n).width > max && l) { lin.push(l); l = p; } else l = n; }
+    if (l) lin.push(l);
+    lin.slice(0, Math.max(1, Math.floor((bh - fs * 2) / (fs * 1.8)))).forEach((s, i) => g.fillText(s, bx + fs * 1.2, by + fs * 1.2 + i * fs * 1.8));
+    g.globalAlpha = 1;
+  }
+}
+
+/* ---------- tocar no palco: escolher e arrastar ---------- */
+const pontos = new Map(); let arr = null;
+function ponto(e){ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * cv.width, (e.clientY - r.top) / r.height * cv.height]; }
+function acertou(L, x, y){
+  const im = imgs[L.img]; if (!im || !im.naturalWidth) return false;
+  const W = cv.width, H = cv.height, w = L.w / 100 * W, h = w * im.naturalHeight / im.naturalWidth, a = -L.r * Math.PI / 180;
+  let px = x - L.x / 100 * W, py = y - L.y / 100 * H; [px, py] = [px * Math.cos(a) - py * Math.sin(a), px * Math.sin(a) + py * Math.cos(a)];
+  if (L.flip) px = -px; px += L.px * w; py += L.py * h; return px >= 0 && py >= 0 && px <= w && py <= h;
+}
+cv.addEventListener("pointerdown", e => {
+  cv.setPointerCapture(e.pointerId); pontos.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pontos.size == 1) { const [x, y] = ponto(e), alvo = [...cfg.layers].reverse().find(L => L.vis && acertou(L, x, y)); if (alvo && alvo.id != cfg.sel) selecionar(alvo.id); }
+  const L = camada(); if (!L) return;
+  arr = {x: e.clientX, y: e.clientY, lx: L.x, ly: L.y, w: L.w, d: 0};
+  if (pontos.size == 2) { const [a, b] = [...pontos.values()]; arr.d = Math.hypot(a[0] - b[0], a[1] - b[1]); }
+});
+cv.addEventListener("pointermove", e => {
+  if (!arr || !pontos.has(e.pointerId)) return; pontos.set(e.pointerId, [e.clientX, e.clientY]);
+  const L = camada(); if (!L) return; const r = cv.getBoundingClientRect();
+  if (pontos.size == 2 && arr.d) { const [a, b] = [...pontos.values()]; L.w = +Math.max(2, Math.min(300, arr.w * Math.hypot(a[0] - b[0], a[1] - b[1]) / arr.d)).toFixed(1); }
+  else if (pontos.size == 1) { L.x = +(arr.lx + (e.clientX - arr.x) / r.width * 100).toFixed(1); L.y = +(arr.ly + (e.clientY - arr.y) / r.height * 100).toFixed(1); }
+  sincronizar();
+});
+const solta = e => { pontos.delete(e.pointerId); if (!pontos.size && arr) { arr = null; salvar(); } };
+cv.addEventListener("pointerup", solta); cv.addEventListener("pointercancel", solta);
+
+/* ---------- camadas ---------- */
+function listaHTML(){
+  if (!cfg.layers.length) return '<p class="vazio">Nenhuma peça ainda. Toque em + PNG e escolha as partes da Tamaki: corpo, cabeça, olhos, bocas, fundo…</p>';
+  return [...cfg.layers].reverse().map(L => `<div class="ly${L.id == cfg.sel ? " on" : ""}" data-sel="${L.id}">
+    <img src="${imgs[L.img] ? imgs[L.img].src : ""}" alt=""><div class="nm">${esc(L.name)}<small>${(PAPEIS.find(p => p[0] == L.role) || PAPEIS[0])[1]} · ${Math.round((L.op ?? 1) * 100)}%</small></div>
+    <button class="olho${L.vis ? "" : " off"}" data-vis="${L.id}" aria-label="Mostrar ou esconder">👁</button></div>`).join("");
+}
+const BARRA = '<label class="add" for="fPng">+ PNG</label><button data-a="dup">Duplicar</button><button data-a="sobe">▲ Frente</button><button data-a="desce">▼ Atrás</button><button data-a="apaga">Apagar</button>';
+function desenharLista(){ $("#lista").innerHTML = listaHTML(); $("#barra").innerHTML = BARRA; if (aba == "camadas") painel(); }
+function selecionar(id){ cfg.sel = id; salvar(); desenharLista(); if (aba != "camadas" && aba != "fala" && aba != "voz") painel(); }
+async function adicionar(files){
+  for (const f of files) { if (!/^image\//.test(f.type)) continue; const id = uid(), img = uid(); await idbPut(img, f); carregarImg(img, f);
+    cfg.layers.push({id, img, name: f.name.replace(/\.[^.]+$/, ""), x: 50, y: 50, w: 50, r: 0, px: .5, py: .5, vis: 1, flip: 0, op: 1, role: "always", idle: "none", ia: 3, is: 1, talk: "none", ta: 5}); cfg.sel = id; }
+  salvar(); desenharLista(); painel();
+}
+async function acao(a, el){
+  const L = camada();
+  if (a == "falar") { audio(); falar(cfg.text); }
+  else if (a == "parar") parar();
+  else if (a == "gravar") gravar();
+  else if (a == "teste") fake = performance.now() + 4000;
+  else if (a == "ping") testar();
+  else if (a == "audio") $("#fAud").click();
+  else if (a == "cmd") { try { await navigator.clipboard.writeText(CMD()); aviso("Comando copiado. Cole no Termux."); } catch (e) { prompt("Copie o comando:", CMD()); } }
+  else if (a == "exp") exportar();
+  else if (a == "imp") $("#fImp").click();
+  else if (!L) return;
+  else if (a == "dup") { const n = Object.assign({}, L, {id: uid(), name: L.name + " 2", x: L.x + 3, y: L.y + 3}); cfg.layers.splice(cfg.layers.indexOf(L) + 1, 0, n); cfg.sel = n.id; salvar(); desenharLista(); painel(); }
+  else if (a == "sobe" || a == "desce") { const i = cfg.layers.indexOf(L), j = i + (a == "sobe" ? 1 : -1); if (j < 0 || j >= cfg.layers.length) return; [cfg.layers[i], cfg.layers[j]] = [cfg.layers[j], cfg.layers[i]]; salvar(); desenharLista(); }
+  else if (a == "apaga") { if (!el.dataset.s) { el.dataset.s = 1; el.textContent = "Confirmar"; return; }
+    cfg.layers = cfg.layers.filter(x => x != L); if (!cfg.layers.some(x => x.img == L.img)) { await idbDel(L.img); delete imgs[L.img]; }
+    cfg.sel = cfg.layers.length ? cfg.layers[cfg.layers.length - 1].id : null; salvar(); desenharLista(); painel(); }
+  else if (a == "centro") { L.x = 50; L.y = 50; sincronizar(); salvar(); }
+}
+
+/* ---------- painel de baixo ---------- */
+const opt = (a, v) => a.map(([k, n]) => `<option value="${k}"${k == v ? " selected" : ""}>${n}</option>`).join("");
+const rg = (k, rot, min, max, st, v, at = "k") => `<label class="f"><b>${rot}<i data-v="${k}">${v}</i></b><input type="range" data-${at}="${k}" min="${min}" max="${max}" step="${st}" value="${v}"></label>`;
+const sel = (k, rot, a, v, at = "k") => `<label class="f"><b>${rot}</b><select data-${at}="${k}">${opt(a, v)}</select></label>`;
+const semCamada = '<p class="vazio">Escolha uma camada na lista ou toque nela no palco.</p>';
+const PAINEIS = {
+  camadas: () => `<div class="lista" id="lista2">${listaHTML()}</div><div class="barra">${BARRA}</div>`,
+  camada: L => !L ? semCamada : `<div class="g">
+    <label class="f"><b>Nome</b><input type="text" data-k="name" value="${esc(L.name)}"></label>
+    ${sel("role", "Papel da peça", PAPEIS, L.role)}
+    ${rg("op", "Opacidade", 0, 1, .01, L.op ?? 1)}${rg("w", "Tamanho (%)", 2, 300, .5, L.w)}
+    ${rg("x", "Horizontal (%)", -20, 120, .1, L.x)}${rg("y", "Vertical (%)", -20, 120, .1, L.y)}
+    ${rg("r", "Rotação (°)", -180, 180, 1, L.r)}
+    <div class="chk"><label class="chk"><input type="checkbox" data-k="flip" ${L.flip ? "checked" : ""}> Espelhar</label><button class="bt" data-a="centro">Centralizar</button></div></div>`,
+  anim: L => !L ? semCamada : `<div class="g">
+    ${sel("idle", "Parada", PARADA, L.idle)}${rg("ia", "Intensidade parada", 0, 10, .1, L.ia)}${rg("is", "Velocidade parada", .2, 4, .1, L.is)}
+    ${sel("talk", "Falando", FALANDO, L.talk)}${rg("ta", "Intensidade falando", 0, 20, .5, L.ta)}
+    ${rg("px", "Pivô horizontal", 0, 1, .01, L.px)}${rg("py", "Pivô vertical", 0, 1, .01, L.py)}
+    <div class="chk"><button class="bt" data-a="teste">Testar movimento</button></div></div>
+    <p class="dica">O pivô é a bolinha laranja: o ponto onde a peça gira. Para a cabeça, coloque no pescoço.</p>`,
+  fala: () => `<div class="fala"><textarea data-c="text" placeholder="O que a Tamaki vai falar. Uma frase por linha.">${esc(cfg.text)}</textarea>
+    <div class="lado"><button class="bt pri" data-a="falar">▶ Falar</button><button class="bt" data-a="audio">Tocar áudio…</button>
+    <label class="chk"><input type="checkbox" data-c="cap" ${cfg.cap ? "checked" : ""}> Legenda</label>
+    ${rg("caph", "Altura da caixa", 8, 45, 1, cfg.caph, "c")}${rg("capsz", "Tamanho da letra", 1.5, 6, .1, cfg.capsz, "c")}<p class="dica" id="msg"></p></div></div>`,
+  voz: () => `<div class="g">
+    ${sel("motor", "Motor de voz", [["termux", "Termux (Kokoro)"], ["browser", "Voz do navegador"]], cfg.motor, "c")}
+    <label class="f"><b>Voz (id do Kokoro)</b><input type="text" data-c="voice" value="${esc(cfg.voice)}"></label>
+    ${rg("speed", "Velocidade", .6, 1.5, .05, cfg.speed, "c")}${rg("pause", "Pausa entre frases (s)", 0, 1.5, .05, cfg.pause, "c")}
+    ${rg("thr", "Limiar da boca", .02, .6, .01, cfg.thr, "c")}${rg("gain", "Ganho do volume", 1, 12, .5, cfg.gain, "c")}
+    <label class="f"><b>Endereço do Termux</b><input type="text" data-c="url" value="${esc(cfg.url)}" inputmode="url"></label>
+    <div class="chk"><button class="bt" data-a="ping">Testar conexão</button><button class="bt" data-a="cmd">Copiar instalação</button></div>
+    <div class="chk"><button class="bt" data-a="exp">Exportar palco</button><button class="bt" data-a="imp">Importar palco</button></div></div>
+    <p class="dica" id="msg">No Termux: <code>palco</code> liga a voz aqui; <code>falar "oi gente"</code> faz a Tamaki falar.</p>`
+};
+function painel(){ $("#painel").innerHTML = PAINEIS[aba](camada()); document.querySelectorAll("#ferr button").forEach(b => b.classList.toggle("on", b.dataset.t == aba)); }
+function sincronizar(){ const L = camada(); if (!L) return; ["x", "y", "w"].forEach(k => { const i = $(`#painel input[data-k="${k}"]`); if (i) i.value = L[k]; const v = $(`#painel i[data-v="${k}"]`); if (v) v.textContent = L[k]; }); }
+function entrada(e){
+  const t = e.target, d = t.dataset; if (t.type == "file") return;
+  const v = t.type == "checkbox" ? (t.checked ? 1 : 0) : t.type == "range" ? parseFloat(t.value) : t.value;
+  if (d.c) { cfg[d.c] = v; if (d.c == "url") { clearTimeout(entrada.u); entrada.u = setTimeout(conectar, 600); } }
+  else if (d.k) { const L = camada(); if (!L) return; L[d.k] = v; if (d.k == "name" || d.k == "role" || d.k == "op") $("#lista").innerHTML = listaHTML(); }
+  else return;
+  const lab = t.closest(".f") && t.closest(".f").querySelector("i[data-v]"); if (lab) lab.textContent = v;
+  salvar();
+}
+document.addEventListener("input", entrada); document.addEventListener("change", entrada);
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-a]"); if (b && b.tagName == "BUTTON") return acao(b.dataset.a, b);
+  const o = e.target.closest("[data-vis]"); if (o) { const L = cfg.layers.find(l => l.id == o.dataset.vis); L.vis = L.vis ? 0 : 1; salvar(); desenharLista(); return; }
+  const s = e.target.closest("[data-sel]"); if (s) return selecionar(s.dataset.sel);
+  const tb = e.target.closest("[data-t]"); if (tb) { aba = tb.dataset.t; painel(); return; }
+  const f = e.target.closest("[data-f]"); if (f) { cfg.fmt = f.dataset.f; tamanho(); topo(); salvar(); return; }
+  const fb = e.target.closest("[data-b]"); if (fb) { cfg.bg = fb.dataset.b; topo(); salvar(); }
+});
+function topo(){
+  document.querySelectorAll("#fmt button").forEach(b => b.classList.toggle("on", b.dataset.f == cfg.fmt));
+  document.querySelectorAll("#fundo button").forEach(b => b.classList.toggle("on", b.dataset.b == cfg.bg));
+  $("#guias").checked = !!cfg.guides;
+}
+$("#guias").onchange = e => { cfg.guides = e.target.checked ? 1 : 0; salvar(); };
+$("#fPng").onchange = async e => { await adicionar(e.target.files); e.target.value = ""; };
+$("#fAud").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; audio(); try { await tocar(f, ""); } catch (x) { aviso("Não consegui tocar esse arquivo."); } };
+$("#fImp").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (f) importar(f); };
+
+/* ---------- cópia de segurança (mesmo formato do Palco da ficha) ---------- */
+const paraTexto = b => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(b); });
+async function exportar(){
+  const im = {}; for (const L of cfg.layers) if (!im[L.img]) { const b = await idbGet(L.img); if (b) im[L.img] = await paraTexto(b); }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify({palco: 1, cfg: Object.assign({}, cfg, {url: undefined, motor: undefined}), imgs: im})], {type: "application/json"}));
+  a.download = "palco-tamaki.json"; a.click(); aviso("Palco exportado.");
+}
+async function importar(f){
+  try { const o = JSON.parse(await f.text()); if (!o.palco || !Array.isArray(o.cfg.layers)) throw 0;
+    for (const k in o.imgs) { const b = await (await fetch(o.imgs[k])).blob(); await idbPut(k, b); carregarImg(k, b); }
+    cfg = Object.assign({}, DEF, o.cfg, {url: cfg.url, motor: cfg.motor}); salvar(); tamanho(); topo(); desenharLista(); painel(); aviso("Palco importado.");
+  } catch (e) { aviso("Arquivo inválido."); }
+}
+
+/* ---------- início ---------- */
+(async () => {
+  try { const s = localStorage.getItem(KEY); if (s) cfg = Object.assign({}, DEF, JSON.parse(s)); } catch (e) {}
+  for (const L of cfg.layers) { try { const b = await idbGet(L.img); if (b && !imgs[L.img]) carregarImg(L.img, b); } catch (e) {} }
+  const prontas = Object.values(imgs).map(im => new Promise(ok => { im.onload = im.onerror = ok; }));
+  tamanho(); topo(); desenharLista(); painel(); selo(); requestAnimationFrame(tick);
+  await Promise.all(prontas); desenharLista();
+  try { conectar(); } catch (e) {}
+})();
+})();
+</script>
+</body>
+</html>
