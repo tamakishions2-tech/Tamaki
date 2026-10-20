@@ -26,8 +26,8 @@ header .hb{background:none;border:1px solid var(--line);border-radius:8px;paddin
 #area>*{position:absolute;inset:0}
 #area iframe{width:100%;height:100%;border:0;background:#000}
 .hide{display:none!important}
-nav{display:grid;grid-template-columns:repeat(6,1fr);background:var(--bar);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav button{background:none;border:0;border-top:3px solid transparent;padding:10px 2px 9px;font-size:.78rem;color:var(--mut);min-height:52px}
+nav{display:grid;grid-template-columns:repeat(7,1fr);background:var(--bar);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{background:none;border:0;border-top:3px solid transparent;padding:10px 1px 9px;font-size:.74rem;color:var(--mut);min-height:52px}
 nav button.on{color:var(--or);border-top-color:var(--gold);font-weight:700}
 .pn{display:flex;flex-direction:column;gap:10px;padding:14px;max-width:760px;margin:0 auto;height:100%}
 .pn h2{margin:0;font:700 1.25rem Georgia,serif}
@@ -84,6 +84,7 @@ const $ = s => document.querySelector(s);
 const ABAS = {
   universo: {n: "Universo", t: "Universo", src: "/universo/"},
   tamaki: {n: "Tamaki", t: "Ficha da Tamaki", src: "/Tamaki_Personagem/"},
+  palco: {n: "Palco", t: "Palco · estúdio", src: "palco/"},
   escrita: {n: "Escrita", t: "Biblioteca de Escrita", src: "projetos/biblioteca-escrita/"},
   novel: {n: "Novel", t: "Visual novel", src: "projetos/visual-novel/"},
   jogos: {n: "Jogos", t: "Jogos"},
