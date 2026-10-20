@@ -25,7 +25,7 @@ fieldset:disabled{opacity:.45}
 .ly.on{border-color:var(--or);background:#2f2552}
 .ly.filho{margin-left:18px}
 .ly.pasta{background:#2a2350}
-.ly .th{width:46px;height:46px;flex:none;object-fit:contain;border-radius:6px;background:conic-gradient(#3a3560 25%,#2a2650 0 50%,#3a3560 0 75%,#2a2650 0) 0 0/12px 12px}
+.th{width:46px;height:46px;flex:none;object-fit:contain;border-radius:6px;background:conic-gradient(#3a3560 25%,#2a2650 0 50%,#3a3560 0 75%,#2a2650 0) 0 0/12px 12px}
 .fi{width:46px;height:46px;flex:none;display:grid;place-items:center;font-size:1.6rem;border-radius:8px;background:#3a3166;object-fit:cover}
 .ly .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
 .ly small{display:block;color:var(--mu);font-weight:400;overflow:hidden;text-overflow:ellipsis}
@@ -54,7 +54,8 @@ fieldset:disabled{opacity:.45}
 #ferr button{flex:1;background:none;border:0;border-top:3px solid transparent;min-height:48px;color:var(--mu);font-size:.84rem;padding:0 2px}
 #ferr button.on{color:var(--or);border-top-color:var(--gold);font-weight:700}
 #ferr .so-retrato{display:none}
-.sub{display:flex;gap:4px;margin-bottom:8px}
+.sub{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.f .sub{margin:0}
 .sub button{background:var(--pn2);border:1px solid var(--ln);border-radius:999px;padding:4px 12px;color:var(--mu);font-size:.8rem}
 .sub button.on{border-color:var(--or);color:var(--or);font-weight:700}
 .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px 14px;align-items:end}
@@ -131,6 +132,7 @@ fieldset:disabled{opacity:.45}
 <input type="file" id="fAud" accept="audio/*" class="esc">
 <input type="file" id="fImp" accept=".json,application/json" class="esc">
 <input type="file" id="fIco" accept="image/*" class="esc">
+<input type="file" id="fPose" accept="image/*" class="esc">
 
 <script>
 (() => {
@@ -145,19 +147,30 @@ const DEF = {url:"http://127.0.0.1:8765", motor:"termux", voice:"pf_dora", speed
 const PAPEIS = [["always","Sempre visível"],["open","Boca aberta (falando)"],["closed","Boca fechada (parada)"],["eyeopen","Olho aberto"],["eyeclosed","Olho fechado (piscar)"]];
 const PARADA = [["none","Nenhuma"],["bob","Flutuar"],["sway","Balançar"],["breathe","Respirar"],["flicker","Cintilar"]];
 const FALANDO = [["none","Nenhuma"],["hop","Pular"],["shake","Tremer"],["grow","Esticar"],["tilt","Inclinar"]];
+const TIPOS = [["personagem","Personagem"],["decoracao","Decoração"],["cenario","Cenário"]];
+const NOMEPOSE = {parada: "Parada", falando: "Falando", falando2: "Falando 2"};
 const ICONES = ["📁","⭐","🎀","👀","👄","💇","👕","🖐","🌙","🔥","🐔","🐱","🎮","📚","💬","✨"];
 const FUNDOS = {check: "Fundo: xadrez", chroma: "Fundo: verde", app: "Fundo: roxo"};
 const copia = o => JSON.parse(JSON.stringify(o));
 function normalizar(c){
   c.folders = c.folders || []; c.layers = c.layers || [];
-  c.layers.forEach(L => { if (L.op == null) L.op = 1; L.lock = L.lock ? 1 : 0; if (L.parent && !c.folders.some(f => f.id == L.parent)) L.parent = null; });
+  c.layers.forEach(L => { if (!L.tipo) L.tipo = "decoracao"; if (L.tipo == "personagem") L.poses = Object.assign({falando: null, falando2: null}, L.poses || {}); if (L.op == null) L.op = 1; L.lock = L.lock ? 1 : 0; if (L.parent && !c.folders.some(f => f.id == L.parent)) L.parent = null; });
   const ob = c.bal ? copia(c.bal) : {}; if (!c.bal) { if (c.cap != null) ob.on = c.cap; if (c.capsz) ob.tam = c.capsz; }
   c.bal = Object.assign(copia(DEF.bal), ob); c.bal.pos = Object.assign(copia(DEF.bal.pos), ob.pos || {});
   c.fx = Object.assign(copia(DEF.fx), c.fx || {});
   return c;
 }
+let subP = "parada", verPose = null, mostrada = {};
 let cfg = normalizar(copia(DEF)), imgs = {}, aba = "camada", subB = "pos", subE = "cam", tm, hist = [], fut = [];
 const cv = $("#cv"), g = cv.getContext("2d");
+const chavesImgs = () => [...cfg.layers.flatMap(L => [L.img, ...(L.poses ? Object.values(L.poses).filter(Boolean).map(p => p.img) : [])]), ...cfg.folders.map(f => f.iconImg).filter(Boolean)];
+function qualPose(L, falando, now){
+  if (verPose && verPose.id == L.id) return verPose.pose;
+  if (!falando) return "parada";
+  const a = L.poses && L.poses.falando, b = L.poses && L.poses.falando2;
+  if (a && b) return Math.floor(now / 160) % 2 ? "falando2" : "falando";
+  return a ? "falando" : b ? "falando2" : "parada";
+}
 
 /* ---------- guardar e desfazer ---------- */
 const idb = () => new Promise((ok, no) => { const r = indexedDB.open("palco", 1); r.onupgradeneeded = () => r.result.createObjectStore("img"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
@@ -407,11 +420,14 @@ function tick(now){
     else if (L.talk == "tilt") dr += Math.sin(t * 12) * lvl * L.ta;
     ancora[L.id] = {x: G.X + dx, y: G.Y + dy};
     if (L.parent) { const s = soma[L.parent] || (soma[L.parent] = {x: 0, y: 0, n: 0}); s.x += G.X + dx; s.y += G.Y + dy; s.n++; }
-    const im = imgs[L.img]; if (!visivel(L) || !im || !im.complete || !im.naturalWidth) continue;
-    if ((L.role == "open" && !falando) || (L.role == "closed" && falando) || (L.role == "eyeopen" && pisca) || (L.role == "eyeclosed" && !pisca)) continue;
-    const w = G.w / 100 * W, h = w * im.naturalHeight / im.naturalWidth;
+    let im = imgs[L.img], ox = 0, oy = 0, kk = 1;
+    if (L.tipo == "personagem") { const ps = qualPose(L, falando, now); if (ps != "parada") { const P = L.poses && L.poses[ps]; if (P && imgs[P.img]) { im = imgs[P.img]; ox = +P.dx || 0; oy = +P.dy || 0; kk = +P.k || 1; } } }
+    if (!visivel(L) || !im || !im.complete || !im.naturalWidth) continue;
+    if ((!L.tipo || L.tipo == "decoracao") && ((L.role == "open" && !falando) || (L.role == "closed" && falando) || (L.role == "eyeopen" && pisca) || (L.role == "eyeclosed" && !pisca))) continue;
+    mostrada[L.id] = {im, ox, oy, kk};
+    const w = G.w * kk / 100 * W, h = w * im.naturalHeight / im.naturalWidth;
     base(); g.globalAlpha = Math.max(0, Math.min(1, op));
-    g.translate((G.X + dx) / 100 * W, (G.Y + dy) / 100 * H); g.rotate((L.r + dr) * Math.PI / 180); g.scale((L.flip ? -1 : 1) * ds, ds);
+    g.translate((G.X + ox + dx) / 100 * W, (G.Y + oy + dy) / 100 * H); g.rotate((L.r + dr) * Math.PI / 180); g.scale((L.flip ? -1 : 1) * ds, ds);
     g.drawImage(im, -L.px * w, -L.py * h, w, h);
     const sel = L.id == cfg.sel, daPasta = L.parent && cfg.sel == "f:" + L.parent;
     if (cfg.guides && !rec && (sel || daPasta)) { g.globalAlpha = 1; g.setLineDash([10, 8]); g.strokeStyle = sel ? "#5fd9cf" : "#f2b632"; g.lineWidth = 3 / c.z; g.strokeRect(-L.px * w, -L.py * h, w, h); g.setLineDash([]); if (sel) { g.fillStyle = "#ff9f45"; g.beginPath(); g.arc(0, 0, 9, 0, 7); g.fill(); } }
@@ -426,9 +442,9 @@ function tick(now){
 const pontos = new Map(); let arr = null;
 function ponto(e){ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * cv.width, (e.clientY - r.top) / r.height * cv.height]; }
 function acertou(L, x, y){
-  const im = imgs[L.img]; if (!im || !im.naturalWidth) return false;
-  const W = cv.width, H = cv.height, G = geo(L), w = G.w / 100 * W, h = w * im.naturalHeight / im.naturalWidth, a = -L.r * Math.PI / 180;
-  let px = x - G.X / 100 * W, py = y - G.Y / 100 * H; [px, py] = [px * Math.cos(a) - py * Math.sin(a), px * Math.sin(a) + py * Math.cos(a)];
+  const M = mostrada[L.id] || {im: imgs[L.img], ox: 0, oy: 0, kk: 1}, im = M.im; if (!im || !im.naturalWidth) return false;
+  const W = cv.width, H = cv.height, G = geo(L), w = G.w * M.kk / 100 * W, h = w * im.naturalHeight / im.naturalWidth, a = -L.r * Math.PI / 180;
+  let px = x - (G.X + M.ox) / 100 * W, py = y - (G.Y + M.oy) / 100 * H; [px, py] = [px * Math.cos(a) - py * Math.sin(a), px * Math.sin(a) + py * Math.cos(a)];
   if (L.flip) px = -px; px += L.px * w; py += L.py * h; return px >= 0 && py >= 0 && px <= w && py <= h;
 }
 function inicioArraste(){
@@ -475,7 +491,7 @@ const cad = (id, on) => `<button class="ic${on ? " lk" : " off"}" data-lock="${i
 const olho = (id, on) => `<button class="ic${on ? "" : " off"}" data-vis="${id}" aria-label="Mostrar ou esconder">👁</button>`;
 function linhaCamada(L, filho){
   return `<div class="ly${filho ? " filho" : ""}${L.id == cfg.sel ? " on" : ""}" data-sel="${L.id}"><img class="th" src="${imgs[L.img] ? imgs[L.img].src : ""}" alt="">
-    <div class="nm">${esc(L.name)}<small>${(PAPEIS.find(p => p[0] == L.role) || PAPEIS[0])[1]} · ${Math.round((L.op ?? 1) * 100)}%</small></div>${cad(L.id, L.lock)}${olho(L.id, L.vis)}</div>`;
+    <div class="nm">${esc(L.name)}<small>${L.tipo == "personagem" ? "🧍 Personagem · " + (1 + (L.poses && L.poses.falando ? 1 : 0) + (L.poses && L.poses.falando2 ? 1 : 0)) + " poses" : L.tipo == "cenario" ? "🏞 Cenário" : (PAPEIS.find(p => p[0] == L.role) || PAPEIS[0])[1]} · ${Math.round((L.op ?? 1) * 100)}%</small></div>${cad(L.id, L.lock)}${olho(L.id, L.vis)}</div>`;
 }
 function linhaPasta(f){
   const n = cfg.layers.filter(l => l.parent == f.id).length;
@@ -497,6 +513,7 @@ function listaHTML(){
 const BARRA = '<label class="add" for="fPng">+ PNG</label><button data-a="novapasta">+ Pasta</button><button data-a="renomear">Renomear</button><button data-a="dup">Duplicar</button><button data-a="sobe">▲ Frente</button><button data-a="desce">▼ Atrás</button><button data-a="apaga">Apagar</button>';
 function desenharLista(){ $("#lista").innerHTML = listaHTML(); $("#barra").innerHTML = BARRA; if (aba == "camadas") painel(); }
 function selecionar(id, doPalco){
+  if (id != cfg.sel) subP = "parada";
   cfg.sel = id; desenharLista(); gravarLS();
   const tp = tipoSel();
   if (tp == "bal" && (aba == "camada" || aba == "anim")) aba = "balao";
@@ -506,7 +523,7 @@ function selecionar(id, doPalco){
 async function adicionar(files){
   const f = pastaSel();
   for (const fl of files) { if (!/^image\//.test(fl.type)) continue; const id = uid(), img = uid(); await idbPut(img, fl); carregarImg(img, fl);
-    cfg.layers.push({id, img, name: fl.name.replace(/\.[^.]+$/, ""), x: 50, y: 50, w: 50, r: 0, px: .5, py: .5, vis: 1, flip: 0, op: 1, lock: 0, parent: f ? f.id : null, role: "always", idle: "none", ia: 3, is: 1, talk: "none", ta: 5}); cfg.sel = id; }
+    cfg.layers.push({id, img, name: fl.name.replace(/\.[^.]+$/, ""), x: 50, y: 50, w: 50, r: 0, px: .5, py: .5, vis: 1, flip: 0, op: 1, lock: 0, parent: f ? f.id : null, tipo: "decoracao", role: "always", idle: "none", ia: 3, is: 1, talk: "none", ta: 5}); cfg.sel = id; }
   salvar(); desenharLista(); painel();
 }
 
@@ -537,7 +554,10 @@ async function acao(a, el){
   }
   if (tp == "bal") { if (a == "apaga" || a == "dup" || a == "sobe" || a == "desce") toast("O balão fica sempre na frente; use o olho para esconder"); return; }
   if (!L) return toast("Escolha uma camada");
-  if (a == "dup") { const n = Object.assign({}, L, {id: uid(), name: L.name + " 2", x: L.x + 3, y: L.y + 3, lock: 0}); cfg.layers.splice(cfg.layers.indexOf(L) + 1, 0, n); cfg.sel = n.id; salvar(); desenharLista(); painel(); }
+  if (a == "poseimg") return $("#fPose").click();
+  if (a == "poserem") { if (L.poses) L.poses[subP] = null; salvar(); desenharLista(); painel(); return; }
+  if (a == "poseigual") { const P = L.poses && L.poses[subP]; if (P) { P.dx = 0; P.dy = 0; P.k = 1; } salvar(); painel(); return; }
+  if (a == "dup") { const n = Object.assign({}, L, {id: uid(), name: L.name + " 2", x: L.x + 3, y: L.y + 3, lock: 0, poses: L.poses ? copia(L.poses) : undefined}); cfg.layers.splice(cfg.layers.indexOf(L) + 1, 0, n); cfg.sel = n.id; salvar(); desenharLista(); painel(); }
   else if (a == "sobe" || a == "desce") { const i = cfg.layers.indexOf(L), j = i + (a == "sobe" ? 1 : -1); if (j < 0 || j >= cfg.layers.length) return; [cfg.layers[i], cfg.layers[j]] = [cfg.layers[j], cfg.layers[i]]; salvar(); desenharLista(); }
   else if (a == "apaga") { if (!el.dataset.s) { el.dataset.s = 1; el.textContent = "Confirmar"; return; }
     cfg.layers = cfg.layers.filter(x => x != L); if (cfg.bal.seguir == L.id) cfg.bal.seguir = ""; cfg.sel = null; salvar(); desenharLista(); painel(); }
@@ -565,14 +585,23 @@ const PAINEIS = {
   camadas: () => `<div class="lista">${listaHTML()}</div><div class="barra">${BARRA}</div>`,
   camada: () => {
     const tp = tipoSel(); if (tp == "bal") return PAINEIS.balao(); if (tp == "pasta") return pastaSel() ? painelPasta(pastaSel()) : semNada;
-    const L = camada(); if (!L) return semNada; const tr = travada(L);
-    return `<fieldset class="g"${tr ? " disabled" : ""}>${tx("k", "name", "Nome", L.name)}
+    const L = camada(); if (!L) return semNada; const tr = travada(L), per = L.tipo == "personagem", tipo = sl("k", "tipo", "O que é na cena", TIPOS, L.tipo || "decoracao");
+    const trava = tr ? `<p class="dica">🔒 Travada${L.lock ? "" : " pela pasta"}. <button class="bt" data-lock="${L.lock ? L.id : "f:" + L.parent}">Destravar</button></p>` : "";
+    const poses = per ? `<div class="sub">${Object.entries(NOMEPOSE).map(([k, n]) => `<button data-pose="${k}" class="${k == subP ? "on" : ""}">${n}${k != "parada" && !(L.poses && L.poses[k]) ? " ＋" : ""}</button>`).join("")}</div>` : "";
+    if (per && subP != "parada") {
+      const P = L.poses && L.poses[subP], im = P && imgs[P.img], outras = cfg.layers.filter(x => x != L).slice().reverse();
+      return `<fieldset${tr ? " disabled" : ""}><div class="g">${tipo}<div class="f"><b>Pose</b>${poses}</div></div><div class="g">
+        <div class="f"><b>Imagem da pose ${NOMEPOSE[subP]}</b><div class="btns">${im ? `<img class="th" src="${im.src}" alt="">` : '<span class="dica">Ainda sem imagem.</span>'}<button class="bt pri" data-a="poseimg">${im ? "Trocar imagem" : "Escolher imagem…"}</button>${P ? '<button class="bt" data-a="poserem">Remover</button>' : ""}</div></div>
+        ${outras.length ? `<label class="f"><b>Ou usar uma camada da lista</b><select data-usar="1"><option value="">Escolher camada…</option>${outras.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></label>` : ""}
+        ${P ? rg("po", "dx", "Ajuste horizontal (%)", -40, 40, .1, +P.dx || 0) + rg("po", "dy", "Ajuste vertical (%)", -40, 40, .1, +P.dy || 0) + rg("po", "k", "Tamanho da pose", .3, 3, .01, +P.k || 1) + '<div class="btns"><button class="bt" data-a="poseigual">Igualar à Parada</button></div>' : ""}</div></fieldset>
+        <p class="dica">A pose começa na mesma posição e tamanho da Parada; ajuste se quiser. O palco mostra esta pose enquanto você edita.${L.poses && L.poses.falando && L.poses.falando2 ? " Falando e Falando 2 se alternam enquanto ela fala." : ""}</p>${trava}`;
+    }
+    return `<fieldset${tr ? " disabled" : ""}><div class="g">${tipo}${tx("k", "name", "Nome", L.name)}
       ${sl("k", "parent", "Pasta", [["", "(sem pasta)"], ...cfg.folders.map(f => [f.id, (f.icon || "📁") + " " + f.name])], L.parent || "")}
-      ${sl("k", "role", "Papel da peça", PAPEIS, L.role)}
+      ${per || L.tipo == "cenario" ? "" : sl("k", "role", "Papel da peça", PAPEIS, L.role)}${per ? `<div class="f"><b>Pose</b>${poses}</div>` : ""}</div><div class="g">
       ${rg("k", "op", "Opacidade", 0, 1, .01, L.op ?? 1)}${rg("k", "w", "Tamanho (%)", 2, 300, .5, L.w)}
       ${rg("k", "x", "Horizontal (%)", -20, 120, .1, L.x)}${rg("k", "y", "Vertical (%)", -20, 120, .1, L.y)}${rg("k", "r", "Rotação (°)", -180, 180, 1, L.r)}
-      <div class="btns">${ck("k", "flip", "Espelhar", L.flip)}<button class="bt" data-a="centro">Centralizar</button></div></fieldset>
-      ${tr ? `<p class="dica">🔒 Travada${L.lock ? "" : " pela pasta"}. <button class="bt" data-lock="${L.lock ? L.id : "f:" + L.parent}">Destravar</button></p>` : ""}`;
+      <div class="btns">${ck("k", "flip", "Espelhar", L.flip)}<button class="bt" data-a="centro">Centralizar</button>${per ? '<button class="bt" data-a="poseimg">Trocar imagem</button>' : ""}</div></div></fieldset>${trava}`;
   },
   anim: () => {
     const L = camada(); if (!L) return tipoSel() == "camada" ? semNada : '<p class="vazio">A animação é por camada. Escolha uma camada.</p>';
@@ -630,14 +659,16 @@ const PAINEIS = {
     <div class="btns"><button class="bt" data-a="exp">Exportar palco</button><button class="bt" data-a="imp">Importar palco</button></div></div>
     <p class="dica" id="msg">No Termux: <code>palco</code> liga a voz aqui; <code>falar "oi gente"</code> faz a Tamaki falar.</p>`
 };
-function painel(){ $("#painel").innerHTML = PAINEIS[aba](); document.querySelectorAll("#ferr button").forEach(b => b.classList.toggle("on", b.dataset.t == aba)); }
+function painel(){ const Lp = camada(); verPose = aba == "camada" && Lp && Lp.tipo == "personagem" && subP != "parada" ? {id: Lp.id, pose: subP} : null; $("#painel").innerHTML = PAINEIS[aba](); document.querySelectorAll("#ferr button").forEach(b => b.classList.toggle("on", b.dataset.t == aba)); }
 function alvoDe(d){
+  if (d.po) { const L = camada(); return [L && L.poses ? L.poses[subP] : null, d.po]; }
   if (d.k) return [camada(), d.k]; if (d.p) return [pastaSel(), d.p]; if (d.bp) return [cfg.bal.pos[cfg.fmt], d.bp];
   if (d.b) return [cfg.bal, d.b]; if (d.x) return [cfg.fx, d.x]; if (d.c) return [cfg, d.c]; return [null];
 }
 function sincronizar(){ document.querySelectorAll("#painel input[type=range]").forEach(i => { const [o, k] = alvoDe(i.dataset); if (o && o[k] != null) { i.value = o[k]; const l = i.closest(".f").querySelector("i"); if (l) l.textContent = o[k]; } }); }
 function entrada(e){
   const t = e.target, d = t.dataset; if (t.type == "file" || !t.closest("#painel")) return;
+  if (d.usar) { if (e.type == "change" && t.value) usarCamada(t.value); return; }
   const [o, k] = alvoDe(d); if (!o) return;
   let v = t.type == "checkbox" ? (t.checked ? 1 : 0) : t.type == "range" ? parseFloat(t.value) : t.value;
   if (d.k == "parent") v = v || null;
@@ -645,10 +676,15 @@ function entrada(e){
     for (const fm in cfg.bal.pos) { const P = cfg.bal.pos[fm], ve = cfg.bal.seguir && ancora[cfg.bal.seguir], no = v && ancora[v];
       if (ve) { P.x = +(+P.x + ve.x).toFixed(1); P.y = +(+P.y + ve.y).toFixed(1); } if (no) { P.x = +(P.x - no.x).toFixed(1); P.y = +(P.y - no.y).toFixed(1); } }
   }
+  if (d.k == "tipo" && o.tipo != v) {
+    if (v == "personagem") o.poses = Object.assign({falando: null, falando2: null}, o.poses || {});
+    if (v == "cenario") { cfg.layers.splice(cfg.layers.indexOf(o), 1); cfg.layers.unshift(o); toast("O cenário foi para o fundo da cena"); }
+    subP = "parada";
+  }
   o[k] = v;
   const l = t.closest(".f") && t.closest(".f").querySelector("b i"); if (l) l.textContent = v;
   if (d.c == "url") { clearTimeout(entrada.u); entrada.u = setTimeout(conectar, 600); }
-  if (["name", "role", "op", "parent", "estilo", "seguir", "on", "lock"].includes(k) && (d.k || d.p || d.b)) { $("#lista").innerHTML = listaHTML(); if (e.type == "change" && (k == "parent" || k == "lock" || k == "seguir")) painel(); }
+  if (["name", "role", "op", "parent", "estilo", "seguir", "on", "lock", "tipo"].includes(k) && (d.k || d.p || d.b)) { $("#lista").innerHTML = listaHTML(); if (e.type == "change" && (k == "parent" || k == "lock" || k == "seguir" || k == "tipo")) painel(); }
   salvar();
 }
 document.addEventListener("input", entrada); document.addEventListener("change", entrada);
@@ -662,6 +698,7 @@ document.addEventListener("click", e => {
   if ((b = q("[data-lock]"))) { const id = b.dataset.lock, o = id == "balao" ? cfg.bal : id.startsWith("f:") ? pasta(id.slice(2)) : cfg.layers.find(l => l.id == id); if (o) { o.lock = o.lock ? 0 : 1; toast(o.lock ? "Travado 🔒" : "Destravado 🔓"); salvar(); desenharLista(); painel(); } return; }
   if ((b = q("[data-vis]"))) { const id = b.dataset.vis; if (id == "balao") cfg.bal.on = cfg.bal.on ? 0 : 1; else { const o = id.startsWith("f:") ? pasta(id.slice(2)) : cfg.layers.find(l => l.id == id); if (o) o.vis = o.vis ? 0 : 1; } salvar(); desenharLista(); if (aba == "balao") painel(); return; }
   if ((b = q("[data-abre]"))) { const f = pasta(b.dataset.abre); f.open = f.open === 0 ? 1 : 0; salvar(); desenharLista(); return; }
+  if ((b = q("[data-pose]"))) { subP = b.dataset.pose; painel(); return; }
   if ((b = q("[data-sel]"))) return selecionar(b.dataset.sel);
   if ((b = q("[data-t]"))) { aba = b.dataset.t; painel(); return; }
   if ((b = q("[data-sub]"))) { const [n, v] = b.dataset.sub.split(":"); if (n == "b") subB = v; else subE = v; painel(); }
@@ -671,12 +708,25 @@ $("#guias").onchange = e => { cfg.guides = e.target.checked ? 1 : 0; salvar(); }
 $("#fPng").onchange = async e => { await adicionar(e.target.files); e.target.value = ""; };
 $("#fAud").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; audio(); try { await tocar(f, ""); } catch (x) { aviso("Não consegui tocar esse arquivo."); } };
 $("#fImp").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (f) importar(f); };
+function usarCamada(id){
+  const L = camada(), X = cfg.layers.find(l => l.id == id); if (!L || !X || subP == "parada") return;
+  L.poses = L.poses || {}; const P = L.poses[subP]; L.poses[subP] = P ? Object.assign(P, {img: X.img}) : {img: X.img, dx: 0, dy: 0, k: 1};
+  cfg.layers = cfg.layers.filter(l => l != X); if (cfg.bal.seguir == X.id) cfg.bal.seguir = L.id;
+  toast(`"${X.name}" virou a pose ${NOMEPOSE[subP]}`); salvar(); desenharLista(); painel();
+}
+$("#fPose").onchange = async e => {
+  const fl = e.target.files[0], L = camada(); e.target.value = ""; if (!fl || !L) return;
+  const k = uid(); await idbPut(k, fl); const im = carregarImg(k, fl);
+  if (subP == "parada") L.img = k;
+  else { L.poses = L.poses || {}; const P = L.poses[subP]; L.poses[subP] = P ? Object.assign(P, {img: k}) : {img: k, dx: 0, dy: 0, k: 1}; }
+  im.onload = () => { desenharLista(); painel(); }; salvar();
+};
 $("#fIco").onchange = async e => { const fl = e.target.files[0], f = pastaSel(); e.target.value = ""; if (!fl || !f) return; const k = uid(); await idbPut(k, fl); const im = carregarImg(k, fl); f.iconImg = k; im.onload = () => { desenharLista(); painel(); }; salvar(); };
 
 /* ---------- cópia de segurança (mesmo formato do Palco da ficha) ---------- */
 const paraTexto = b => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(b); });
 async function exportar(){
-  const im = {}, chaves = [...cfg.layers.map(L => L.img), ...cfg.folders.map(f => f.iconImg).filter(Boolean)];
+  const im = {}, chaves = chavesImgs();
   for (const k of chaves) if (!im[k]) { const b = await idbGet(k); if (b) im[k] = await paraTexto(b); }
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify({palco: 1, cfg: Object.assign({}, cfg, {url: undefined, motor: undefined}), imgs: im})], {type: "application/json"}));
   a.download = "palco-tamaki.json"; a.click(); aviso("Palco exportado.");
@@ -691,7 +741,7 @@ async function importar(f){
 /* ---------- início ---------- */
 (async () => {
   try { const s = localStorage.getItem(KEY); if (s) cfg = normalizar(Object.assign(copia(DEF), JSON.parse(s))); } catch (e) {}
-  const chaves = [...cfg.layers.map(L => L.img), ...cfg.folders.map(f => f.iconImg).filter(Boolean)];
+  const chaves = chavesImgs();
   for (const k of chaves) { try { const b = await idbGet(k); if (b && !imgs[k]) carregarImg(k, b); } catch (e) {} }
   const prontas = Object.values(imgs).map(im => new Promise(ok => { im.onload = im.onerror = ok; }));
   tamanho(); topo(); desenharLista(); painel(); selo(); hist = [foto()]; requestAnimationFrame(tick);
