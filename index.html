@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#120f24">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Tamaki · Central</title>
+<style>
+:root{--bg:#120f24;--bar:#1b1736;--line:#2e2a55;--tx:#efe9f7;--mut:#a49cc9;--or:#ff9f45;--gold:#f2b632;--vi:#4b47a8;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+body{display:grid;grid-template-rows:auto 1fr auto;height:100dvh}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+header{display:flex;align-items:center;gap:10px;padding:calc(6px + env(safe-area-inset-top,0px)) 12px 6px;background:var(--bar);border-bottom:1px solid var(--line)}
+header img{width:38px;height:38px;border-radius:50%;box-shadow:0 0 0 2px var(--gold)}
+header h1{flex:1;margin:0;font:700 1.05rem/1.2 Georgia,"Iowan Old Style",serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .hb{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--mut);text-decoration:none;font-size:.85rem}
+#area{position:relative;min-height:0}
+#area>*{position:absolute;inset:0}
+#area iframe{width:100%;height:100%;border:0;background:#000}
+.hide{display:none!important}
+nav{display:grid;grid-template-columns:repeat(6,1fr);background:var(--bar);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{background:none;border:0;border-top:3px solid transparent;padding:10px 2px 9px;font-size:.78rem;color:var(--mut);min-height:52px}
+nav button.on{color:var(--or);border-top-color:var(--gold);font-weight:700}
+.pn{display:flex;flex-direction:column;gap:10px;padding:14px;max-width:760px;margin:0 auto;height:100%}
+.pn h2{margin:0;font:700 1.25rem Georgia,serif}
+.mut{color:var(--mut);margin:0;font-size:.9rem}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.bt{background:var(--bar);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-height:44px}
+.bt.pri{background:var(--or);border-color:var(--or);color:#24130a;font-weight:700}
+#nota{flex:1;min-height:0;width:100%;resize:none;background:#0b0918;color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:10px;font:.82rem/1.5 ui-monospace,Menlo,monospace}
+.jg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.jg button{text-align:left;background:var(--bar);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:10px;padding:14px}
+.jg b{display:block;font:700 1.1rem Georgia,serif}
+.jg span{color:var(--mut);font-size:.88rem}
+dialog{background:var(--bar);color:var(--tx);border:1px solid var(--line);border-radius:12px;width:min(520px,92vw)}
+dialog::backdrop{background:#000a}
+dialog textarea{width:100%;min-height:40vh;background:#0b0918;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px;font:.85rem ui-monospace,monospace}
+</style>
+</head>
+<body>
+<header>
+  <img src="icon-192.png" alt="">
+  <h1 id="tt">Universo</h1>
+  <button class="hb hide" id="voltar">Voltar aos jogos</button>
+  <a class="hb" id="sozinho" target="_blank" rel="noopener">Abrir sozinho</a>
+</header>
+<main id="area">
+  <section id="v-jogos" class="hide"><div class="pn">
+    <h2>Jogos</h2>
+    <div class="jg" id="jg"></div>
+  </div></section>
+  <section id="v-reuniao" class="hide"><div class="pn">
+    <h2>Reunião</h2>
+    <p class="mut" id="resumo">Juntando tudo…</p>
+    <div class="row">
+      <button class="bt pri" id="copiar">Copiar nota</button>
+      <button class="bt" id="arquivo">Enviar como arquivo</button>
+      <button class="bt" id="colar">Colar resposta do Claude</button>
+      <button class="bt" id="atualizar">Atualizar</button>
+    </div>
+    <textarea id="nota" readonly aria-label="Nota da reunião, somente leitura"></textarea>
+  </div></section>
+</main>
+<nav id="nav"></nav>
+
+<dialog id="dCola">
+  <h2 style="margin:0 0 8px;font-family:Georgia,serif">Colar resposta do Claude</h2>
+  <p class="mut">O bloco JSON é aplicado no Universo, que mostra o que vai mudar antes de confirmar. Texto comum vira uma nota nova.</p>
+  <textarea id="cola" placeholder="Cole aqui a resposta"></textarea>
+  <div class="row" style="margin-top:10px"><button class="bt pri" id="aplicar">Aplicar no Universo</button><button class="bt" id="fechar">Cancelar</button></div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+// Universo e Ficha da Tamaki são os sites que já existem na mesma conta do GitHub.
+const ABAS = {
+  universo: {n: "Universo", t: "Universo", src: "/universo/"},
+  tamaki: {n: "Tamaki", t: "Ficha da Tamaki", src: "/Tamaki_Personagem/"},
+  escrita: {n: "Escrita", t: "Biblioteca de Escrita", src: "projetos/biblioteca-escrita/"},
+  novel: {n: "Novel", t: "Visual novel", src: "projetos/visual-novel/"},
+  jogos: {n: "Jogos", t: "Jogos"},
+  reuniao: {n: "Reunião", t: "Reunião"}
+};
+const JOGOS = [
+  ["conselho", "Conselho", "Jogo do Kaoro na escola neutra.", "projetos/conselho/", "#965d3f"],
+  ["gangue", "Gangue da Escola", "Idle dos Corvos de Ferro.", "projetos/gangue-escola/", "#c9a227"],
+  ["emulador", "Emulador retrô", "Clássicos direto no navegador.", "projetos/emulador/", "#5fd9cf"]
+];
+const frames = {}, prontos = {};
+let atual = "";
+
+function frame(k, src){
+  if (!frames[k]) {
+    const f = document.createElement("iframe");
+    f.title = k; f.className = "hide"; f.allow = "fullscreen; clipboard-write; autoplay";
+    prontos[k] = new Promise(ok => f.addEventListener("load", ok, {once: true}));
+    f.src = src; $("#area").appendChild(f); frames[k] = f;
+  }
+  return prontos[k];
+}
+function ir(k, jogo){
+  atual = k;
+  document.querySelectorAll("#area>*").forEach(e => e.classList.add("hide"));
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b.dataset.k == k));
+  let titulo = ABAS[k].t, src = ABAS[k].src;
+  if (jogo) { const j = JOGOS.find(x => x[0] == jogo); titulo = j[1]; src = j[3]; }
+  $("#tt").textContent = titulo;
+  $("#voltar").classList.toggle("hide", !jogo);
+  $("#sozinho").classList.toggle("hide", !src);
+  if (src) { $("#sozinho").href = src; const id = jogo ? "jogo-" + jogo : k; frame(id, src); frames[id].classList.remove("hide"); }
+  else $("#v-" + k).classList.remove("hide");
+  if (k == "reuniao") montar();
+  try { localStorage.setItem("central_aba", k); } catch (e) {}
+}
+$("#nav").innerHTML = Object.entries(ABAS).map(([k, a]) => `<button data-k="${k}">${a.n}</button>`).join("");
+$("#nav").onclick = e => { const k = e.target.dataset.k; if (k) ir(k); };
+$("#jg").innerHTML = JOGOS.map(j => `<button data-j="${j[0]}" style="--c:${j[4]}"><b>${j[1]}</b><span>${j[2]}</span></button>`).join("");
+$("#jg").onclick = e => { const b = e.target.closest("[data-j]"); if (b) ir("jogos", b.dataset.j); };
+$("#voltar").onclick = () => ir("jogos");
+
+// ---------- Reunião: lê os dados de cada projeto (mesmo endereço = mesmos dados) ----------
+const texto = h => { try { return new DOMParser().parseFromString(h || "", "text/html").body.textContent.trim(); } catch (e) { return ""; } };
+const lerLS = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+function lerIDB(nome, loja, chave){
+  return new Promise(ok => {
+    let r; try { r = indexedDB.open(nome); } catch (e) { return ok(null); }
+    r.onupgradeneeded = () => r.transaction.abort(); // não cria o banco se ele ainda não existe
+    r.onerror = () => ok(null);
+    r.onsuccess = () => { const d = r.result;
+      if (!d.objectStoreNames.contains(loja)) { d.close(); return ok(null); }
+      const q = d.transaction(loja).objectStore(loja).get(chave);
+      q.onsuccess = () => { ok(q.result || null); d.close(); }; q.onerror = () => { ok(null); d.close(); }; };
+  });
+}
+const T = {html: "HTML", quadro: "Quadro", nota: "Nota", doc: "Documento", img: "Imagem", audio: "Áudio", link: "Link"};
+function biblia(S){
+  const L = [];
+  for (const i of S.items.slice().reverse()) {
+    L.push("## [" + (T[i.type] || i.type) + "] " + (i.title || "Sem título"));
+    if (i.tags) L.push("Etiquetas: " + i.tags);
+    if (i.type == "link") L.push("Endereço: " + i.url);
+    if (i.type == "img") L.push("(imagem; não incluída neste arquivo)");
+    if (i.type == "audio") L.push("(áudio; não incluído neste arquivo)");
+    if (i.type == "quadro") (i.cards || []).forEach(c => { const r = c.ref && S.items.find(x => x.id == c.ref); L.push("- " + (c.kind == "g" ? "Grupo: " + (c.text || "") : c.kind == "ref" ? "Item: " + (r ? r.title : "(apagado)") : "Nota: " + (c.text || ""))); });
+    if (i.text) L.push("", i.type == "html" ? "```html\n" + i.text + "\n```" : i.text);
+    L.push("");
+  }
+  return L.join("\n");
+}
+async function fichaTamaki(){
+  const F = lerLS("tamaki");
+  if (F && Array.isArray(F.mods)) return F.mods.filter(m => m.inc).map(m => "## " + m.t + "\n" + m.f.map(x => "- " + x[0] + ": " + x[1]).join("\n")).join("\n\n")
+    + "\n\n## Links e ferramentas\n" + (F.links || []).map(l => "- " + l.n + (l.u ? " (" + l.u + ")" : "") + (l.d ? ": " + l.d : "")).join("\n");
+  // nunca editada: pede o texto pronto à própria ficha
+  await frame("tamaki", ABAS.tamaki.src);
+  try { const w = frames.tamaki.contentWindow; if (typeof w.gv == "function") return w.prompt(); } catch (e) {}
+  return "";
+}
+function escrita(){
+  const s = lerLS("kurogane:data"); if (!s) return "";
+  const L = [], ord = a => (a || []).slice().sort((x, y) => (x.order || 0) - (y.order || 0));
+  ord(s.chapters).forEach(c => L.push("## [Capítulo] " + (c.title || "Sem título"), texto(c.content), ""));
+  ord(s.personagens).forEach(p => L.push("## [Personagem] " + (p.nome || "Sem nome"), (p.blocks || []).filter(b => b.type == "texto").map(b => texto(b.content)).join("\n"), ""));
+  ord(s.cenarios).forEach(p => L.push("## [Cenário] " + (p.nome || "Sem nome"), (p.blocks || []).filter(b => b.type == "texto").map(b => texto(b.content)).join("\n"), ""));
+  ord(s.mundo).forEach(m => L.push("## [Mundo · " + (m.tipo || "item") + "] " + (m.titulo || "Sem título"), texto(m.content), ""));
+  return L.join("\n");
+}
+async function novel(){
+  let H = lerLS("vn_story");
+  if (!H) try { H = new Function(await (await fetch("projetos/visual-novel/story.js")).text() + ";return STORY")(); } catch (e) {}
+  if (!H || !H.cenas) return "";
+  return "Título: " + (H.titulo || "") + " · cena inicial: " + H.inicio + "\n\n" + Object.entries(H.cenas).map(([n, L]) =>
+    "## Cena " + n + "\n" + L.map(p => p.escolha ? "- Escolha: " + p.escolha.map(o => o.texto + " → " + (o.ir || "?")).join(" | ")
+      : p.texto !== undefined ? "- " + (p.nome ? p.nome + ": " : "(narração) ") + p.texto
+      : p.ir ? "- Vai para: " + p.ir : "").filter(Boolean).join("\n")).join("\n\n");
+}
+const CAB = ["=== INSTRUÇÕES PARA O CLAUDE ===",
+  "Responda sempre normalmente ao que eu pedir.",
+  "No final de cada resposta, entregue UM bloco de código em JSON válido, pronto para eu colar no app Universo (botão Colar resposta do Claude). Formato:",
+  '{"universo":1,"substituir":[{"de":"texto antigo","para":"texto novo"}],"atualizar":[{"titulo":"título exato do item","anexar":"texto a acrescentar"},{"titulo":"...","trocar":"trecho antigo exato","por":"trecho novo"},{"titulo":"...","texto":"novo texto completo"}],"criar":[{"titulo":"...","texto":"...","etiquetas":"a, b"}]}',
+  "Use só as chaves necessárias. Escape aspas e quebras de linha (\\n) para o JSON ser válido. Se nada precisar mudar, use \"criar\" com uma nota-resumo da conversa.",
+  "O bloco JSON altera só o Universo. Mudanças na Ficha da Tamaki, na Biblioteca de Escrita ou na visual novel: descreva o que mudar, que eu edito na aba de cada uma.",
+  "Se eu pedir algo em HTML, entregue um único arquivo HTML completo e autocontido, também em bloco de código.",
+  "=== FIM DAS INSTRUÇÕES ==="].join("\n");
+async function montar(){
+  $("#resumo").textContent = "Juntando tudo…";
+  const U = await lerIDB("universo", "s", "s"), F = await fichaTamaki(), E = escrita(), V = await novel();
+  const partes = [CAB, "", "# Reunião geral", "Exportado em " + new Date().toLocaleDateString("pt-BR"), ""];
+  const sec = (t, c) => { if (c && c.trim()) partes.push("", "# " + t, "", c.trim(), ""); };
+  sec("UNIVERSO", U && U.items ? biblia(U) : "");
+  sec("FICHA DA TAMAKI", F);
+  sec("BIBLIOTECA DE ESCRITA", E);
+  sec("VISUAL NOVEL", V);
+  $("#nota").value = partes.join("\n");
+  const r = [U && U.items ? "Universo: " + U.items.length + (U.items.length == 1 ? " item" : " itens") : "Universo: sem dados neste aparelho",
+    F ? "Ficha da Tamaki: incluída" : "Ficha da Tamaki: não encontrada",
+    E ? "Escrita: incluída" : "Escrita: vazia", V ? "Visual novel: incluída" : "Visual novel: vazia"];
+  $("#resumo").textContent = r.join(" · ");
+}
+$("#atualizar").onclick = montar;
+$("#copiar").onclick = async () => { const b = $("#copiar"), n = $("#nota");
+  try { await navigator.clipboard.writeText(n.value); } catch (e) { n.select(); document.execCommand("copy"); }
+  b.textContent = "Copiado!"; setTimeout(() => b.textContent = "Copiar nota", 1800); };
+$("#arquivo").onclick = async () => { const f = new File([$("#nota").value], "reuniao-geral.md", {type: "text/markdown"});
+  try { if (navigator.canShare && navigator.canShare({files: [f]})) return await navigator.share({files: [f], title: "Reunião geral"}); } catch (e) { return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); };
+
+// ---------- Colar resposta: usa o próprio Universo para mostrar e aplicar as mudanças ----------
+$("#colar").onclick = () => $("#dCola").showModal();
+$("#fechar").onclick = () => $("#dCola").close();
+$("#aplicar").onclick = async () => {
+  const t = $("#cola").value.trim(); if (!t) return;
+  $("#dCola").close(); ir("universo");
+  await prontos.universo; await new Promise(r => setTimeout(r, 700));
+  try { const d = frames.universo.contentWindow.document;
+    d.querySelector("#pb").value = t; d.querySelector("#ps").click(); $("#cola").value = ""; }
+  catch (e) { alert("Não consegui falar com o Universo. Abra a aba Universo e use Reunião > Colar resposta do Claude."); }
+};
+
+ir(ABAS[localStorage.getItem("central_aba")] ? localStorage.getItem("central_aba") : "universo");
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
