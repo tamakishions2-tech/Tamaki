@@ -144,6 +144,13 @@ const DEF = {url:"http://127.0.0.1:8765", motor:"termux", voice:"pf_dora", speed
   bal:{on:1, lock:0, estilo:"rpg", fundo:"#06050f", opF:1, borda:"#ffffff", texto:"#ffffff", fonte:"pixel", tam:3.2, alinh:"left", digitar:1, nome:"", nomeCor:"#ff9f45", rabo:"baixo", raboX:.25, seguir:"", cam:0,
     pos:{"16:9":{x:50, y:82, w:94, h:28}, "9:16":{x:50, y:84, w:94, h:24}}},
   fx:{zoom:1, px:0, py:0, rot:0, reage:0, dur:1, intro:"titulo", titulo:"TAMAKI SHION", sub:"", cor:"#ff9f45", gIntro:0, gEntrada:1, gSaida:1}};
+const PRESETS = [["natural", "Natural"], ["doce", "Mais doce"], ["call", "Call (microfone)"], ["radio", "Rádio"], ["original", "Sem efeito"]];
+const PRESET = {natural: {tom: 0, vel: 1, variar: .4, pausa: 1, calor: 2, clareza: 2, brilho: 1, sala: .05, vol: 1, comp: 1},
+  doce: {tom: 1.5, vel: 1.02, variar: .5, pausa: 1, calor: 1, clareza: 3, brilho: 3, sala: .06, vol: 1, comp: 1},
+  call: {tom: 0, vel: 1, variar: .3, pausa: 1, calor: 3, clareza: 4, brilho: -2, sala: 0, vol: 1.1, comp: 1},
+  radio: {tom: 0, vel: 1, variar: .2, pausa: 1, calor: -5, clareza: 6, brilho: -6, sala: 0, vol: 1.1, comp: 1},
+  original: {tom: 0, vel: 1, variar: 0, pausa: 1, calor: 0, clareza: 0, brilho: 0, sala: 0, vol: 1, comp: 0}};
+const VOZDEF = {azVoz: "pt-BR-FranciscaNeural", azEstilo: "", elVoz: "", elModelo: "eleven_multilingual_v2", elEst: .45, elSim: .8, elStyle: .15, navVoz: ""};
 const PAPEIS = [["always","Sempre visível"],["open","Boca aberta (falando)"],["closed","Boca fechada (parada)"],["eyeopen","Olho aberto"],["eyeclosed","Olho fechado (piscar)"]];
 const PARADA = [["none","Nenhuma"],["bob","Flutuar"],["sway","Balançar"],["breathe","Respirar"],["flicker","Cintilar"]];
 const FALANDO = [["none","Nenhuma"],["hop","Pular"],["shake","Tremer"],["grow","Esticar"],["tilt","Inclinar"]];
@@ -161,9 +168,10 @@ function normalizar(c){
   const ob = c.bal ? copia(c.bal) : {}; if (!c.bal) { if (c.cap != null) ob.on = c.cap; if (c.capsz) ob.tam = c.capsz; }
   c.bal = Object.assign(copia(DEF.bal), ob); c.bal.pos = Object.assign(copia(DEF.bal.pos), ob.pos || {});
   c.fx = Object.assign(copia(DEF.fx), c.fx || {});
+  c.voz = Object.assign(copia(VOZDEF), c.voz || {}); c.ed = Object.assign(copia(PRESET.natural), c.ed || {});
   return c;
 }
-let subP = "parada", subA = "mov", verPose = null, mostrada = {}, ultimoAlto = -1e9;
+let subV = "motor", subP = "parada", subA = "mov", verPose = null, mostrada = {}, ultimoAlto = -1e9;
 const estados = {};
 let cfg = normalizar(copia(DEF)), imgs = {}, aba = "camada", subB = "pos", subE = "cam", tm, hist = [], fut = [];
 const cv = $("#cv"), g = cv.getContext("2d");
@@ -201,40 +209,139 @@ const pastaSel = () => tipoSel() == "pasta" ? pasta(cfg.sel.slice(2)) : null;
 function geo(L){ const f = fDe(L), s = f ? +f.s || 1 : 1; return {X: 50 + (L.x - 50) * s + (f ? +f.dx || 0 : 0), Y: 50 + (L.y - 50) * s + (f ? +f.dy || 0 : 0), w: L.w * s, s}; }
 
 /* ---------- áudio e voz ---------- */
-let ac, an, buf, saida, cur = null, sp = false, fake = 0, lvl = 0, piscaAte = 0, proxPisca = 0, cap = "", capIni = 0, capDur = 1;
+let ac, an, buf, saida, cadV = null, cur = null, sp = false, fake = 0, lvl = 0, piscaAte = 0, proxPisca = 0, cap = "", capIni = 0, capDur = 1;
+const FRASE = "Oi, gente! Aqui é a Tamaki. Vocês não vão acreditar no que aconteceu hoje...";
+let chaves = {}; try { chaves = JSON.parse(localStorage.getItem("palco-chaves")) || {}; } catch (e) {}
+const guardarChaves = () => { try { localStorage.setItem("palco-chaves", JSON.stringify(chaves)); } catch (e) {} };
+const lerLS = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) || f; } catch (e) { return f; } };
+let vozesAz = lerLS("palco-vozes-az", [{id: "pt-BR-FranciscaNeural", n: "Francisca (feminina)", est: []}, {id: "pt-BR-ThalitaNeural", n: "Thalita (feminina)", est: []}, {id: "pt-BR-AntonioNeural", n: "Antonio (masculina)", est: []}]);
+let vozesEl = lerLS("palco-vozes-el", []);
+function impulso(ctx){ const n = Math.floor(ctx.sampleRate * 1.4), b = ctx.createBuffer(2, n, ctx.sampleRate); for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3); } return b; }
+function cadeia(ctx){ // editor de voz: graves, clareza, brilho, compressor, sala e volume
+  const ent = ctx.createGain(), f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter(), f3 = ctx.createBiquadFilter(), cp = ctx.createDynamicsCompressor(), seco = ctx.createGain(), mol = ctx.createGain(), rv = ctx.createConvolver(), out = ctx.createGain();
+  f1.type = "lowshelf"; f1.frequency.value = 250; f2.type = "peaking"; f2.frequency.value = 3000; f2.Q.value = .9; f3.type = "highshelf"; f3.frequency.value = 7500; rv.buffer = impulso(ctx);
+  ent.connect(f1); f1.connect(f2); f2.connect(f3); f3.connect(cp); cp.connect(seco); seco.connect(out); cp.connect(rv); rv.connect(mol); mol.connect(out);
+  const ajustar = () => { const E = cfg.ed; f1.gain.value = +E.calor; f2.gain.value = +E.clareza; f3.gain.value = +E.brilho;
+    cp.threshold.value = E.comp ? -24 : 0; cp.ratio.value = E.comp ? 3.5 : 1; cp.knee.value = 12; cp.attack.value = .005; cp.release.value = .2;
+    seco.gain.value = 1 - E.sala * .5; mol.gain.value = +E.sala; out.gain.value = +E.vol; };
+  ajustar(); return {ent, out, ajustar};
+}
 function audio(){
-  if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); an = ac.createAnalyser(); an.fftSize = 512; buf = new Uint8Array(an.fftSize); an.connect(ac.destination); saida = ac.createMediaStreamDestination(); an.connect(saida); }
+  if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); an = ac.createAnalyser(); an.fftSize = 512; buf = new Uint8Array(an.fftSize); an.connect(ac.destination); saida = ac.createMediaStreamDestination(); an.connect(saida); cadV = cadeia(ac); cadV.out.connect(an); }
   if (ac.state == "suspended") ac.resume(); return ac;
 }
 document.addEventListener("pointerdown", () => { try { audio(); } catch (e) {} }, {passive: true});
 function legenda(t, ms){ cap = t || ""; capIni = performance.now(); capDur = Math.max(ms, 500); }
 function pararAtual(){ if (cur) { const s = cur; cur = null; try { s.stop(); } catch (e) {} } if (window.speechSynthesis) speechSynthesis.cancel(); sp = false; }
 function parar(){ fila.length = 0; cap = ""; pararAtual(); }
-function tocar(blob, txt){ return new Promise(async (ok, no) => { try {
-  const c = audio(), ab = await c.decodeAudioData(await blob.arrayBuffer()); pararAtual(); legenda(txt, ab.duration * 1000);
-  const s = c.createBufferSource(); s.buffer = ab; s.connect(an); cur = s; s.onended = () => { if (cur === s) cur = null; ok(); }; s.start();
-} catch (e) { no(e); } }); }
+// muda o tom e a velocidade sem deixar a voz de "esquilo" (WSOLA + reamostragem)
+function esticar(x, a, sr){
+  const N = sr > 32000 ? 2048 : 1024, Hs = N / 4, Ha = Hs / a, S = N / 8, w = new Float32Array(N);
+  for (let i = 0; i < N; i++) w[i] = .5 - .5 * Math.cos(2 * Math.PI * i / N);
+  const L = Math.ceil(x.length * a) + N, y = new Float32Array(L), nm = new Float32Array(L);
+  let pin = 0, pout = 0, prev = -1;
+  while (Math.round(pin) + N + S < x.length && pout + N < L) {
+    let st = Math.round(pin);
+    if (prev >= 0) { const ref = prev + Hs; let bv = -Infinity, bd = 0;
+      for (let d = -S; d <= S; d += 4) { const s0 = st + d; if (s0 < 0 || s0 + N > x.length || ref + N / 2 > x.length) continue; let c = 0; for (let i = 0; i < N / 2; i += 8) c += x[ref + i] * x[s0 + i]; if (c > bv) { bv = c; bd = d; } }
+      st = Math.max(0, st + bd); }
+    for (let i = 0; i < N; i++) { y[pout + i] += x[st + i] * w[i]; nm[pout + i] += w[i]; }
+    prev = st; pin += Ha; pout += Hs;
+  }
+  for (let i = 0; i < L; i++) if (nm[i] > 1e-3) y[i] /= nm[i];
+  return y.subarray(0, Math.min(L, Math.round(x.length * a)));
+}
+function processar(ab, st, vel){
+  if (Math.abs(st) < .01 && Math.abs(vel - 1) < .005) return ab;
+  const n = ab.length, x = new Float32Array(n), nc = ab.numberOfChannels;
+  for (let c = 0; c < nc; c++) { const d = ab.getChannelData(c); for (let i = 0; i < n; i++) x[i] += d[i] / nc; }
+  const f = Math.pow(2, st / 12), z = esticar(x, f / vel, ab.sampleRate), m = Math.max(1, Math.floor(z.length / f)), y = new Float32Array(m);
+  for (let i = 0; i < m; i++) { const p = i * f, j = Math.floor(p), r = p - j; y[i] = (z[j] || 0) * (1 - r) + (z[j + 1] || 0) * r; }
+  const out = audio().createBuffer(1, m, ab.sampleRate); out.copyToChannel(y, 0); return out;
+}
+const escXml = s => String(s).replace(/[<>&'"]/g, c => ({"<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;"}[c]));
+const variar = () => { const k = +cfg.ed.variar || 0; return {st: (Math.random() - .5) * 1.2 * k, v: 1 + (Math.random() - .5) * .08 * k}; };
+async function azure(t, va){
+  if (!chaves.az) throw new Error("Falta a chave do Azure");
+  const V = cfg.voz, st = +cfg.ed.tom + va.st, pct = Math.round((cfg.ed.vel * va.v - 1) * 100), est = V.azEstilo;
+  const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="pt-BR"><voice name="${escXml(V.azVoz)}">${est ? `<mstts:express-as style="${escXml(est)}">` : ""}<prosody pitch="${st >= 0 ? "+" : ""}${st.toFixed(1)}st" rate="${pct >= 0 ? "+" : ""}${pct}%">${escXml(t)}</prosody>${est ? "</mstts:express-as>" : ""}</voice></speak>`;
+  const r = await fetch(`https://${chaves.azReg || "brazilsouth"}.tts.speech.microsoft.com/cognitiveservices/v1`, {method: "POST", headers: {"Ocp-Apim-Subscription-Key": chaves.az, "Content-Type": "application/ssml+xml", "X-Microsoft-OutputFormat": "audio-24khz-96kbitrate-mono-mp3"}, body: ssml});
+  if (!r.ok) throw new Error("O Azure respondeu " + r.status + (r.status == 401 ? " (chave ou região errada)" : ""));
+  return r.blob();
+}
+async function eleven(t){
+  if (!chaves.el) throw new Error("Falta a chave do ElevenLabs"); const V = cfg.voz; if (!V.elVoz) throw new Error("Escolha uma voz do ElevenLabs");
+  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(V.elVoz)}?output_format=mp3_44100_128`, {method: "POST", headers: {"xi-api-key": chaves.el, "Content-Type": "application/json"},
+    body: JSON.stringify({text: t, model_id: V.elModelo, voice_settings: {stability: +V.elEst, similarity_boost: +V.elSim, style: +V.elStyle, use_speaker_boost: true}})});
+  if (!r.ok) throw new Error("O ElevenLabs respondeu " + r.status + (r.status == 401 ? " (chave errada)" : ""));
+  return r.blob();
+}
+async function obterAudio(t){ // devolve o áudio já com tom e velocidade; null para a voz do aparelho
+  const m = cfg.motor, E = cfg.ed, va = variar(); let blob, st = +E.tom + va.st, vel = E.vel * va.v;
+  if (m == "termux") { const r = await fetch(cfg.url + "/tts", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text: t, voice: cfg.voice, speed: cfg.speed * vel, pause: cfg.pause})}); if (!r.ok) throw new Error("O Termux respondeu " + r.status); blob = await r.blob(); vel = 1; }
+  else if (m == "azure") { blob = await azure(t, va); st = 0; vel = 1; }
+  else if (m == "eleven") blob = await eleven(t);
+  else return null;
+  return processar(await audio().decodeAudioData(await blob.arrayBuffer()), st, vel);
+}
+function tocarBuffer(ab, txt){ return new Promise(ok => { const c = audio(); pararAtual(); legenda(txt, ab.duration * 1000); const s = c.createBufferSource(); s.buffer = ab; s.connect(cadV.ent); cur = s; s.onended = () => { if (cur === s) cur = null; ok(); }; s.start(); }); }
+async function tocar(blob, txt){ const ab = await audio().decodeAudioData(await blob.arrayBuffer()); return tocarBuffer(processar(ab, +cfg.ed.tom, +cfg.ed.vel), txt); }
+const vozesNav = () => window.speechSynthesis ? speechSynthesis.getVoices().filter(v => /^pt/i.test(v.lang)).sort((a, b) => (/BR/i.test(b.lang) ? 1 : 0) - (/BR/i.test(a.lang) ? 1 : 0)) : [];
 function vozNavegador(t){ return new Promise(ok => {
   if (!window.speechSynthesis) return ok();
   const u = new SpeechSynthesisUtterance(t); u.lang = "pt-BR";
-  const v = speechSynthesis.getVoices().find(v => /pt[-_]BR/i.test(v.lang)); if (v) u.voice = v;
-  u.rate = cfg.speed || 1; u.onstart = () => { sp = true; legenda(t, t.length * 70 / (cfg.speed || 1)); }; u.onend = u.onerror = () => { sp = false; ok(); };
+  const vs = speechSynthesis.getVoices(), v = vs.find(v => v.voiceURI == cfg.voz.navVoz) || vs.find(v => /pt[-_]BR/i.test(v.lang)); if (v) u.voice = v;
+  u.rate = (cfg.speed || 1) * (+cfg.ed.vel || 1); u.pitch = Math.max(.1, Math.min(2, Math.pow(2, (+cfg.ed.tom || 0) / 12)));
+  u.onstart = () => { sp = true; legenda(t, t.length * 70 / u.rate); }; u.onend = u.onerror = () => { sp = false; ok(); };
   speechSynthesis.speak(u);
 }); }
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => { if (aba == "voz" && subV == "motor" && cfg.motor == "browser") painel(); };
 const fila = []; let ocupado = false;
+const espera = ms => new Promise(r => setTimeout(r, ms));
 function falar(texto){ (texto || "").split(/\n+/).map(s => s.trim()).filter(Boolean).forEach(t => fila.push(t)); bomba(); }
 async function bomba(){ if (ocupado) return; ocupado = true;
-  while (fila.length) { const t = fila.shift(); try { await dizer(t); } catch (e) { aviso("Erro: " + (e.message || e)); } }
+  while (fila.length) { const t = fila.shift(); try { await dizer(t); } catch (e) { aviso("Erro: " + (e.message || e)); } if (fila.length) await espera(cfg.pause * 1000 * (+cfg.ed.pausa || 1)); }
   ocupado = false; }
+function msgErro(e){ const m = e && e.message || String(e); return /fetch|network|load failed/i.test(m) ? "Não consegui conectar (" + ({termux: "o comando palco está ligado no Termux?", azure: "confira a internet e a região"}[cfg.motor] || "confira a internet") + ")" : m; }
 async function dizer(t){
-  if (cfg.motor == "termux") {
-    try {
-      const r = await fetch(cfg.url + "/tts", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text: t, voice: cfg.voice, speed: cfg.speed, pause: cfg.pause})});
-      if (!r.ok) throw new Error("servidor " + r.status);
-      return await tocar(await r.blob(), t);
-    } catch (e) { aviso("Termux sem voz, usando a voz do navegador."); }
-  }
+  if (cfg.motor != "browser") { try { const ab = await obterAudio(t); if (ab) return await tocarBuffer(ab, t); } catch (e) { aviso(msgErro(e) + ". Usei a voz do aparelho."); } }
   await vozNavegador(t);
+}
+function ouvir(){ audio(); parar(); falar(FRASE); }
+function wav(ab){
+  const n = ab.length, ch = ab.numberOfChannels, sr = ab.sampleRate, dv = new DataView(new ArrayBuffer(44 + n * ch * 2)), w = (o, s) => [...s].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); dv.setUint32(4, 36 + n * ch * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, ch, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr * ch * 2, true); dv.setUint16(32, ch * 2, true); dv.setUint16(34, 16, true); w(36, "data"); dv.setUint32(40, n * ch * 2, true);
+  let o = 44; const d = [...Array(ch)].map((_, c) => ab.getChannelData(c));
+  for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) { const v = Math.max(-1, Math.min(1, d[c][i])); dv.setInt16(o, v < 0 ? v * 32768 : v * 32767, true); o += 2; }
+  return new Blob([dv], {type: "audio/wav"});
+}
+function baixar(blob, nome){ const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); }
+async function baixarFala(){
+  if (cfg.motor == "browser") return aviso("A voz do aparelho não pode ser baixada. Escolha o Azure, o ElevenLabs ou o Kokoro.");
+  const linhas = (cfg.text || FRASE).split(/\n+/).map(s => s.trim()).filter(Boolean); aviso("Gerando o áudio…");
+  try {
+    const ps = []; for (const l of linhas) ps.push(await obterAudio(l));
+    const sr = ps[0].sampleRate, gap = Math.round(sr * cfg.pause * (+cfg.ed.pausa || 1)), tot = ps.reduce((s, b) => s + b.length + gap, Math.round(sr * .3)) + sr;
+    const off = new OfflineAudioContext(1, tot, sr), cd = cadeia(off); cd.out.connect(off.destination);
+    let t0 = .15; for (const b of ps) { const s = off.createBufferSource(); s.buffer = b; s.connect(cd.ent); s.start(t0); t0 += (b.length + gap) / sr; }
+    baixar(wav(await off.startRendering()), "fala-tamaki.wav"); aviso("Áudio baixado: fala-tamaki.wav");
+  } catch (e) { aviso("Não consegui gerar: " + msgErro(e)); }
+}
+async function carregarVozes(){
+  const m = cfg.motor;
+  try {
+    let msg = "";
+    if (m == "azure") { if (!chaves.az) return aviso("Coloque a chave do Azure primeiro.");
+      const r = await fetch(`https://${chaves.azReg || "brazilsouth"}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {headers: {"Ocp-Apim-Subscription-Key": chaves.az}}); if (!r.ok) throw new Error("o Azure respondeu " + r.status);
+      vozesAz = (await r.json()).filter(v => /^pt-BR/i.test(v.Locale)).map(v => ({id: v.ShortName, n: (v.LocalName || v.DisplayName) + (v.Gender == "Female" ? " (feminina)" : v.Gender == "Male" ? " (masculina)" : ""), est: v.StyleList || []}));
+      localStorage.setItem("palco-vozes-az", JSON.stringify(vozesAz)); msg = vozesAz.length + " vozes em português carregadas.";
+    } else if (m == "eleven") { if (!chaves.el) return aviso("Coloque a chave do ElevenLabs primeiro.");
+      const r = await fetch("https://api.elevenlabs.io/v1/voices", {headers: {"xi-api-key": chaves.el}}); if (!r.ok) throw new Error("o ElevenLabs respondeu " + r.status);
+      vozesEl = (await r.json()).voices.map(v => ({id: v.voice_id, n: v.name + (v.labels && v.labels.gender ? " (" + v.labels.gender + ")" : "")}));
+      localStorage.setItem("palco-vozes-el", JSON.stringify(vozesEl)); if (!cfg.voz.elVoz && vozesEl[0]) cfg.voz.elVoz = vozesEl[0].id; msg = vozesEl.length + " vozes carregadas.";
+    }
+    salvar(); painel(); aviso(msg);
+  } catch (e) { aviso("Não consegui carregar as vozes: " + msgErro(e)); }
 }
 let es = null, esUrl = "", online = false;
 function selo(){ $("#st").textContent = online ? "Termux: conectado" : "Termux: desconectado"; $("#st").style.color = online ? "var(--te)" : "var(--mu)"; }
@@ -561,6 +668,7 @@ async function acao(a, el){
     fundo: () => { const o = Object.keys(FUNDOS); cfg.bg = o[(o.indexOf(cfg.bg) + 1) % o.length]; topo(); salvar(); },
     teste: () => { fake = performance.now() + 4000; }, ping: testar, audio: () => $("#fAud").click(), exp: exportar, imp: () => $("#fImp").click(),
     cmd: async () => { try { await navigator.clipboard.writeText(CMD()); aviso("Comando copiado. Cole no Termux."); } catch (e) { prompt("Copie o comando:", CMD()); } },
+    ouvir, vozes: carregarVozes, baixarfala: baixarFala,
     testebal: () => legenda("Gente, nem te conto! Este é um teste do balão de fala.", 3000),
     balpadrao: () => { cfg.bal.pos[cfg.fmt] = copia(DEF.bal.pos[cfg.fmt]); cfg.bal.seguir = ""; salvar(); painel(); desenharLista(); },
     camcentro: () => { Object.assign(cfg.fx, {zoom: 1, px: 0, py: 0, rot: 0}); salvar(); painel(); },
@@ -681,17 +789,39 @@ const PAINEIS = {
       <p class="dica">Ao tocar em ● Gravar, a central faz isso sozinha. Com fundo xadrez, o vídeo sai em verde chroma para recortar no CapCut.</p>`;
     return c;
   },
-  voz: () => `<div class="g">
-    ${sl("c", "motor", "Motor de voz", [["termux", "Termux (Kokoro)"], ["browser", "Voz do navegador"]], cfg.motor)}${tx("c", "voice", "Voz (id do Kokoro)", cfg.voice)}
-    ${rg("c", "speed", "Velocidade", .6, 1.5, .05, cfg.speed)}${rg("c", "pause", "Pausa entre frases (s)", 0, 1.5, .05, cfg.pause)}
-    ${rg("c", "thr", "Limiar da boca", .02, .6, .01, cfg.thr)}${rg("c", "gain", "Ganho do volume", 1, 12, .5, cfg.gain)}
-    ${tx("c", "url", "Endereço do Termux", cfg.url)}
-    <div class="btns"><button class="bt" data-a="ping">Testar conexão</button><button class="bt" data-a="cmd">Copiar instalação</button></div>
-    <div class="btns"><button class="bt" data-a="exp">Exportar palco</button><button class="bt" data-a="imp">Importar palco</button></div></div>
-    <p class="dica" id="msg">No Termux: <code>palco</code> liga a voz aqui; <code>falar "oi gente"</code> faz a Tamaki falar.</p>`
+  voz: () => {
+    const V = cfg.voz, E = cfg.ed, m = cfg.motor, senha = (k, rot) => `<label class="f"><b>${rot}</b><input type="password" data-ch="${k}" value="${esc(chaves[k] || "")}" autocomplete="off" placeholder="cole aqui"></label>`;
+    let c = subs("v", subV, [["motor", "Voz"], ["editor", "Editor de voz"], ["termux", "Boca e Termux"]]);
+    if (subV == "motor") {
+      c += `<div class="g">${sl("c", "motor", "Motor de voz", [["azure", "Azure · vozes neurais"], ["eleven", "ElevenLabs · a mais natural"], ["termux", "Kokoro no Termux"], ["browser", "Voz do aparelho"]], m)}`;
+      if (m == "azure") { const at = vozesAz.find(v => v.id == V.azVoz);
+        c += senha("az", "Chave do Azure") + tx("ch", "azReg", "Região do Azure", chaves.azReg || "brazilsouth") + sl("v", "azVoz", "Voz", vozesAz.map(v => [v.id, v.n]), V.azVoz)
+          + (at && at.est && at.est.length ? sl("v", "azEstilo", "Jeito de falar", [["", "Normal"], ...at.est.map(x => [x, x])], V.azEstilo) : ""); }
+      else if (m == "eleven") c += senha("el", "Chave do ElevenLabs") + (vozesEl.length ? sl("v", "elVoz", "Voz", vozesEl.map(v => [v.id, v.n]), V.elVoz) : "")
+          + sl("v", "elModelo", "Modelo", [["eleven_multilingual_v2", "Multilíngue v2 (melhor)"], ["eleven_flash_v2_5", "Flash v2.5 (mais rápido)"]], V.elModelo)
+          + rg("v", "elEst", "Estabilidade", 0, 1, .01, V.elEst) + rg("v", "elSim", "Semelhança", 0, 1, .01, V.elSim) + rg("v", "elStyle", "Exagero / emoção", 0, 1, .01, V.elStyle);
+      else if (m == "termux") c += sl("c", "voice", "Voz do Kokoro", [["pf_dora", "Dora (feminina)"], ["pm_alex", "Alex (masculina)"], ["pm_santa", "Santa (masculina)"]], cfg.voice) + rg("c", "speed", "Velocidade do Kokoro", .6, 1.5, .05, cfg.speed);
+      else c += sl("v", "navVoz", "Voz do aparelho", [["", "Automática (português)"], ...vozesNav().map(v => [v.voiceURI, v.name + " · " + v.lang])], V.navVoz);
+      c += rg("c", "pause", "Pausa entre frases (s)", 0, 1.5, .05, cfg.pause) + `<div class="btns"><button class="bt pri" data-a="ouvir">▶ Ouvir a voz</button>${m == "azure" || m == "eleven" ? '<button class="bt" data-a="vozes">Carregar vozes</button>' : ""}</div></div>
+        <p class="dica" id="msg">${{azure: "Vozes neurais da Microsoft, bem mais naturais. O plano grátis dá 500 mil caracteres por mês. A chave fica só neste aparelho.", eleven: "A voz mais natural, mas é paga: no plano grátis não pode usar comercialmente. A chave fica só neste aparelho.", termux: "O Kokoro em português é limitado e soa mais robótico. O Editor de voz ajuda a suavizar.", browser: "Depende das vozes instaladas no aparelho. Não passa pelo editor, não entra na gravação e não pode ser baixada."}[m]}</p>`;
+    } else if (subV == "editor") {
+      c += `<div class="btns" style="margin-bottom:6px">${PRESETS.map(([k, n]) => `<button class="bt" data-preset="${k}">${n}</button>`).join("")}<button class="bt pri" data-a="ouvir">▶ Ouvir</button><button class="bt" data-a="baixarfala">Baixar fala (.wav)</button>${ck("ed", "comp", "Voz mais cheia", E.comp)}</div><div class="g">
+        ${rg("ed", "tom", "Tom (semitons)", -6, 6, .1, E.tom)}${rg("ed", "vel", "Velocidade", .7, 1.4, .01, E.vel)}${rg("ed", "variar", "Variação natural", 0, 1, .01, E.variar)}${rg("ed", "pausa", "Pausas entre frases (×)", .3, 3, .05, E.pausa)}
+        ${rg("ed", "calor", "Graves / calor (dB)", -9, 9, .5, E.calor)}${rg("ed", "clareza", "Clareza (dB)", -9, 9, .5, E.clareza)}${rg("ed", "brilho", "Brilho (dB)", -9, 9, .5, E.brilho)}${rg("ed", "sala", "Ambiente (sala)", 0, .6, .01, E.sala)}${rg("ed", "vol", "Volume", .2, 2, .01, E.vol)}
+</div>
+        <p class="dica" id="msg">Vale para Azure, ElevenLabs, Kokoro e para os áudios que você tocar. "Variação natural" muda um pouquinho o tom e o ritmo de cada frase, para não soar repetido. "Baixar fala" gera o roteiro da aba Fala em áudio para o CapCut.</p>`;
+    } else c += `<div class="g">
+      ${rg("c", "thr", "Limiar da boca", .02, .6, .01, cfg.thr)}${rg("c", "gain", "Ganho do volume", 1, 12, .5, cfg.gain)}
+      ${tx("c", "url", "Endereço do Termux", cfg.url)}
+      <div class="btns"><button class="bt" data-a="ping">Testar conexão</button><button class="bt" data-a="cmd">Copiar instalação</button></div>
+      <div class="btns"><button class="bt" data-a="exp">Exportar palco</button><button class="bt" data-a="imp">Importar palco</button></div></div>
+      <p class="dica" id="msg">No Termux: <code>palco</code> liga a voz aqui; <code>falar "oi gente"</code> faz a Tamaki falar. O limiar e o ganho controlam quando a boca abre.</p>`;
+    return c;
+  }
 };
 function painel(){ const Lp = camada(); verPose = aba == "camada" && Lp && Lp.tipo == "personagem" && Lp.pose != "parada" ? {pers: Lp.pers, pose: Lp.pose} : null; $("#painel").innerHTML = PAINEIS[aba](); document.querySelectorAll("#ferr button").forEach(b => b.classList.toggle("on", b.dataset.t == aba)); }
 function alvoDe(d){
+  if (d.ch) return [chaves, d.ch]; if (d.v) return [cfg.voz, d.v]; if (d.ed) return [cfg.ed, d.ed];
   if (d.q) { const L = camada(); return [L && L.tipo == "personagem" ? persDe(L) : null, d.q]; }
   if (d.k) return [camada(), d.k]; if (d.p) return [pastaSel(), d.p]; if (d.bp) return [cfg.bal.pos[cfg.fmt], d.bp];
   if (d.b) return [cfg.bal, d.b]; if (d.x) return [cfg.fx, d.x]; if (d.c) return [cfg, d.c]; return [null];
@@ -722,6 +852,9 @@ function entrada(e){
   o[k] = v;
   const l = t.closest(".f") && t.closest(".f").querySelector("b i"); if (l) l.textContent = v;
   if (d.c == "url") { clearTimeout(entrada.u); entrada.u = setTimeout(conectar, 600); }
+  if (d.ch) { guardarChaves(); return; }
+  if (d.ed && cadV) cadV.ajustar();
+  if (e.type == "change" && (d.c == "motor" || d.v == "azVoz")) painel();
   if (["name", "role", "op", "parent", "estilo", "seguir", "on", "lock", "tipo", "pose", "pers"].includes(k) && (d.k || d.p || d.b)) { $("#lista").innerHTML = listaHTML(); if (e.type == "change" && (k == "parent" || k == "lock" || k == "seguir" || k == "tipo" || k == "pose" || k == "pers")) painel(); }
   salvar();
 }
@@ -731,6 +864,7 @@ document.addEventListener("click", e => {
   let b;
   if ((b = q("button[data-a]"))) return acao(b.dataset.a, b);
   if ((b = q("[data-fx]"))) return disparar(b.dataset.fx);
+  if ((b = q("[data-preset]"))) { Object.assign(cfg.ed, PRESET[b.dataset.preset]); if (cadV) cadV.ajustar(); salvar(); painel(); toast("Predefinição: " + b.textContent); return; }
   if ((b = q("[data-icone]"))) { const f = pastaSel(); if (f) { f.icon = b.dataset.icone; f.iconImg = null; salvar(); desenharLista(); painel(); } return; }
   if ((b = q("[data-membro]"))) { const f = pastaSel(), L = cfg.layers.find(l => l.id == b.dataset.membro); if (f && L) { L.parent = L.parent == f.id ? null : f.id; salvar(); desenharLista(); painel(); } return; }
   if ((b = q("[data-lock]"))) { const id = b.dataset.lock, o = id == "balao" ? cfg.bal : id.startsWith("f:") ? pasta(id.slice(2)) : cfg.layers.find(l => l.id == id); if (o) { o.lock = o.lock ? 0 : 1; toast(o.lock ? "Travado 🔒" : "Destravado 🔓"); salvar(); desenharLista(); painel(); } return; }
@@ -738,7 +872,7 @@ document.addEventListener("click", e => {
   if ((b = q("[data-abre]"))) { const f = pasta(b.dataset.abre); f.open = f.open === 0 ? 1 : 0; salvar(); desenharLista(); return; }
   if ((b = q("[data-sel]"))) return selecionar(b.dataset.sel);
   if ((b = q("[data-t]"))) { aba = b.dataset.t; painel(); return; }
-  if ((b = q("[data-sub]"))) { const [n, v] = b.dataset.sub.split(":"); if (n == "b") subB = v; else if (n == "a") subA = v; else subE = v; painel(); }
+  if ((b = q("[data-sub]"))) { const [n, v] = b.dataset.sub.split(":"); if (n == "b") subB = v; else if (n == "a") subA = v; else if (n == "v") subV = v; else subE = v; painel(); }
 });
 function topo(){ $("#bFmt").textContent = cfg.fmt; $("#bFundo").textContent = FUNDOS[cfg.bg] || FUNDOS.check; $("#guias").checked = !!cfg.guides; }
 $("#guias").onchange = e => { cfg.guides = e.target.checked ? 1 : 0; salvar(); };
