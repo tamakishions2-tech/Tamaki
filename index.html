@@ -1,233 +1,632 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#120f24">
-<meta name="color-scheme" content="dark">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<title>Tamaki · Central</title>
+<title>Ninho Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#120f24;--bar:#1b1736;--line:#2e2a55;--tx:#efe9f7;--mut:#a49cc9;--or:#ff9f45;--gold:#f2b632;--vi:#4b47a8;color-scheme:dark}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
-body{display:grid;grid-template-rows:auto 1fr auto;height:100dvh}
-button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-header{display:flex;align-items:center;gap:10px;padding:calc(6px + env(safe-area-inset-top,0px)) 12px 6px;background:var(--bar);border-bottom:1px solid var(--line)}
-header img{width:38px;height:38px;border-radius:50%;box-shadow:0 0 0 2px var(--gold)}
-header h1{flex:1;margin:0;font:700 1.05rem/1.2 Georgia,"Iowan Old Style",serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-header .hb{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--mut);text-decoration:none;font-size:.85rem}
-#area{position:relative;min-height:0}
-#area>*{position:absolute;inset:0}
-#area iframe{width:100%;height:100%;border:0;background:#000}
-.hide{display:none!important}
-nav{display:grid;grid-template-columns:repeat(7,1fr);background:var(--bar);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav button{background:none;border:0;border-top:3px solid transparent;padding:10px 1px 9px;font-size:.74rem;color:var(--mut);min-height:52px}
-nav button.on{color:var(--or);border-top-color:var(--gold);font-weight:700}
-.pn{display:flex;flex-direction:column;gap:10px;padding:14px;max-width:760px;margin:0 auto;height:100%}
-.pn h2{margin:0;font:700 1.25rem Georgia,serif}
-.mut{color:var(--mut);margin:0;font-size:.9rem}
-.row{display:flex;flex-wrap:wrap;gap:8px}
-.bt{background:var(--bar);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-height:44px}
-.bt.pri{background:var(--or);border-color:var(--or);color:#24130a;font-weight:700}
-#nota{flex:1;min-height:0;width:100%;resize:none;background:#0b0918;color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:10px;font:.82rem/1.5 ui-monospace,Menlo,monospace}
-.jg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
-.jg button{text-align:left;background:var(--bar);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:10px;padding:14px}
-.jg b{display:block;font:700 1.1rem Georgia,serif}
-.jg span{color:var(--mut);font-size:.88rem}
-dialog{background:var(--bar);color:var(--tx);border:1px solid var(--line);border-radius:12px;width:min(520px,92vw)}
-dialog::backdrop{background:#000a}
-dialog textarea{width:100%;min-height:40vh;background:#0b0918;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px;font:.85rem ui-monospace,monospace}
+:root{
+  --ferro:#1c2130; --ferro2:#2a3142; --aco:#4a5468; --giz:#ecebe4; --giz2:#a9adb8;
+  --ouro:#e3b448; --corvo:#7a6ad8; --erro:#e0625a;
+  --t:"Chakra Petch",system-ui,sans-serif; --b:"Atkinson Hyperlegible",system-ui,sans-serif;
+  color-scheme:dark; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{position:relative;background:var(--ferro);color:var(--giz);font-family:var(--b);overflow:hidden;-webkit-tap-highlight-color:transparent}
+.tela{position:absolute;inset:0;display:none}
+.tela.on{display:flex}
+button{font:inherit;color:inherit;background:var(--ferro2);border:1px solid var(--aco);border-radius:6px;padding:.6em 1.1em;cursor:pointer}
+button:active{transform:translateY(1px)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ouro);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+button.pri{background:var(--ouro);color:#1c1a12;border-color:var(--ouro);font-weight:700}
+h1,h2,h3{font-family:var(--t)}
+
+/* trava e menu */
+#lock,#menu{flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:1.5rem;text-align:center;
+  background:radial-gradient(120% 90% at 20% 10%,#2b3350 0%,var(--ferro) 60%)}
+.marca{font-family:var(--t);font-weight:700;font-size:clamp(3rem,12vw,6.5rem);line-height:.9;margin:0}
+.fita{display:inline-block;background:var(--ouro);color:#1c1a12;font-family:var(--t);font-weight:700;padding:.2em 1em;
+  clip-path:polygon(4% 0,100% 0,96% 100%,0 100%);transform:rotate(-3deg)}
+.col{display:flex;flex-direction:column;gap:.6rem;width:min(80vw,300px)}
+input[type=password]{font:inherit;padding:.7em;border-radius:6px;border:1px solid var(--aco);background:var(--ferro2);color:var(--giz)}
+.nota{color:var(--giz2);font-size:.9rem;max-width:42ch;margin:0}
+
+/* jogo */
+#jogo{flex-direction:column}
+#palco{position:relative;flex:1;overflow:hidden;background:#262c3d;user-select:none;-webkit-user-select:none}
+#fundo{position:absolute;inset:0;background-size:cover;background-position:center}
+#fundo.ph{background:repeating-linear-gradient(135deg,#2a3142 0 22px,#262c3d 22px 44px)}
+#fundoNome{position:absolute;top:3.2rem;left:50%;transform:translateX(-50%);color:var(--giz2);font-family:var(--t);font-size:.95rem}
+#pers{position:absolute;inset:0;pointer-events:none}
+.p{position:absolute;bottom:0;height:86%;transform:translateX(-50%);transition:filter .25s}
+.p img{height:100%;width:auto;display:block}
+.p.ph{width:min(24vw,210px);background:var(--c);border-radius:46% 46% 6px 6px/22% 22% 6px 6px;display:flex;align-items:center;justify-content:center;opacity:.92}
+.p.ph span{font-family:var(--t);font-weight:700;color:#fff;text-shadow:0 1px 3px #000a;text-align:center}
+.p.ph small{display:block;font-weight:500;opacity:.85}
+.p.quieto{filter:brightness(.55)}
+#caixa{position:absolute;left:3%;right:3%;bottom:3%;min-height:24%;background:rgba(18,22,34,.93);border:1px solid var(--aco);border-radius:4px;padding:1.6em 1.4em 1.1em}
+#nome{position:absolute;top:0;left:1.2em;transform:translateY(-60%) rotate(-2deg);background:var(--ouro);color:#fff;text-shadow:0 1px 2px #000a;
+  font-family:var(--t);font-weight:700;font-size:1.05rem;padding:.15em 1.1em;clip-path:polygon(5% 0,100% 0,95% 100%,0 100%)}
+#texto{font-size:clamp(1rem,2.4vw,1.25rem);line-height:1.55;max-width:68ch;min-height:3em;margin:0}
+#hud{position:absolute;top:.6rem;left:.6rem;display:flex;gap:.4rem;flex-wrap:wrap;pointer-events:none;max-width:50%}
+.chip{background:rgba(18,22,34,.85);border:1px solid var(--aco);border-radius:999px;padding:.2em .75em;font-size:.85rem}
+.chip b{font-family:var(--t);color:var(--ouro);margin-right:.35em}
+#barra{position:absolute;top:.6rem;right:.6rem;display:flex;gap:.4rem;flex-wrap:wrap;justify-content:flex-end}
+#barra button{padding:.35em .8em;font-size:.85rem;background:rgba(18,22,34,.85)}
+#escolhas{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;background:rgba(10,12,20,.55);padding:1rem}
+#escolhas button{width:min(92%,520px);text-align:left;padding:.85em 1.2em;font-size:1.05rem;background:rgba(28,33,48,.97);border-left:4px solid var(--corvo)}
+.aviso{position:absolute;left:3%;right:3%;top:3.2rem;background:#3a1f22;border:1px solid var(--erro);color:#ffd9d6;padding:.8em 1em;border-radius:4px;display:none;z-index:5}
+.aviso button{margin-top:.6em}
+#fimBox{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:rgba(10,12,20,.8);z-index:4}
+
+/* gestão */
+#gestao{flex-direction:column;overflow:auto}
+.gTopo{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.2rem;border-bottom:1px solid var(--aco);position:sticky;top:0;background:var(--ferro);z-index:1}
+.gTopo h2{margin:0;font-size:1.6rem}
+#gRec{display:flex;gap:1.6rem;flex-wrap:wrap;padding:1.1rem 1.2rem}
+.rec b{display:block;font-family:var(--t);font-size:2.1rem;color:var(--ouro);line-height:1}
+.rec span{color:var(--giz2);font-size:.9rem}
+#gSalas{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.7rem;padding:0 1.2rem 1.4rem}
+.sala{border:1px solid var(--aco);border-radius:4px;padding:.9rem;display:flex;flex-direction:column;justify-content:space-between;gap:.8rem;background:var(--ferro2)}
+.sala.fechada{background:repeating-linear-gradient(135deg,#232939 0 14px,#262d3e 14px 28px)}
+.sala strong{display:block;font-family:var(--t);font-size:1.15rem}
+.sala span{color:var(--giz2);font-size:.9rem}
+
+/* editor */
+#editor{flex-direction:column}
+.eBarra{display:flex;gap:.4rem;flex-wrap:wrap;padding:.6rem;border-bottom:1px solid var(--aco);background:var(--ferro2)}
+.eBarra button{padding:.45em .9em;font-size:.9rem}
+#roteiro{flex:1;width:100%;resize:none;border:0;background:#161a26;color:var(--giz);font:15px/1.6 ui-monospace,Menlo,Consolas,monospace;padding:1rem;tab-size:4;white-space:pre;overflow:auto}
+#edErro{display:none;background:#3a1f22;color:#ffd9d6;padding:.6rem 1rem;border-top:1px solid var(--erro)}
+#ajuda{display:none;max-height:48%;overflow:auto;padding:1rem 1.2rem;background:var(--ferro2);border-top:1px solid var(--aco);font-size:.92rem;line-height:1.5}
+#ajuda h3{margin:.8em 0 .3em;font-size:1rem;color:var(--ouro)}
+#ajuda h3:first-child{margin-top:0}
+#ajuda pre{background:#161a26;padding:.6em .8em;border-radius:4px;overflow-x:auto;margin:.3em 0}
+
+/* janela de saves */
+#modal{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,12,20,.7);z-index:10;padding:1rem}
+.mbox{background:var(--ferro2);border:1px solid var(--aco);border-radius:6px;padding:1.2rem;width:min(94vw,440px);display:flex;flex-direction:column;gap:.6rem}
+.mbox h2{margin:0 0 .3rem}
+.slot{display:flex;align-items:center;justify-content:space-between;gap:.8rem;border:1px solid var(--aco);border-radius:4px;padding:.6rem .8rem}
+.slot span{font-size:.85rem;color:var(--giz2);display:block}
+#fatal{position:fixed;left:1rem;right:1rem;bottom:1rem;background:#3a1f22;border:1px solid var(--erro);color:#ffd9d6;padding:.8rem 1rem;border-radius:4px;display:none;z-index:99;white-space:pre-wrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-<header>
-  <img src="icon-192.png" alt="">
-  <h1 id="tt">Universo</h1>
-  <button class="hb hide" id="voltar">Voltar aos jogos</button>
-  <a class="hb" id="sozinho" target="_blank" rel="noopener">Abrir sozinho</a>
-</header>
-<main id="area">
-  <section id="v-jogos" class="hide"><div class="pn">
-    <h2>Jogos</h2>
-    <div class="jg" id="jg"></div>
-  </div></section>
-  <section id="v-reuniao" class="hide"><div class="pn">
-    <h2>Reunião</h2>
-    <p class="mut" id="resumo">Juntando tudo…</p>
-    <div class="row">
-      <button class="bt pri" id="copiar">Copiar nota</button>
-      <button class="bt" id="arquivo">Enviar como arquivo</button>
-      <button class="bt" id="colar">Colar resposta do Claude</button>
-      <button class="bt" id="atualizar">Atualizar</button>
-    </div>
-    <textarea id="nota" readonly aria-label="Nota da reunião, somente leitura"></textarea>
-  </div></section>
-</main>
-<nav id="nav"></nav>
 
-<dialog id="dCola">
-  <h2 style="margin:0 0 8px;font-family:Georgia,serif">Colar resposta do Claude</h2>
-  <p class="mut">O bloco JSON é aplicado no Universo, que mostra o que vai mudar antes de confirmar. Texto comum vira uma nota nova.</p>
-  <textarea id="cola" placeholder="Cole aqui a resposta"></textarea>
-  <div class="row" style="margin-top:10px"><button class="bt pri" id="aplicar">Aplicar no Universo</button><button class="bt" id="fechar">Cancelar</button></div>
-</dialog>
+<section id="lock" class="tela">
+  <h1 class="marca">NINHO</h1>
+  <span class="fita">engine</span>
+  <p id="lockTxt" class="nota"></p>
+  <div class="col">
+    <input id="senha" type="password" autocomplete="current-password" aria-label="Senha">
+    <button id="lockBtn" class="pri">Entrar</button>
+  </div>
+  <p id="lockErro" class="nota" style="color:var(--erro)"></p>
+</section>
+
+<section id="menu" class="tela">
+  <h1 class="marca">NINHO</h1>
+  <span class="fita">engine</span>
+  <div class="col" style="margin-top:1.2rem">
+    <button id="mContinuar" class="pri">Continuar</button>
+    <button id="mNovo">Novo jogo</button>
+    <button id="mCarregar">Carregar</button>
+    <button id="mEditor">Editar roteiro</button>
+  </div>
+  <p id="menuErro" class="nota" style="color:var(--erro)"></p>
+</section>
+
+<section id="jogo" class="tela">
+  <div id="palco">
+    <div id="fundo"></div>
+    <div id="fundoNome"></div>
+    <div id="pers"></div>
+    <div id="hud"></div>
+    <div id="barra">
+      <button id="bGestao" hidden>Ninho</button>
+      <button id="bSalvar">Salvar</button>
+      <button id="bCarregar">Carregar</button>
+      <button id="bMenu">Menu</button>
+    </div>
+    <div id="caixa"><div id="nome"></div><p id="texto"></p></div>
+    <div id="escolhas"></div>
+    <div id="erroJogo" class="aviso"><div id="erroJogoTxt"></div><button id="erroEditor">Abrir no editor</button></div>
+    <div id="fimBox"><h2 class="marca" style="font-size:3rem">Fim</h2><button id="fimMenu" class="pri">Voltar ao menu</button></div>
+  </div>
+</section>
+
+<section id="gestao" class="tela">
+  <div class="gTopo"><h2>Ninho</h2><button id="gVoltar" class="pri">Voltar à história</button></div>
+  <div id="gRec"></div>
+  <div id="gSalas"></div>
+</section>
+
+<section id="editor" class="tela">
+  <div class="eBarra">
+    <button id="eTestar" class="pri">Testar</button>
+    <button id="eMais">Recuo +</button>
+    <button id="eMenos">Recuo −</button>
+    <button id="eBaixar">Baixar .txt</button>
+    <button id="eAbrir">Abrir .txt</button>
+    <button id="eAjuda">Comandos</button>
+    <button id="eVoltar">Menu</button>
+    <input id="eArquivo" type="file" accept=".txt,text/plain" hidden>
+  </div>
+  <textarea id="roteiro" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Roteiro"></textarea>
+  <div id="edErro"></div>
+  <div id="ajuda">
+    <h3>Definições (fora dos labels, sem recuo)</h3>
+<pre>personagem sato "Sato" #d9645a
+imagem fundo ninho "img/ninho.jpg"
+imagem sato feliz "img/sato_feliz.png"
+recurso grana 40 "Grana"
+sala oficina "Oficina" custo grana 30 renda grana 2
+var capitulo = 1</pre>
+    <h3>História</h3>
+<pre>label inicio:
+    cena ninho
+    mostra sato feliz esquerda
+    sato "Fala do personagem. Você tem [grana] de grana."
+    "Narração sem nome."
+    esconde sato
+    musica "audio/tema.mp3"
+    som "audio/porta.mp3"
+    para musica
+    jump outro_label
+    chama outro_label
+    fim</pre>
+    <h3>Escolhas e condições</h3>
+<pre>    menu:
+        "Ajudar o Sato":
+            $ respeito += 1
+        "Só aparece com grana" se grana >= 50:
+            $ grana -= 50
+    se respeito >= 3 and grana > 10:
+        sato "..."
+    senao se respeito >= 1:
+        sato "..."
+    senao:
+        sato "..."</pre>
+    <h3>Gestão</h3>
+<pre>    gestao</pre>
+    <p class="nota">Abre o painel do Ninho. A história continua quando você toca em “Voltar à história”. Cada sala vira uma variável: <code>sala_oficina</code> guarda o nível dela, então dá pra usar em <code>se sala_oficina >= 2:</code>. As salas rendem a cada 5 segundos, inclusive com o jogo fechado (até 2 horas).</p>
+    <p class="nota">Posições: esquerda, centro, direita. Recuo é sempre 4 espaços. O Enter já copia o recuo da linha de cima.</p>
+  </div>
+</section>
+
+<div id="modal"><div class="mbox"><h2 id="mTit"></h2><div id="mSlots" class="col" style="width:100%"></div><button id="mFechar">Fechar</button></div></div>
+<div id="fatal"></div>
+
+<script type="text/plain" id="demo"># Roteiro de exemplo, só pra mostrar os comandos.
+# Pode apagar tudo e escrever a sua história.
+
+personagem sato "Sato" #d9645a
+personagem maya "Maya" #4f9cc4
+
+# Quando tiver as artes, tire o # e coloque o caminho:
+# imagem fundo ninho "img/ninho.jpg"
+# imagem sato "img/sato.png"
+
+recurso grana 40 "Grana"
+recurso respeito 0 "Respeito"
+
+sala oficina "Oficina" custo grana 30 renda grana 2
+sala treino "Treino" custo grana 60 renda respeito 1
+
+label inicio:
+    cena ninho
+    mostra sato esquerda
+    sato "Fala de exemplo do Sato."
+    mostra maya direita
+    maya "Temos [grana] de grana agora."
+    menu:
+        "Primeira escolha":
+            $ respeito += 1
+            jump painel
+        "Segunda escolha":
+            maya "Resposta da segunda escolha."
+            jump painel
+
+label painel:
+    sato "Agora o painel de gestão abre."
+    gestao
+    se sala_oficina >= 1:
+        maya "Fala se a Oficina foi construída."
+    senao:
+        sato "Fala se nada foi construído."
+    "Fim do exemplo."
+    fim
+</script>
 
 <script>
-const $ = s => document.querySelector(s);
-// Universo e Ficha da Tamaki são os sites que já existem na mesma conta do GitHub.
-const ABAS = {
-  universo: {n: "Universo", t: "Universo", src: "/universo/"},
-  tamaki: {n: "Tamaki", t: "Ficha da Tamaki", src: "/Tamaki_Personagem/"},
-  palco: {n: "Palco", t: "Palco · estúdio", src: "palco.html"},
-  escrita: {n: "Escrita", t: "Biblioteca de Escrita", src: "projetos/biblioteca-escrita/"},
-  novel: {n: "Novel", t: "Visual novel", src: "projetos/visual-novel/"},
-  jogos: {n: "Jogos", t: "Jogos"},
-  reuniao: {n: "Reunião", t: "Reunião"}
-};
-const JOGOS = [
-  ["conselho", "Conselho", "Jogo do Kaoro na escola neutra.", "projetos/conselho/", "#965d3f"],
-  ["gangue", "Gangue da Escola", "Idle dos Corvos de Ferro.", "projetos/gangue-escola/", "#c9a227"],
-  ["emulador", "Emulador retrô", "Clássicos direto no navegador.", "projetos/emulador/", "#5fd9cf"]
-];
-const frames = {}, prontos = {};
-let atual = "";
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=x=>Math.floor(+x||0).toLocaleString('pt-BR');
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+          set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function fatal(msg){const e=$('#fatal');e.textContent=msg;e.style.display='block';setTimeout(()=>e.style.display='none',8000)}
+window.addEventListener('error',ev=>fatal('Erro: '+ev.message));
+function tela(id){document.querySelectorAll('.tela').forEach(t=>t.classList.toggle('on',t.id===id));G.tela=id}
+function hash(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
 
-function frame(k, src){
-  if (!frames[k]) {
-    const f = document.createElement("iframe");
-    f.title = k; f.className = "hide"; f.allow = "fullscreen; clipboard-write; autoplay";
-    prontos[k] = new Promise(ok => f.addEventListener("load", ok, {once: true}));
-    f.src = src; $("#area").appendChild(f); frames[k] = f;
+class ErroScript extends Error{constructor(n,msg){super(msg);this.linha=n}}
+const POS={esquerda:22,left:22,centro:50,meio:50,center:50,direita:78,right:78};
+const G={prog:null,st:null,hash:'',tela:'',modal:false,gestaoManual:false};
+
+/* ---------- leitor do roteiro ---------- */
+function parse(src){
+  const lines=[];
+  src.replace(/\r/g,'').replace(/\t/g,'    ').split('\n').forEach((t,i)=>{
+    const tr=t.trim(); if(!tr||tr.startsWith('#'))return;
+    lines.push({ind:t.match(/^ */)[0].length,txt:tr,n:i+1});
+  });
+  const P={blocks:[],labels:{},chars:{},imgs:{},recursos:[],salas:[],vars:{}};
+  let pos=0;
+
+  function linha(L){
+    const t=L.txt,n=L.n,D={t:'def',def:true,n};let m;
+    const tem=t.endsWith(':'),corpo=tem?t.slice(0,-1).trim():t;
+    // definições
+    if(m=t.match(/^personagem\s+(\w+)\s+"([^"]+)"(?:\s+(#[0-9a-fA-F]{3,8}))?$/)){P.chars[m[1]]={nome:m[2],cor:m[3]||null};return D}
+    if(m=t.match(/^imagem\s+(\w+(?:\s+\w+)?)\s+"([^"]+)"$/)){P.imgs[m[1].replace(/\s+/,' ')]=m[2];return D}
+    if(m=t.match(/^recurso\s+(\w+)\s+(-?\d+(?:\.\d+)?)(?:\s+"([^"]+)")?$/)){P.recursos.push({id:m[1],nome:m[3]||m[1]});P.vars[m[1]]=+m[2];return D}
+    if(m=t.match(/^sala\s+(\w+)\s+"([^"]+)"\s+custo\s+(\w+)\s+(\d+(?:\.\d+)?)\s+renda\s+(\w+)\s+(\d+(?:\.\d+)?)$/)){
+      P.salas.push({id:m[1],nome:m[2],custoRec:m[3],custo:+m[4],rendaRec:m[5],renda:+m[6],n});P.vars['sala_'+m[1]]=0;return D}
+    if(m=t.match(/^(?:var|default)\s+(\w+)\s*=\s*(.+)$/)){
+      try{P.vars[m[1]]=Function('return ('+jsExpr(m[2])+')')()}catch(e){throw new ErroScript(n,'Valor inválido para "'+m[1]+'".')}
+      return D}
+    // blocos
+    if(m=corpo.match(/^label\s+(\w+)$/)){if(!tem)throw new ErroScript(n,'Faltou ":" no fim do label.');return{t:'label',name:m[1],n}}
+    if(corpo==='menu'){if(!tem)throw new ErroScript(n,'Faltou ":" depois de menu.');return{t:'menu',n}}
+    if(m=corpo.match(/^(?:senao se|senão se|elif)\s+(.+)$/)){if(!tem)throw new ErroScript(n,'Faltou ":" no fim.');return{t:'senaose',cond:m[1],n}}
+    if(/^(?:senao|senão|else)$/.test(corpo)){if(!tem)throw new ErroScript(n,'Faltou ":" depois de senao.');return{t:'senao',n}}
+    if(m=corpo.match(/^(?:se|if)\s+(.+)$/)){if(!tem)throw new ErroScript(n,'Faltou ":" no fim do se.');return{t:'se',cond:m[1],n}}
+    if(tem&&(m=corpo.match(/^"([^"]*)"(?:\s+(?:se|if)\s+(.+))?$/)))return{t:'opcao',txt:m[1],cond:m[2]||null,n};
+    if(tem)throw new ErroScript(n,'Não reconheci este bloco: '+t);
+    // comandos
+    if(m=t.match(/^\$\s*(.+)$/))return{t:'code',code:m[1],n};
+    if(m=t.match(/^(?:jump|pula)\s+(\w+)$/))return{t:'jump',to:m[1],n};
+    if(m=t.match(/^(?:call|chama)\s+(\w+)$/))return{t:'call',to:m[1],n};
+    if(/^(?:return|fim)$/.test(t))return{t:'fim',n};
+    if(m=t.match(/^(?:cena|scene)\s+(.+)$/))return{t:'cena',img:m[1].trim(),n};
+    if(m=t.match(/^(?:mostra|show)\s+(.+)$/)){
+      const tk=m[1].split(/\s+/).filter(x=>x!=='at'&&x!=='em');const who=tk.shift();let p=null;
+      if(tk.length&&POS[tk[tk.length-1]]!=null)p=tk.pop();
+      return{t:'mostra',who,expr:tk.join(' ')||null,pos:p,n}}
+    if(m=t.match(/^(?:esconde|hide)\s+(\w+)$/))return{t:'esconde',who:m[1],n};
+    if(m=t.match(/^(?:musica|música|play music)\s+"([^"]+)"$/))return{t:'musica',src:m[1],n};
+    if(m=t.match(/^(?:som|play sound)\s+"([^"]+)"$/))return{t:'som',src:m[1],n};
+    if(/^(?:para musica|para música|stop music)$/.test(t))return{t:'paramusica',n};
+    if(/^(?:gestao|gestão)$/.test(t))return{t:'gestao',n};
+    // falas
+    if(m=t.match(/^(\w+)\s+"(.*)"$/))return{t:'fala',who:m[1],txt:m[2],n};
+    if(m=t.match(/^"(.*)"$/))return{t:'fala',who:null,txt:m[1],n};
+    throw new ErroScript(n,'Não entendi esta linha: '+t);
   }
-  return prontos[k];
-}
-function ir(k, jogo){
-  atual = k;
-  document.querySelectorAll("#area>*").forEach(e => e.classList.add("hide"));
-  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b.dataset.k == k));
-  let titulo = ABAS[k].t, src = ABAS[k].src;
-  if (jogo) { const j = JOGOS.find(x => x[0] == jogo); titulo = j[1]; src = j[3]; }
-  $("#tt").textContent = titulo;
-  $("#voltar").classList.toggle("hide", !jogo);
-  $("#sozinho").classList.toggle("hide", !src);
-  if (src) { $("#sozinho").href = src; const id = jogo ? "jogo-" + jogo : k; frame(id, src); frames[id].classList.remove("hide"); }
-  else $("#v-" + k).classList.remove("hide");
-  if (k == "reuniao") montar();
-  try { localStorage.setItem("central_aba", k); } catch (e) {}
-}
-$("#nav").innerHTML = Object.entries(ABAS).map(([k, a]) => `<button data-k="${k}">${a.n}</button>`).join("");
-$("#nav").onclick = e => { const k = e.target.dataset.k; if (k) ir(k); };
-$("#jg").innerHTML = JOGOS.map(j => `<button data-j="${j[0]}" style="--c:${j[4]}"><b>${j[1]}</b><span>${j[2]}</span></button>`).join("");
-$("#jg").onclick = e => { const b = e.target.closest("[data-j]"); if (b) ir("jogos", b.dataset.j); };
-$("#voltar").onclick = () => ir("jogos");
 
-// ---------- Reunião: lê os dados de cada projeto (mesmo endereço = mesmos dados) ----------
-const texto = h => { try { return new DOMParser().parseFromString(h || "", "text/html").body.textContent.trim(); } catch (e) { return ""; } };
-const lerLS = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
-function lerIDB(nome, loja, chave){
-  return new Promise(ok => {
-    let r; try { r = indexedDB.open(nome); } catch (e) { return ok(null); }
-    r.onupgradeneeded = () => r.transaction.abort(); // não cria o banco se ele ainda não existe
-    r.onerror = () => ok(null);
-    r.onsuccess = () => { const d = r.result;
-      if (!d.objectStoreNames.contains(loja)) { d.close(); return ok(null); }
-      const q = d.transaction(loja).objectStore(loja).get(chave);
-      q.onsuccess = () => { ok(q.result || null); d.close(); }; q.onerror = () => { ok(null); d.close(); }; };
+  function bloco(ind,ctx){
+    const arr=[],id=P.blocks.length;P.blocks.push(arr);
+    while(pos<lines.length){
+      const L=lines[pos];
+      if(L.ind<ind)break;
+      if(L.ind>ind)throw new ErroScript(L.n,'Recuo a mais nesta linha. Confira os espaços do começo.');
+      pos++;
+      const node=linha(L);
+      if(ctx==='menu'&&node.t!=='opcao')throw new ErroScript(L.n,'Dentro de "menu:" só vão opções, assim: "Texto da opção":');
+      if(node.t==='opcao'&&ctx!=='menu')throw new ErroScript(L.n,'Esta opção está fora de um "menu:".');
+      if(node.t==='label'&&ctx!=='raiz')throw new ErroScript(L.n,'"label" fica sem recuo, fora de outros blocos.');
+      if(L.txt.endsWith(':')){
+        const nx=lines[pos];
+        if(!nx||nx.ind<=ind)throw new ErroScript(L.n,'Depois de ":" a linha seguinte precisa de recuo (4 espaços a mais).');
+        node.kids=bloco(nx.ind,node.t);
+      }
+      if(node.t==='senao'||node.t==='senaose'){
+        let p=arr[arr.length-1];
+        if(!p||p.t!=='se')throw new ErroScript(L.n,'"senao" precisa vir logo depois de um bloco "se".');
+        while(p.elsIf)p=p.elsIf;
+        if(p.els!=null)throw new ErroScript(L.n,'Já existe um "senao" final antes deste.');
+        if(node.t==='senao')p.els=node.kids;else p.elsIf={t:'se',cond:node.cond,kids:node.kids,n:L.n};
+        continue;
+      }
+      if(ctx==='raiz'){
+        if(node.t==='label'){
+          if(P.labels[node.name]!=null)throw new ErroScript(L.n,'Já existe um label "'+node.name+'".');
+          P.labels[node.name]=node.kids;continue}
+        if(!node.def)throw new ErroScript(L.n,'Este comando precisa ficar dentro de um label.');
+      }
+      arr.push(node);
+    }
+    return id;
+  }
+  bloco(0,'raiz');
+  if(P.labels.inicio==null)throw new ErroScript(0,'Falta o "label inicio:". É por ele que o jogo começa.');
+  const rec=new Set(P.recursos.map(r=>r.id));
+  P.salas.forEach(s=>{[s.custoRec,s.rendaRec].forEach(r=>{if(!rec.has(r))throw new ErroScript(s.n,'O recurso "'+r+'" não foi definido. Use: recurso '+r+' 0 "Nome"')})});
+  P.blocks.forEach(b=>b.forEach(nd=>{
+    if((nd.t==='jump'||nd.t==='call')&&P.labels[nd.to]==null)throw new ErroScript(nd.n,'O label "'+nd.to+'" não existe.');
+    if(nd.t==='fala'&&nd.who&&!P.chars[nd.who])throw new ErroScript(nd.n,'Personagem "'+nd.who+'" não definido. Use: personagem '+nd.who+' "Nome"');
+  }));
+  return P;
+}
+
+/* ---------- expressões ---------- */
+function jsExpr(e){return e.replace(/\band\b/g,'&&').replace(/\bor\b/g,'||').replace(/\bnot\b/g,'!').replace(/\bTrue\b/g,'true').replace(/\bFalse\b/g,'false')}
+function avalia(expr,n){
+  try{return Function('v','with(v){return ('+jsExpr(expr)+')}')(G.st.vars)}
+  catch(e){const nm=(e.message.match(/^(\w+) is not defined/)||[])[1];
+    throw new ErroScript(n,nm?'A variável "'+nm+'" não existe. Crie com: var '+nm+' = 0':'Não consegui calcular "'+expr+'".')}
+}
+function execCode(node){
+  const m=node.code.match(/^(\w+)\s*([+\-*\/]?=)(?!=)\s*(.+)$/);
+  if(!m){avalia(node.code,node.n);return}
+  const v=G.st.vars,k=m[1],op=m[2],val=avalia(m[3],node.n),cur=v[k]??0;
+  v[k]=op==='='?val:op==='+='?cur+val:op==='-='?cur-val:op==='*='?cur*val:cur/val;
+}
+function interp(txt){return txt.replace(/\[(\w+)\]/g,(a,k)=>{if(!(k in G.st.vars))return a;const x=G.st.vars[k];return typeof x==='number'?fmt(x):String(x)})}
+
+/* ---------- execução ---------- */
+const topo=()=>G.st.stack[G.st.stack.length-1];
+function nodeAtual(){const f=topo();if(!f)return null;const b=G.prog.blocks[f.b];return b?b[f.ip]:null}
+function novoEstado(label){
+  return{stack:[{b:G.prog.labels[label||'inicio'],ip:0}],vars:JSON.parse(JSON.stringify(G.prog.vars)),bg:null,chars:{},music:null,t:Date.now(),ultima:'',done:false};
+}
+function run(){
+  let guarda=0;
+  try{
+    while(true){
+      if(++guarda>5000)throw new ErroScript(nodeAtual()?.n||0,'Parece um loop sem fim (jump voltando sempre pro mesmo lugar sem fala).');
+      const f=topo();
+      if(!f){fimJogo();return}
+      const blk=G.prog.blocks[f.b];
+      if(!blk)throw new ErroScript(0,'Este save não combina com o roteiro atual.');
+      if(f.ip>=blk.length){G.st.stack.pop();continue}
+      if(exec(blk[f.ip],f)==='espera'){salvar('auto');return}
+    }
+  }catch(e){erroJogo(e)}
+}
+function escolheSe(nd){if(avalia(nd.cond,nd.n))return nd.kids;if(nd.elsIf)return escolheSe(nd.elsIf);return nd.els??null}
+function exec(nd,f){
+  const st=G.st;
+  switch(nd.t){
+    case 'fala':mostraFala(nd);return 'espera';
+    case 'menu':mostraMenu(nd);return 'espera';
+    case 'gestao':G.gestaoManual=false;abreGestao();return 'espera';
+    case 'code':execCode(nd);f.ip++;atualizaHud();return;
+    case 'se':{f.ip++;const k=escolheSe(nd);if(k!=null)st.stack.push({b:k,ip:0});return}
+    case 'jump':st.stack=[{b:G.prog.labels[nd.to],ip:0}];return;
+    case 'call':f.ip++;st.stack.push({b:G.prog.labels[nd.to],ip:0,call:true});return;
+    case 'fim':{const s=st.stack;while(s.length){if(s.pop().call)return}return}
+    case 'cena':st.bg=nd.img;st.chars={};renderCena();f.ip++;return;
+    case 'mostra':{const prev=st.chars[nd.who];st.chars[nd.who]={e:nd.expr??prev?.e??null,pos:nd.pos||prev?.pos||'centro'};renderCena();f.ip++;return}
+    case 'esconde':delete st.chars[nd.who];renderCena();f.ip++;return;
+    case 'musica':st.music=nd.src;tocaMusica(nd.src);f.ip++;return;
+    case 'paramusica':st.music=null;tocaMusica(null);f.ip++;return;
+    case 'som':{try{const a=new Audio(nd.src);a.play().catch(()=>{})}catch(e){}f.ip++;return}
+    default:f.ip++;return;
+  }
+}
+function fimJogo(){G.st.done=true;$('#fimBox').style.display='flex';salvar('auto')}
+function erroJogo(e){
+  if(!(e instanceof ErroScript)){console.error(e);e=new ErroScript(0,e.message)}
+  G.ultimoErro=e;
+  $('#erroJogoTxt').textContent=(e.linha?'Linha '+e.linha+': ':'')+e.message;
+  $('#erroJogo').style.display='block';
+}
+
+/* ---------- cena e falas ---------- */
+let digitando=null;
+function renderCena(){
+  const st=G.st,P=G.prog,f=$('#fundo');
+  const src=st.bg?(P.imgs['fundo '+st.bg]||P.imgs[st.bg]):null;
+  f.style.backgroundImage=src?'url("'+src+'")':'';
+  f.classList.toggle('ph',!src);
+  $('#fundoNome').textContent=st.bg&&!src?st.bg:'';
+  const lay=$('#pers');lay.innerHTML='';
+  for(const [id,c] of Object.entries(st.chars)){
+    const img=(c.e&&P.imgs[id+' '+c.e])||P.imgs[id];
+    const d=document.createElement('div');d.className='p';d.dataset.id=id;d.style.left=(POS[c.pos]??50)+'%';
+    if(img){const im=new Image();im.src=img;im.alt=P.chars[id]?.nome||id;d.appendChild(im)}
+    else{d.classList.add('ph');d.style.setProperty('--c',P.chars[id]?.cor||'#7d8597');
+      d.innerHTML='<span>'+esc(P.chars[id]?.nome||id)+(c.e?'<small>'+esc(c.e)+'</small>':'')+'</span>'}
+    lay.appendChild(d);
+  }
+}
+function mostraFala(nd){
+  const p=nd.who?G.prog.chars[nd.who]:null,nome=$('#nome');
+  nome.textContent=p?p.nome:'';nome.style.display=p?'block':'none';nome.style.background=p?.cor||'var(--ouro)';
+  document.querySelectorAll('.p').forEach(el=>el.classList.toggle('quieto',!!nd.who&&el.dataset.id!==nd.who));
+  const txt=interp(nd.txt);G.st.ultima=(p?p.nome+': ':'')+txt;
+  escreve(txt);
+}
+function escreve(txt){
+  const el=$('#texto');clearInterval(digitando);digitando=null;el.dataset.full=txt;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=txt;return}
+  let i=0;el.textContent='';
+  digitando=setInterval(()=>{i++;el.textContent=txt.slice(0,i);if(i>=txt.length){clearInterval(digitando);digitando=null}},22);
+}
+function avancar(){
+  if(G.modal||!G.st||G.st.done||$('#erroJogo').style.display==='block')return;
+  const nd=nodeAtual();if(!nd||nd.t!=='fala')return;
+  if(digitando){clearInterval(digitando);digitando=null;$('#texto').textContent=$('#texto').dataset.full;return}
+  topo().ip++;run();
+}
+function mostraMenu(nd){
+  const box=$('#escolhas');box.innerHTML='';let qtd=0;
+  G.prog.blocks[nd.kids].forEach(op=>{
+    if(op.cond&&!avalia(op.cond,op.n))return;
+    const b=document.createElement('button');b.textContent=interp(op.txt);
+    b.onclick=ev=>{ev.stopPropagation();box.style.display='none';topo().ip++;G.st.stack.push({b:op.kids,ip:0});run()};
+    box.appendChild(b);qtd++;
+  });
+  if(!qtd)throw new ErroScript(nd.n,'Nenhuma opção deste menu está disponível agora.');
+  box.style.display='flex';
+}
+
+/* ---------- áudio ---------- */
+const audio={m:null,src:null};
+function tocaMusica(src){
+  if(audio.src===src&&audio.m)return;
+  if(audio.m)audio.m.pause();audio.m=null;audio.src=src;if(!src)return;
+  try{const a=new Audio(src);a.loop=true;a.volume=.6;a.play().catch(()=>{});audio.m=a}catch(e){}
+}
+
+/* ---------- gestão ---------- */
+const custoSala=(s,niv)=>Math.ceil(s.custo*Math.pow(1.6,niv));
+const nomeRec=id=>G.prog.recursos.find(r=>r.id===id)?.nome||id;
+function abreGestao(){tela('gestao');renderGestao()}
+function renderGestao(){
+  const P=G.prog,v=G.st.vars;
+  $('#gRec').innerHTML=P.recursos.map(r=>'<div class="rec"><b>'+fmt(v[r.id])+'</b><span>'+esc(r.nome)+'</span></div>').join('');
+  const lista=$('#gSalas');lista.innerHTML='';
+  if(!P.salas.length){lista.innerHTML='<p class="nota">Nenhuma sala ainda. No roteiro, escreva: sala oficina "Oficina" custo grana 30 renda grana 2</p>';return}
+  P.salas.forEach(s=>{
+    const niv=v['sala_'+s.id]||0,c=custoSala(s,niv);
+    const d=document.createElement('div');d.className='sala'+(niv?'':' fechada');
+    d.innerHTML='<div><strong>'+esc(s.nome)+'</strong><span>'+(niv?'Nível '+niv+', rende '+fmt(s.renda*niv)+' '+esc(nomeRec(s.rendaRec))+' a cada 5 s':'Fechada')+'</span></div>';
+    const b=document.createElement('button');b.textContent=(niv?'Melhorar':'Construir')+' por '+fmt(c)+' '+nomeRec(s.custoRec);
+    b.disabled=(v[s.custoRec]||0)<c;
+    b.onclick=()=>{if((v[s.custoRec]||0)<c)return;v[s.custoRec]-=c;v['sala_'+s.id]=niv+1;renderGestao();atualizaHud();salvar('auto')};
+    d.appendChild(b);lista.appendChild(d);
   });
 }
-const T = {html: "HTML", quadro: "Quadro", nota: "Nota", doc: "Documento", img: "Imagem", audio: "Áudio", link: "Link"};
-function biblia(S){
-  const L = [];
-  for (const i of S.items.slice().reverse()) {
-    L.push("## [" + (T[i.type] || i.type) + "] " + (i.title || "Sem título"));
-    if (i.tags) L.push("Etiquetas: " + i.tags);
-    if (i.type == "link") L.push("Endereço: " + i.url);
-    if (i.type == "img") L.push("(imagem; não incluída neste arquivo)");
-    if (i.type == "audio") L.push("(áudio; não incluído neste arquivo)");
-    if (i.type == "quadro") (i.cards || []).forEach(c => { const r = c.ref && S.items.find(x => x.id == c.ref); L.push("- " + (c.kind == "g" ? "Grupo: " + (c.text || "") : c.kind == "ref" ? "Item: " + (r ? r.title : "(apagado)") : "Nota: " + (c.text || ""))); });
-    if (i.text) L.push("", i.type == "html" ? "```html\n" + i.text + "\n```" : i.text);
-    L.push("");
+function tick(){
+  const st=G.st,now=Date.now(),dt=Math.min((now-st.t)/1000,7200);st.t=now;
+  G.prog.salas.forEach(s=>{const niv=st.vars['sala_'+s.id]||0;if(niv)st.vars[s.rendaRec]=(st.vars[s.rendaRec]||0)+s.renda*niv*dt/5});
+}
+function atualizaHud(){
+  if(!G.st)return;
+  $('#hud').innerHTML=G.prog.recursos.map(r=>'<span class="chip"><b>'+fmt(G.st.vars[r.id])+'</b>'+esc(r.nome)+'</span>').join('');
+}
+setInterval(()=>{
+  if(!G.st||G.st.done||(G.tela!=='jogo'&&G.tela!=='gestao'))return;
+  tick();atualizaHud();if(G.tela==='gestao')renderGestao();
+},1000);
+
+/* ---------- saves ---------- */
+const SLOTS=['auto','1','2','3'];
+function salvar(k){if(!G.st)return;const s=LS.get('ne_saves',{});s[k]={st:G.st,h:G.hash,quando:Date.now(),prev:G.st.ultima};LS.set('ne_saves',s)}
+function carregar(k){
+  const s=LS.get('ne_saves',{})[k];if(!s)return;
+  if(s.h!==G.hash&&!confirm('Este save foi feito com outra versão do roteiro e pode dar erro. Carregar mesmo assim?'))return;
+  G.st=JSON.parse(JSON.stringify(s.st));G.st.done=false;fechaModal();iniciaTela();run();
+}
+function iniciaTela(){
+  $('#escolhas').style.display='none';$('#fimBox').style.display='none';$('#erroJogo').style.display='none';
+  $('#texto').textContent='';$('#nome').style.display='none';
+  $('#bGestao').hidden=!G.prog.salas.length;
+  renderCena();atualizaHud();tocaMusica(G.st.music);tela('jogo');
+}
+function abreSlots(modo){
+  G.modal=true;$('#mTit').textContent=modo==='salvar'?'Salvar':'Carregar';
+  const s=LS.get('ne_saves',{}),box=$('#mSlots');box.innerHTML='';
+  SLOTS.forEach(k=>{
+    const sv=s[k],d=document.createElement('div');d.className='slot';
+    const info=sv?new Date(sv.quando).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})+(sv.prev?', '+sv.prev.slice(0,40):''):'Vazio';
+    d.innerHTML='<div><strong>'+(k==='auto'?'Automático':'Espaço '+k)+'</strong><span>'+esc(info)+'</span></div>';
+    const b=document.createElement('button');
+    if(modo==='salvar'){b.textContent='Salvar aqui';b.disabled=k==='auto';b.onclick=()=>{salvar(k);abreSlots('salvar')}}
+    else{b.textContent='Carregar';b.disabled=!sv;b.onclick=()=>carregar(k)}
+    d.appendChild(b);box.appendChild(d);
+  });
+  $('#modal').style.display='flex';
+}
+function fechaModal(){G.modal=false;$('#modal').style.display='none'}
+
+/* ---------- roteiro e editor ---------- */
+const ta=$('#roteiro');
+function roteiroAtual(){return LS.get('ne_roteiro',null)??$('#demo').textContent}
+function compila(){
+  const src=ta.value;
+  try{G.prog=parse(src);G.hash=hash(src);$('#edErro').style.display='none';return true}
+  catch(e){mostraErroEditor(e);return false}
+}
+function mostraErroEditor(e){
+  const box=$('#edErro');box.textContent=(e.linha?'Linha '+e.linha+': ':'')+e.message;box.style.display='block';
+  if(e.linha){const ls=ta.value.split('\n');let p=0;for(let i=0;i<e.linha-1;i++)p+=ls[i].length+1;ta.focus();ta.setSelectionRange(p,p+(ls[e.linha-1]||'').length)}
+}
+let tSalva;
+ta.addEventListener('input',e=>{
+  if(e.inputType==='insertLineBreak'){
+    const pos=ta.selectionStart,antes=ta.value.slice(0,pos-1),lin=antes.slice(antes.lastIndexOf('\n')+1);
+    let ind=lin.match(/^ */)[0];if(lin.trim().endsWith(':'))ind+='    ';
+    if(ind)ta.setRangeText(ind,pos,pos,'end');
   }
-  return L.join("\n");
+  clearTimeout(tSalva);tSalva=setTimeout(()=>LS.set('ne_roteiro',ta.value),600);
+});
+ta.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();recuo(e.shiftKey?-1:1)}});
+function recuo(dir){
+  const v=ta.value,s=ta.selectionStart,e=ta.selectionEnd,ini=v.lastIndexOf('\n',s-1)+1;
+  let fimL=v.indexOf('\n',e);if(fimL<0)fimL=v.length;
+  const linhas=v.slice(ini,fimL).split('\n').map(l=>dir>0?'    '+l:l.replace(/^ {1,4}/,''));
+  const novo=linhas.join('\n');ta.setRangeText(novo,ini,fimL,'preserve');
+  ta.setSelectionRange(ini,ini+novo.length);ta.focus();LS.set('ne_roteiro',ta.value);
 }
-async function fichaTamaki(){
-  const F = lerLS("tamaki");
-  if (F && Array.isArray(F.mods)) return F.mods.filter(m => m.inc).map(m => "## " + m.t + "\n" + m.f.map(x => "- " + x[0] + ": " + x[1]).join("\n")).join("\n\n")
-    + "\n\n## Links e ferramentas\n" + (F.links || []).map(l => "- " + l.n + (l.u ? " (" + l.u + ")" : "") + (l.d ? ": " + l.d : "")).join("\n");
-  // nunca editada: pede o texto pronto à própria ficha
-  await frame("tamaki", ABAS.tamaki.src);
-  try { const w = frames.tamaki.contentWindow; if (typeof w.gv == "function") return w.prompt(); } catch (e) {}
-  return "";
-}
-function escrita(){
-  const s = lerLS("kurogane:data"); if (!s) return "";
-  const L = [], ord = a => (a || []).slice().sort((x, y) => (x.order || 0) - (y.order || 0));
-  ord(s.chapters).forEach(c => L.push("## [Capítulo] " + (c.title || "Sem título"), texto(c.content), ""));
-  ord(s.personagens).forEach(p => L.push("## [Personagem] " + (p.nome || "Sem nome"), (p.blocks || []).filter(b => b.type == "texto").map(b => texto(b.content)).join("\n"), ""));
-  ord(s.cenarios).forEach(p => L.push("## [Cenário] " + (p.nome || "Sem nome"), (p.blocks || []).filter(b => b.type == "texto").map(b => texto(b.content)).join("\n"), ""));
-  ord(s.mundo).forEach(m => L.push("## [Mundo · " + (m.tipo || "item") + "] " + (m.titulo || "Sem título"), texto(m.content), ""));
-  return L.join("\n");
-}
-async function novel(){
-  let H = lerLS("vn_story");
-  if (!H) try { H = new Function(await (await fetch("projetos/visual-novel/story.js")).text() + ";return STORY")(); } catch (e) {}
-  if (!H || !H.cenas) return "";
-  return "Título: " + (H.titulo || "") + " · cena inicial: " + H.inicio + "\n\n" + Object.entries(H.cenas).map(([n, L]) =>
-    "## Cena " + n + "\n" + L.map(p => p.escolha ? "- Escolha: " + p.escolha.map(o => o.texto + " → " + (o.ir || "?")).join(" | ")
-      : p.texto !== undefined ? "- " + (p.nome ? p.nome + ": " : "(narração) ") + p.texto
-      : p.ir ? "- Vai para: " + p.ir : "").filter(Boolean).join("\n")).join("\n\n");
-}
-const CAB = ["=== INSTRUÇÕES PARA O CLAUDE ===",
-  "Responda sempre normalmente ao que eu pedir.",
-  "No final de cada resposta, entregue UM bloco de código em JSON válido, pronto para eu colar no app Universo (botão Colar resposta do Claude). Formato:",
-  '{"universo":1,"substituir":[{"de":"texto antigo","para":"texto novo"}],"atualizar":[{"titulo":"título exato do item","anexar":"texto a acrescentar"},{"titulo":"...","trocar":"trecho antigo exato","por":"trecho novo"},{"titulo":"...","texto":"novo texto completo"}],"criar":[{"titulo":"...","texto":"...","etiquetas":"a, b"}]}',
-  "Use só as chaves necessárias. Escape aspas e quebras de linha (\\n) para o JSON ser válido. Se nada precisar mudar, use \"criar\" com uma nota-resumo da conversa.",
-  "O bloco JSON altera só o Universo. Mudanças na Ficha da Tamaki, na Biblioteca de Escrita ou na visual novel: descreva o que mudar, que eu edito na aba de cada uma.",
-  "Se eu pedir algo em HTML, entregue um único arquivo HTML completo e autocontido, também em bloco de código.",
-  "=== FIM DAS INSTRUÇÕES ==="].join("\n");
-async function montar(){
-  $("#resumo").textContent = "Juntando tudo…";
-  const U = await lerIDB("universo", "s", "s"), F = await fichaTamaki(), E = escrita(), V = await novel();
-  const partes = [CAB, "", "# Reunião geral", "Exportado em " + new Date().toLocaleDateString("pt-BR"), ""];
-  const sec = (t, c) => { if (c && c.trim()) partes.push("", "# " + t, "", c.trim(), ""); };
-  sec("UNIVERSO", U && U.items ? biblia(U) : "");
-  sec("FICHA DA TAMAKI", F);
-  sec("BIBLIOTECA DE ESCRITA", E);
-  sec("VISUAL NOVEL", V);
-  $("#nota").value = partes.join("\n");
-  const r = [U && U.items ? "Universo: " + U.items.length + (U.items.length == 1 ? " item" : " itens") : "Universo: sem dados neste aparelho",
-    F ? "Ficha da Tamaki: incluída" : "Ficha da Tamaki: não encontrada",
-    E ? "Escrita: incluída" : "Escrita: vazia", V ? "Visual novel: incluída" : "Visual novel: vazia"];
-  $("#resumo").textContent = r.join(" · ");
-}
-$("#atualizar").onclick = montar;
-$("#copiar").onclick = async () => { const b = $("#copiar"), n = $("#nota");
-  try { await navigator.clipboard.writeText(n.value); } catch (e) { n.select(); document.execCommand("copy"); }
-  b.textContent = "Copiado!"; setTimeout(() => b.textContent = "Copiar nota", 1800); };
-$("#arquivo").onclick = async () => { const f = new File([$("#nota").value], "reuniao-geral.md", {type: "text/markdown"});
-  try { if (navigator.canShare && navigator.canShare({files: [f]})) return await navigator.share({files: [f], title: "Reunião geral"}); } catch (e) { return; }
-  const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); };
+$('#eMais').onclick=()=>recuo(1);
+$('#eMenos').onclick=()=>recuo(-1);
+$('#eTestar').onclick=()=>{LS.set('ne_roteiro',ta.value);if(!compila())return;G.st=novoEstado();iniciaTela();run()};
+$('#eAjuda').onclick=()=>{const a=$('#ajuda');a.style.display=a.style.display==='block'?'none':'block'};
+$('#eVoltar').onclick=()=>{LS.set('ne_roteiro',ta.value);abreMenu()};
+$('#eBaixar').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ta.value],{type:'text/plain'}));a.download='roteiro.txt';document.body.appendChild(a);a.click();a.remove()};
+$('#eAbrir').onclick=()=>$('#eArquivo').click();
+$('#eArquivo').onchange=ev=>{const f=ev.target.files[0];if(!f)return;f.text().then(t=>{ta.value=t;LS.set('ne_roteiro',t);compila()});ev.target.value=''};
 
-// ---------- Colar resposta: usa o próprio Universo para mostrar e aplicar as mudanças ----------
-$("#colar").onclick = () => $("#dCola").showModal();
-$("#fechar").onclick = () => $("#dCola").close();
-$("#aplicar").onclick = async () => {
-  const t = $("#cola").value.trim(); if (!t) return;
-  $("#dCola").close(); ir("universo");
-  await prontos.universo; await new Promise(r => setTimeout(r, 700));
-  try { const d = frames.universo.contentWindow.document;
-    d.querySelector("#pb").value = t; d.querySelector("#ps").click(); $("#cola").value = ""; }
-  catch (e) { alert("Não consegui falar com o Universo. Abra a aba Universo e use Reunião > Colar resposta do Claude."); }
+/* ---------- menu e telas ---------- */
+function abreMenu(){
+  tocaMusica(null);
+  ta.value=roteiroAtual();
+  const ok=(()=>{try{G.prog=parse(ta.value);G.hash=hash(ta.value);return true}catch(e){G.erroMenu=e;return false}})();
+  $('#menuErro').textContent=ok?'':'O roteiro tem um erro. Abra o editor para ver.';
+  const temAuto=!!LS.get('ne_saves',{}).auto;
+  $('#mContinuar').disabled=!ok||!temAuto;$('#mNovo').disabled=!ok;$('#mCarregar').disabled=!ok;
+  tela('menu');
+}
+$('#mNovo').onclick=()=>{G.st=novoEstado();iniciaTela();run()};
+$('#mContinuar').onclick=()=>carregar('auto');
+$('#mCarregar').onclick=()=>abreSlots('carregar');
+$('#mEditor').onclick=()=>{tela('editor');if(G.erroMenu){mostraErroEditor(G.erroMenu);G.erroMenu=null}};
+$('#mFechar').onclick=fechaModal;
+$('#bSalvar').onclick=e=>{e.stopPropagation();abreSlots('salvar')};
+$('#bCarregar').onclick=e=>{e.stopPropagation();abreSlots('carregar')};
+$('#bMenu').onclick=e=>{e.stopPropagation();salvar('auto');abreMenu()};
+$('#bGestao').onclick=e=>{e.stopPropagation();G.gestaoManual=true;abreGestao()};
+$('#gVoltar').onclick=()=>{
+  if(G.gestaoManual){G.gestaoManual=false;tela('jogo');return}
+  tela('jogo');const nd=nodeAtual();if(nd&&nd.t==='gestao'){topo().ip++;run()}
 };
+$('#fimMenu').onclick=e=>{e.stopPropagation();abreMenu()};
+$('#erroEditor').onclick=e=>{e.stopPropagation();tela('editor');mostraErroEditor(G.ultimoErro)};
+$('#palco').addEventListener('click',e=>{if(e.target.closest('button'))return;avancar()});
+document.addEventListener('keydown',e=>{if(G.tela==='jogo'&&(e.key===' '||e.key==='Enter')){e.preventDefault();avancar()}});
 
-ir(ABAS[localStorage.getItem("central_aba")] ? localStorage.getItem("central_aba") : "universo");
-if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+/* ---------- senha ---------- */
+function montaTrava(){
+  const h=LS.get('ne_senha',null),inp=$('#senha');
+  $('#lockTxt').textContent=h?'Digite sua senha.':'Crie uma senha para abrir a engine. Ela fica salva só neste aparelho e serve para afastar curiosos, não é uma proteção forte.';
+  $('#lockBtn').textContent=h?'Entrar':'Criar senha';
+  const tenta=()=>{
+    const v=inp.value;
+    if(!h){if(v.length<4){$('#lockErro').textContent='Use pelo menos 4 caracteres.';return}LS.set('ne_senha',hash('ninho:'+v))}
+    else if(hash('ninho:'+v)!==h){$('#lockErro').textContent='Senha errada.';inp.select();return}
+    try{sessionStorage.setItem('ne_ok','1')}catch(e){}
+    abreMenu();
+  };
+  $('#lockBtn').onclick=tenta;inp.onkeydown=e=>{if(e.key==='Enter')tenta()};
+  tela('lock');inp.focus();
+}
+try{
+  let ok=false;try{ok=sessionStorage.getItem('ne_ok')==='1'}catch(e){}
+  ok?abreMenu():montaTrava();
+}catch(e){fatal('Erro ao iniciar: '+e.message)}
 </script>
 </body>
 </html>
