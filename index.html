@@ -54,8 +54,9 @@
   .pc .ar { position: absolute; font-size: 1.2rem; opacity: .85; pointer-events: none; }
   .editing .pc { background: rgba(255,216,74,.25); }
 
-  #menuBtn { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 8px; z-index: 9999; display: none;
+  #menuBtn, #muteBtn { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 8px; z-index: 9999; display: none;
     background: rgba(0,0,0,.55); color: #fff; border: 0; border-radius: 10px; padding: 8px 14px; font-size: 1.1rem; }
+  #muteBtn { left: 64px; }
   #panel { position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.6); display: none;
     align-items: center; justify-content: center; padding: 16px; }
   #panel .box { background: var(--card); border-radius: 18px; padding: 18px; width: 100%; max-width: 380px;
@@ -64,6 +65,8 @@
   #panel h3 { margin: 6px 0 0; font-size: .85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
   .row { display: flex; gap: 8px; align-items: center; }
   .row > * { flex: 1; }
+  .row.vol #volMute { flex: 0 0 52px; padding: 10px 0; font-size: 1.1rem; }
+  .row.vol #volV { flex: 0 0 48px; text-align: right; font-size: .9rem; color: var(--muted); }
   .sb { background: #2e2e5a; color: #fff; border: 0; border-radius: 12px; padding: 12px; font-size: .95rem; }
   .sb.pri { background: var(--accent); }
   select.sb { appearance: none; text-align: center; }
@@ -94,12 +97,13 @@
   <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive ou GBA).</p></div>
   <div id="grid"></div>
   <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar. Toque no ⋮ de um jogo para trocar a capa, exportar ou remover.</p>
-  <p style="font-size:.75rem">versão 7</p>
+  <p style="font-size:.75rem">versão 8</p>
 </div>
 
 <div id="wrap"><div id="game"></div></div>
 <div id="pad"></div>
 <button id="menuBtn">☰</button>
+<button id="muteBtn" aria-label="Ligar ou desligar o som">🔊</button>
 <div id="editbar">
   <span id="editLabel">Arraste as peças</span>
   <input type="range" id="sizeR" min="0.5" max="2.2" step="0.05" value="1">
@@ -116,6 +120,12 @@
     <div class="row">
       <button class="sb pri" id="saveBtn">💾 Salvar…</button>
       <button class="sb pri" id="loadBtn">📂 Carregar…</button>
+    </div>
+    <h3>Som</h3>
+    <div class="row vol">
+      <button class="sb" id="volMute" aria-label="Ligar ou desligar o som">🔊</button>
+      <input type="range" id="volR" min="0" max="100" step="1" value="80" aria-label="Volume">
+      <span id="volV">80%</span>
     </div>
     <h3>Controles</h3>
     <label class="sw"><span>Mostrar controles na tela</span><input type="checkbox" id="showCtl" checked></label>
@@ -146,6 +156,47 @@ function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.style.display = "block";
   clearTimeout(toastT); toastT = setTimeout(() => (t.style.display = "none"), 2000);
 }
+
+/* ---------- volume ---------- */
+let VOL = store.get("retro-volume", 0.8);
+let MUTED = store.get("retro-muted", false);
+const outVol = () => (MUTED ? 0 : VOL);
+
+function applyVolume() {
+  const v = outVol();
+  window.EJS_volume = v;
+  const emu = window.EJS_emulator;
+  if (!emu) return;
+  try {
+    if (typeof emu.setVolume === "function") emu.setVolume(v);
+    else emu.volume = v;
+  } catch (e) {}
+}
+function refreshVolUI() {
+  const pct = Math.round(VOL * 100);
+  const icon = MUTED || pct === 0 ? "🔇" : pct < 50 ? "🔉" : "🔊";
+  $("muteBtn").textContent = icon;
+  $("volMute").textContent = icon;
+  $("volR").value = pct;
+  $("volV").textContent = MUTED ? "mudo" : pct + "%";
+}
+function setVol(v) {
+  VOL = Math.min(1, Math.max(0, v));
+  if (VOL > 0) MUTED = false;
+  store.set("retro-volume", VOL); store.set("retro-muted", MUTED);
+  applyVolume(); refreshVolUI();
+}
+function toggleMute() {
+  MUTED = !MUTED;
+  if (!MUTED && VOL === 0) VOL = 0.5;
+  store.set("retro-volume", VOL); store.set("retro-muted", MUTED);
+  applyVolume(); refreshVolUI();
+  toast(MUTED ? "🔇 Som desligado" : "🔊 Som ligado");
+}
+$("volR").oninput = (e) => setVol(parseInt(e.target.value, 10) / 100);
+$("volMute").onclick = toggleMute;
+$("muteBtn").onclick = toggleMute;
+refreshVolUI();
 
 /* ---------- controles ---------- */
 // índices do RetroPad
@@ -279,17 +330,21 @@ function select(id) {
   $("sizeR").value = layout[id].s;
   $("editLabel").textContent = "Peça: " + id.toUpperCase();
 }
+function topButtons(show) {
+  $("menuBtn").style.display = show ? "block" : "none";
+  $("muteBtn").style.display = show ? "block" : "none";
+}
 function startEdit() {
   editing = true; $("panel").style.display = "none";
   $("pad").classList.add("editing"); $("pad").style.opacity = 1;
-  $("editbar").style.display = "flex"; $("menuBtn").style.display = "none";
+  $("editbar").style.display = "flex"; topButtons(false);
   select("dpad");
 }
 function stopEdit() {
   editing = false; saveLayout();
   $("pad").classList.remove("editing"); $("pad").style.opacity = store.get("retro-opacity", 0.8);
   document.querySelectorAll(".pc").forEach((n) => n.classList.remove("sel"));
-  $("editbar").style.display = "none"; $("menuBtn").style.display = "block";
+  $("editbar").style.display = "none"; topButtons(true);
 }
 $("sizeR").oninput = (e) => { if (selected) { layout[selected].s = parseFloat(e.target.value); applyLayout(); } };
 $("editDone").onclick = stopEdit;
@@ -297,7 +352,7 @@ $("editBtn").onclick = startEdit;
 $("resetBtn").onclick = () => { store.set(lkey(), {}); loadLayout(); applyLayout(); toast("Posições restauradas"); };
 
 /* ---------- menu ---------- */
-$("menuBtn").onclick = () => ($("panel").style.display = "flex");
+$("menuBtn").onclick = () => { refreshVolUI(); $("panel").style.display = "flex"; };
 $("closeBtn").onclick = () => ($("panel").style.display = "none");
 $("panel").onclick = (e) => { if (e.target.id === "panel") $("panel").style.display = "none"; };
 $("backBtn").onclick = () => { location.href = location.pathname; };
@@ -619,7 +674,8 @@ function startGame(f, core, fname) {
 
   $("menu").style.display = "none";
   $("wrap").style.display = "block";
-  $("menuBtn").style.display = "block";
+  topButtons(true);
+  refreshVolUI();
   $("pad").style.display = store.get("retro-show", true) ? "block" : "none";
   buildPad();
 
@@ -631,6 +687,9 @@ function startGame(f, core, fname) {
   window.EJS_startOnLoaded = true;
   window.EJS_color = "#7a7aff";
   window.EJS_language = "pt-BR";
+  window.EJS_volume = outVol();
+  // o EmulatorJS restaura o volume que ele mesmo guardou; reaplicamos o nosso depois que o jogo começa
+  window.EJS_onGameStart = () => { applyVolume(); setTimeout(applyVolume, 600); setTimeout(applyVolume, 2000); };
   window.EJS_defaultOptions = SAFE
     ? { shader: "disabled", webgl2Enabled: "disabled", vsync: "disabled" }
     : { shader: "disabled" };
