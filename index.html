@@ -43,6 +43,11 @@ header{position:relative;display:flex;align-items:center;gap:10px;padding:calc(8
 dialog{background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:18px;width:min(520px,92vw)}
 dialog::backdrop{background:#000b}
 dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);border:1px solid var(--ln);border-radius:12px;padding:10px;font:.85rem ui-monospace,monospace}
+#abas button.add{background:none;border:1.5px dashed var(--am);color:var(--am)}
+.tuto{background:var(--pn);border:1px solid var(--ln);border-left:0;border-radius:14px;padding:10px 14px;font-size:.88rem}
+.tuto b{color:var(--am)}.tuto ol{margin:6px 0 0;padding-left:20px;color:var(--mut);line-height:1.5}.tuto ol b{color:var(--tx)}
+.campo{display:grid;gap:4px;margin-bottom:10px;font-size:.85rem;color:var(--mut)}
+.campo input,.campo select{background:#0d0d0d;color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:10px;font:inherit}
 @media (max-width:700px){#abas button:not(.on) .t{display:none}#abas button{padding:0 12px}}
 </style>
 </head>
@@ -54,6 +59,8 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
   <div id="menu" class="hide" role="menu">
     <a id="sozinho" target="_blank" rel="noopener" role="menuitem">↗ Abrir esta aba sozinha</a>
     <button id="recarregar" role="menuitem">⟳ Recarregar esta aba</button>
+    <button id="editar" role="menuitem" class="hide">✎ Editar esta aba</button>
+    <button id="remover" role="menuitem" class="hide">🗑 Remover esta aba</button>
   </div>
 </header>
 <main id="area">
@@ -66,9 +73,24 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
       <button class="bt" id="colar">Colar resposta do Claude</button>
       <button class="bt" id="atualizar">Atualizar</button>
     </div>
+    <div class="tuto"><b>Pedir coisas novas ao Claude</b><ol>
+      <li>Toque em <b>Copiar nota</b> e cole numa conversa com o Claude.</li>
+      <li>Logo abaixo, escreva o que você quer. Ex.: "quero um nicho de agenda" ou "quero um motion de chuva de confete".</li>
+      <li>Ele vai dizer onde colocar: nicho novo → <b>＋ Adicionar</b> na barra de cima; motion novo → Motion › <b>＋ Adicionar › Novo tipo</b>; mudança no que já existe → um arquivo para trocar no repositório Tamaki-Central.</li></ol></div>
     <textarea id="nota" readonly aria-label="Nota da reunião, somente leitura"></textarea>
   </div></section>
 </main>
+
+<dialog id="dNicho">
+  <h2 style="margin:0 0 10px;font-family:Georgia,serif" id="nichoTit">Adicionar nicho</h2>
+  <div class="row" style="gap:10px"><label class="campo" style="flex:1">Nome<input id="nNome" maxlength="24" placeholder="Ex.: Agenda"></label><label class="campo" style="width:90px">Ícone<input id="nIco" maxlength="4" placeholder="📅"></label></div>
+  <label class="campo">Como vai entrar<select id="nTipo"><option value="html">Colar o código que o Claude mandou</option><option value="arquivo">Arquivo .html do aparelho</option><option value="url">Endereço (link ou pasta do repositório)</option></select></label>
+  <textarea id="nCod" placeholder="Cole aqui o código HTML completo"></textarea>
+  <label class="campo hide" id="nUrlBox">Endereço<input id="nUrl" placeholder="Ex.: ninho/ ou https://..."></label>
+  <input type="file" id="nArq" accept=".html,text/html" class="hide">
+  <p class="mut" id="nMsg" style="margin:8px 0 0"></p>
+  <div class="row" style="margin-top:10px"><button class="bt pri" id="nSalvar">Salvar aba</button><button class="bt" id="nFechar">Cancelar</button></div>
+</dialog>
 
 <dialog id="dCola">
   <h2 style="margin:0 0 8px;font-family:Georgia,serif">Colar resposta do Claude</h2>
@@ -85,7 +107,7 @@ if (window.self !== window.top) {
 }
 const $ = s => document.querySelector(s);
 // Universo e Ficha da Tamaki são os sites que já existem na mesma conta do GitHub.
-const ABAS = {
+const BASE = {
   universo: {i: "🌌", n: "Universo", src: "/universo/"},
   tamaki: {i: "📇", n: "Tamaki", src: "/Tamaki_Personagem/"},
   palco: {i: "🎙", n: "Palco", src: "palco.html"},
@@ -93,8 +115,25 @@ const ABAS = {
   escrita: {i: "✍️", n: "Escrita", src: "projetos/biblioteca-escrita/"},
   reuniao: {i: "🤝", n: "Reunião"}
 };
+// Nichos extras: criados pela aba ＋ e guardados só neste aparelho, sem mexer na base.
+let extras = []; try { extras = JSON.parse(localStorage.getItem("central-extras")) || []; } catch (e) {}
+let ABAS = {};
+const cdb = () => new Promise((ok, no) => { const r = indexedDB.open("central", 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+async function cPut(k, v){ const d = await cdb(); await new Promise(ok => { const t = d.transaction("h", "readwrite"); v == null ? t.objectStore("h").delete(k) : t.objectStore("h").put(v, k); t.oncomplete = ok; }); }
+async function cGet(k){ const d = await cdb(); return new Promise(ok => { const q = d.transaction("h").objectStore("h").get(k); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); }
+function montarAbas(){
+  ABAS = {}; const {reuniao, ...resto} = BASE; Object.assign(ABAS, resto);
+  for (const x of extras) ABAS["x-" + x.id] = {i: x.i || "⭐", n: x.n, src: x.tipo == "url" ? x.src : null, extra: x};
+  ABAS.reuniao = reuniao;
+  $("#abas").innerHTML = Object.entries(ABAS).map(([k, a]) => `<button data-k="${k}" aria-label="${esc(a.n)}" title="${esc(a.n)}"><span class="i" aria-hidden="true">${esc(a.i)}</span><span class="t">${esc(a.n)}</span></button>`).join("")
+    + '<button class="add" id="addAba" aria-label="Adicionar nicho" title="Adicionar nicho"><span class="i" aria-hidden="true">＋</span><span class="t">Adicionar</span></button>';
+  if (atual) document.querySelectorAll("#abas [data-k]").forEach(b => b.classList.toggle("on", b.dataset.k == atual));
+}
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+async function srcDe(k){ const a = ABAS[k]; if (a.src) return a.src; const h = await cGet("x-" + a.extra.id); return URL.createObjectURL(new Blob([h || "<p style='font-family:sans-serif;color:#fff'>Código desta aba não encontrado neste aparelho.</p>"], {type: "text/html"})); }
 const frames = {}, prontos = {};
 let atual = "";
+const esqueceFrame = k => { if (frames[k]) { frames[k].remove(); delete frames[k]; delete prontos[k]; } };
 function frame(k, src){
   if (!frames[k]) {
     const f = document.createElement("iframe");
@@ -105,21 +144,46 @@ function frame(k, src){
   return prontos[k];
 }
 function fecharMenu(){ $("#menu").classList.add("hide"); $("#mais").setAttribute("aria-expanded", "false"); }
-function ir(k){
+async function ir(k){
+  if (!ABAS[k]) k = "universo";
   atual = k;
   document.querySelectorAll("#area>*").forEach(e => e.classList.add("hide"));
-  document.querySelectorAll("#abas button").forEach(b => b.classList.toggle("on", b.dataset.k == k));
-  const src = ABAS[k].src;
-  $("#sozinho").classList.toggle("hide", !src);
-  if (src) { $("#sozinho").href = src; frame(k, src); frames[k].classList.remove("hide"); }
-  else $("#v-" + k).classList.remove("hide");
-  if (k == "reuniao") montar();
-  const b = $(`#abas [data-k="${k}"]`), nv = $("#abas"); if (b) nv.scrollLeft = b.offsetLeft - (nv.clientWidth - b.offsetWidth) / 2; // centraliza a aba ativa sem empurrar a página
+  document.querySelectorAll("#abas [data-k]").forEach(b => b.classList.toggle("on", b.dataset.k == k));
+  const a = ABAS[k];
+  $("#sozinho").classList.toggle("hide", !a.src); if (a.src) $("#sozinho").href = a.src;
+  $("#editar").classList.toggle("hide", !a.extra); $("#remover").classList.toggle("hide", !a.extra);
+  if (k == "reuniao") { $("#v-reuniao").classList.remove("hide"); montar(); }
+  else { if (!frames[k]) frame(k, await srcDe(k)); if (atual == k) frames[k].classList.remove("hide"); }
+  const b = $(`#abas [data-k="${k}"]`), nv = $("#abas"); if (b) nv.scrollLeft = b.offsetLeft - (nv.clientWidth - b.offsetWidth) / 2;
   fecharMenu();
   try { localStorage.setItem("central_aba", k); } catch (e) {}
 }
-$("#abas").innerHTML = Object.entries(ABAS).map(([k, a]) => `<button data-k="${k}" aria-label="${a.n}" title="${a.n}"><span class="i" aria-hidden="true">${a.i}</span><span class="t">${a.n}</span></button>`).join("");
-$("#abas").onclick = e => { const b = e.target.closest("[data-k]"); if (b) ir(b.dataset.k); };
+montarAbas();
+$("#abas").onclick = e => { if (e.target.closest("#addAba")) return abrirNicho(null); const b = e.target.closest("[data-k]"); if (b) ir(b.dataset.k); };
+let editando = null;
+function tipoNicho(){ const t = $("#nTipo").value; $("#nCod").classList.toggle("hide", t != "html"); $("#nUrlBox").classList.toggle("hide", t != "url"); if (t == "arquivo") $("#nArq").click(); }
+$("#nTipo").onchange = tipoNicho;
+$("#nArq").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; $("#nCod").value = await f.text(); $("#nTipo").value = "html"; tipoNicho(); $("#nMsg").textContent = "Arquivo carregado: " + f.name; if (!$("#nNome").value) $("#nNome").value = f.name.replace(/\.html?$/i, ""); };
+async function abrirNicho(x){
+  editando = x; $("#nichoTit").textContent = x ? "Editar aba" : "Adicionar nicho"; $("#nMsg").textContent = "";
+  $("#nNome").value = x ? x.n : ""; $("#nIco").value = x ? x.i : ""; $("#nTipo").value = x ? x.tipo : "html"; $("#nUrl").value = x && x.tipo == "url" ? x.src : "";
+  $("#nCod").value = x && x.tipo == "html" ? (await cGet("x-" + x.id)) || "" : ""; tipoNicho(); fecharMenu(); $("#dNicho").showModal();
+}
+$("#nFechar").onclick = () => $("#dNicho").close();
+$("#nSalvar").onclick = async () => {
+  const n = $("#nNome").value.trim(), t = $("#nTipo").value, cod = $("#nCod").value.trim(), url = $("#nUrl").value.trim();
+  if (!n) return $("#nMsg").textContent = "Dê um nome para a aba.";
+  if (t == "html" && !/<[a-z!]/i.test(cod)) return $("#nMsg").textContent = "Cole o código HTML que o Claude mandou.";
+  if (t == "url" && !url) return $("#nMsg").textContent = "Escreva o endereço.";
+  const x = editando || {id: Math.random().toString(36).slice(2, 9)}; Object.assign(x, {n, i: $("#nIco").value.trim() || "⭐", tipo: t == "url" ? "url" : "html", src: t == "url" ? url : null});
+  if (x.tipo == "html") await cPut("x-" + x.id, cod); else await cPut("x-" + x.id, null);
+  if (!editando) extras.push(x); localStorage.setItem("central-extras", JSON.stringify(extras));
+  esqueceFrame("x-" + x.id); montarAbas(); $("#dNicho").close(); ir("x-" + x.id);
+};
+$("#editar").onclick = () => { const a = ABAS[atual]; if (a && a.extra) abrirNicho(a.extra); };
+$("#remover").onclick = async () => { const a = ABAS[atual]; if (!a || !a.extra) return; fecharMenu();
+  if (!confirm("Remover a aba " + a.n + "? Os dados que ela guardou continuam no aparelho.")) return;
+  extras = extras.filter(x => x != a.extra); localStorage.setItem("central-extras", JSON.stringify(extras)); await cPut("x-" + a.extra.id, null); esqueceFrame(atual); montarAbas(); ir("universo"); };
 $("#mais").onclick = e => { e.stopPropagation(); const m = $("#menu"); m.classList.toggle("hide"); $("#mais").setAttribute("aria-expanded", String(!m.classList.contains("hide"))); };
 document.addEventListener("click", e => { if (!e.target.closest("#menu")) fecharMenu(); });
 document.addEventListener("keydown", e => { if (e.key == "Escape") fecharMenu(); });
@@ -188,6 +252,16 @@ const CAB = ["=== INSTRUÇÕES PARA O CLAUDE ===",
   "Use só as chaves necessárias. Escape aspas e quebras de linha (\\n) para o JSON ser válido. Se nada precisar mudar, use \"criar\" com uma nota-resumo da conversa.",
   "O bloco JSON altera só o Universo. Mudanças na Ficha da Tamaki, na Biblioteca de Escrita ou na visual novel: descreva o que mudar, que eu edito na aba de cada uma.",
   "Se eu pedir algo em HTML, entregue um único arquivo HTML completo e autocontido, também em bloco de código.",
+  "",
+  "=== COMO ATENDER PEDIDOS NOVOS ===",
+  "A Central é um site no GitHub Pages: https://tamakishions2-tech.github.io/Tamaki-Central/ (repositório Tamaki-Central: index.html = Central, palco.html = Palco, motion.html = Motion, projetos/biblioteca-escrita/ = Escrita). Universo (/universo/) e Ficha da Tamaki (/Tamaki_Personagem/) são outros repositórios: nunca mande arquivos para eles sem eu pedir.",
+  "Visual: fundo #121212, painéis #1b1b1b e #242424, destaque amarelo #f2b51d, texto #f4f1e8, cantos arredondados, tudo cabendo na tela sem rolar a página, funcionando no celular e no tablet (Galaxy A11).",
+  "1) NICHO NOVO (aba nova): entregue UM arquivo HTML completo e autocontido, em bloco de código. Eu adiciono pela aba ＋ Adicionar da barra (Colar o código). Guarde os dados em localStorage ou IndexedDB com um prefixo próprio. Dados que já existem no mesmo endereço e podem ser lidos: IndexedDB \"universo\" (loja \"s\", chave \"s\"), localStorage \"tamaki\", \"palco-cfg\", \"motion-proj\" e \"kurogane:data\".",
+  "2) MOTION NOVO: entregue só um bloco JavaScript que chama Motion.registrar({...}). Eu colo em Motion › ＋ Adicionar › Novo tipo. Formato:",
+  "Motion.registrar({ tipo: \"id-unico\", nome: \"Nome\", icone: \"✨\", desc: \"frase curta\", cor: \"#hex da barra na linha do tempo\", usa: [\"texto\",\"sub\",\"area\",\"fonte\",\"cor\",\"cor2\",\"tam\",\"pos\"], rot: {cor2: \"rótulo da cor2\"}, fixo: false, padrao: {dur: 3, texto: \"...\", anim: \"pop\", saida: \"fade\", cont: \"nenhum\"}, campos: [[\"chave\",\"Rótulo\",\"num\",min,max,passo], [\"chave\",\"Rótulo\",\"sel\",[[\"valor\",\"Nome\"]]], [\"chave\",\"Rótulo\",\"texto\"], [\"chave\",\"Rótulo\",\"cor\"], [\"chave\",\"Rótulo\",\"chk\"], [\"chave\",\"Rótulo\",\"img\"], [\"chave\",\"Rótulo\",\"imgs\"]], desenhar(g, it, s, c){ ... } })",
+  "No desenhar: g é o contexto 2D do canvas (1280x720 ou 720x1280), já levado até (it.x%, it.y%) com entrada, saída e efeito contínuo aplicados (com fixo: true ele desenha na tela inteira, sem posição). it tem os campos do item. s tem a, k, rot, chars, letras, onda. c tem W, H, m (menor lado), T (tempo do vídeo), lt (tempo desde o começo do item), dur, fs (tamanho da fonte em px a partir de it.tam), fnt(fonte, px), texto(str, s, {fs, cor, contorno, align}), img(chave) para imagens escolhidas em campos img/imgs.",
+  "Entradas existentes: fade, subir, descer, pop, zoom, deslizar, deslizarD, girar, quique, elastico, digitar, letras, glitch, desfocar, nenhuma. Saídas: fade, subir, descer, zoom, encolher, deslizar, girar, glitch, nenhuma. Contínuos: nenhum, pulsar, flutuar, balancar, tremer, onda, brilhar, glitch.",
+  "3) MUDANÇA NO QUE JÁ EXISTE (Central, Palco, Motion): peça o arquivo atual se precisar, entregue o arquivo completo e diga o nome exato e a pasta dentro do repositório Tamaki-Central.",
   "=== FIM DAS INSTRUÇÕES ==="].join("\n");
 async function montar(){
   $("#resumo").textContent = "Juntando tudo…";
@@ -198,6 +272,8 @@ async function montar(){
   sec("FICHA DA TAMAKI", F);
   sec("BIBLIOTECA DE ESCRITA", E);
   sec("VISUAL NOVEL", V);
+  sec("ESTRUTURA DA CENTRAL", "Abas: " + Object.values(ABAS).map(a => a.n + (a.extra ? " (nicho extra, " + (a.extra.tipo == "url" ? "endereço " + a.extra.src : "código colado") + ")" : "")).join(", ")
+    + "\nMotions instalados por código: " + (((lerLS("motion-plugins") || []).map(p => p.nome).join(", ")) || "nenhum"));
   $("#nota").value = partes.join("\n");
   const r = [U && U.items ? "Universo: " + U.items.length + (U.items.length == 1 ? " item" : " itens") : "Universo: sem dados neste aparelho",
     F ? "Ficha da Tamaki: incluída" : "Ficha da Tamaki: não encontrada",
@@ -225,7 +301,7 @@ $("#aplicar").onclick = async () => {
 };
 
 const salvo = localStorage.getItem("central_aba");
-ir(ABAS[salvo] ? salvo : "universo");
+ir(salvo || "universo");
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
