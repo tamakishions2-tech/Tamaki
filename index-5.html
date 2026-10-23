@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1b1b">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Tamaki · Central</title>
+<style>
+:root{--bg:#121212;--bar:#1b1b1b;--pn:#242424;--ln:#313131;--tx:#f4f1e8;--mut:#a7a39a;--am:#f2b51d;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+body{display:grid;grid-template-rows:auto 1fr;grid-template-columns:minmax(0,1fr);height:100dvh}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--am);outline-offset:2px}
+header{position:relative;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 10px 8px;background:var(--bar);border-bottom:1px solid var(--ln);z-index:5}
+.logo{flex:none;width:42px;height:42px;border-radius:50%;box-shadow:0 0 0 2px var(--am)}
+#abas{position:relative;flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+#abas::-webkit-scrollbar{display:none}
+#abas button{flex:none;display:flex;align-items:center;gap:7px;min-height:44px;padding:0 15px;border:0;border-radius:14px;background:var(--pn);color:var(--mut);font-weight:600;white-space:nowrap}
+#abas button .i{font-size:1.15rem}
+#abas button.on{background:var(--am);color:#151515}
+#mais{flex:none;width:44px;height:44px;border:0;border-radius:14px;background:var(--pn);font-size:1.4rem;line-height:1}
+#menu{position:absolute;right:10px;top:calc(100% + 6px);min-width:230px;background:var(--pn);border:1px solid var(--ln);border-radius:16px;padding:6px;box-shadow:0 14px 40px #000b}
+#menu a,#menu button{display:flex;gap:10px;align-items:center;width:100%;padding:12px;border:0;border-radius:10px;background:none;text-decoration:none;color:var(--tx);text-align:left}
+#menu a:hover,#menu button:hover{background:#2f2f2f}
+#area{position:relative;min-height:0}
+#area>*{position:absolute;inset:0}
+#area iframe{width:100%;height:100%;border:0;background:#000}
+.hide{display:none!important}
+.pn{display:flex;flex-direction:column;gap:10px;padding:16px;max-width:780px;margin:0 auto;height:100%}
+.pn h2{margin:0;font:700 1.3rem Georgia,serif}
+.mut{color:var(--mut);margin:0;font-size:.9rem}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.bt{background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:10px 14px;min-height:44px}
+.bt.pri{background:var(--am);border-color:var(--am);color:#151515;font-weight:700}
+#nota{flex:1;min-height:0;width:100%;resize:none;background:#0d0d0d;color:var(--tx);border:1px solid var(--ln);border-radius:14px;padding:12px;font:.82rem/1.5 ui-monospace,Menlo,monospace}
+dialog{background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:18px;width:min(520px,92vw)}
+dialog::backdrop{background:#000b}
+dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);border:1px solid var(--ln);border-radius:12px;padding:10px;font:.85rem ui-monospace,monospace}
+@media (max-width:700px){#abas button:not(.on) .t{display:none}#abas button{padding:0 12px}}
+</style>
+</head>
+<body>
+<header>
+  <img class="logo" src="icon-192.png" alt="">
+  <nav id="abas" aria-label="Projetos"></nav>
+  <button id="mais" aria-label="Mais opções" aria-haspopup="true" aria-expanded="false">⋮</button>
+  <div id="menu" class="hide" role="menu">
+    <a id="sozinho" target="_blank" rel="noopener" role="menuitem">↗ Abrir esta aba sozinha</a>
+    <button id="recarregar" role="menuitem">⟳ Recarregar esta aba</button>
+  </div>
+</header>
+<main id="area">
+  <section id="v-reuniao" class="hide"><div class="pn">
+    <h2>Reunião</h2>
+    <p class="mut" id="resumo">Juntando tudo…</p>
+    <div class="row">
+      <button class="bt pri" id="copiar">Copiar nota</button>
+      <button class="bt" id="arquivo">Enviar como arquivo</button>
+      <button class="bt" id="colar">Colar resposta do Claude</button>
+      <button class="bt" id="atualizar">Atualizar</button>
+    </div>
+    <textarea id="nota" readonly aria-label="Nota da reunião, somente leitura"></textarea>
+  </div></section>
+</main>
+
+<dialog id="dCola">
+  <h2 style="margin:0 0 8px;font-family:Georgia,serif">Colar resposta do Claude</h2>
+  <p class="mut">O bloco JSON é aplicado no Universo, que mostra o que vai mudar antes de confirmar. Texto comum vira uma nota nova.</p>
+  <textarea id="cola" placeholder="Cole aqui a resposta"></textarea>
+  <div class="row" style="margin-top:10px"><button class="bt pri" id="aplicar">Aplicar no Universo</button><button class="bt" id="fechar">Cancelar</button></div>
+</dialog>
+
+<script>
+// Se a Central abrir dentro dela mesma, o index.html dela foi parar no repositório de outro projeto.
+if (window.self !== window.top) {
+  document.body.innerHTML = '<div style="padding:24px;font:16px/1.5 system-ui,sans-serif;color:#f4f1e8;background:#121212;height:100%;box-sizing:border-box">⚠️ <b>Arquivo no lugar errado.</b><br>Este endereço deveria abrir outro projeto, mas está abrindo a Central. O <b>index.html</b> da Central foi enviado para o repositório errado. Coloque de volta o index.html original desse projeto.</div>';
+  throw new Error("Central aberta dentro dela mesma");
+}
+const $ = s => document.querySelector(s);
+// Universo e Ficha da Tamaki são os sites que já existem na mesma conta do GitHub.
+const ABAS = {
+  universo: {i: "🌌", n: "Universo", src: "/universo/"},
+  tamaki: {i: "📇", n: "Tamaki", src: "/Tamaki_Personagem/"},
+  palco: {i: "🎙", n: "Palco", src: "palco.html"},
+  motion: {i: "🎬", n: "Motion", src: "motion.html"},
+  escrita: {i: "✍️", n: "Escrita", src: "projetos/biblioteca-escrita/"},
+  reuniao: {i: "🤝", n: "Reunião"}
+};
+const frames = {}, prontos = {};
+let atual = "";
+function frame(k, src){
+  if (!frames[k]) {
+    const f = document.createElement("iframe");
+    f.title = ABAS[k].n; f.className = "hide"; f.allow = "fullscreen; clipboard-write; autoplay";
+    prontos[k] = new Promise(ok => f.addEventListener("load", ok, {once: true}));
+    f.src = src; $("#area").appendChild(f); frames[k] = f;
+  }
+  return prontos[k];
+}
+function fecharMenu(){ $("#menu").classList.add("hide"); $("#mais").setAttribute("aria-expanded", "false"); }
+function ir(k){
+  atual = k;
+  document.querySelectorAll("#area>*").forEach(e => e.classList.add("hide"));
+  document.querySelectorAll("#abas button").forEach(b => b.classList.toggle("on", b.dataset.k == k));
+  const src = ABAS[k].src;
+  $("#sozinho").classList.toggle("hide", !src);
+  if (src) { $("#sozinho").href = src; frame(k, src); frames[k].classList.remove("hide"); }
+  else $("#v-" + k).classList.remove("hide");
+  if (k == "reuniao") montar();
+  const b = $(`#abas [data-k="${k}"]`), nv = $("#abas"); if (b) nv.scrollLeft = b.offsetLeft - (nv.clientWidth - b.offsetWidth) / 2; // centraliza a aba ativa sem empurrar a página
+  fecharMenu();
+  try { localStorage.setItem("central_aba", k); } catch (e) {}
+}
+$("#abas").innerHTML = Object.entries(ABAS).map(([k, a]) => `<button data-k="${k}" aria-label="${a.n}" title="${a.n}"><span class="i" aria-hidden="true">${a.i}</span><span class="t">${a.n}</span></button>`).join("");
+$("#abas").onclick = e => { const b = e.target.closest("[data-k]"); if (b) ir(b.dataset.k); };
+$("#mais").onclick = e => { e.stopPropagation(); const m = $("#menu"); m.classList.toggle("hide"); $("#mais").setAttribute("aria-expanded", String(!m.classList.contains("hide"))); };
+document.addEventListener("click", e => { if (!e.target.closest("#menu")) fecharMenu(); });
+document.addEventListener("keydown", e => { if (e.key == "Escape") fecharMenu(); });
+window.addEventListener("blur", fecharMenu); // toque dentro de um projeto (iframe) também fecha o menu
+$("#recarregar").onclick = () => { const f = frames[atual]; if (f) { prontos[atual] = new Promise(ok => f.addEventListener("load", ok, {once: true})); f.src = f.src; } else if (atual == "reuniao") montar(); fecharMenu(); };
+
+// ---------- Reunião: lê os dados de cada projeto (mesmo endereço = mesmos dados) ----------
+const texto = h => { try { return new DOMParser().parseFromString(h || "", "text/html").body.textContent.trim(); } catch (e) { return ""; } };
+const lerLS = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+function lerIDB(nome, loja, chave){
+  return new Promise(ok => {
+    let r; try { r = indexedDB.open(nome); } catch (e) { return ok(null); }
+    r.onupgradeneeded = () => r.transaction.abort(); // não cria o banco se ele ainda não existe
+    r.onerror = () => ok(null);
+    r.onsuccess = () => { const d = r.result;
+      if (!d.objectStoreNames.contains(loja)) { d.close(); return ok(null); }
+      const q = d.transaction(loja).objectStore(loja).get(chave);
+      q.onsuccess = () => { ok(q.result || null); d.close(); }; q.onerror = () => { ok(null); d.close(); }; };
+  });
+}
+const T = {html: "HTML", quadro: "Quadro", nota: "Nota", doc: "Documento", img: "Imagem", audio: "Áudio", link: "Link"};
+function biblia(S){
+  const L = [];
+  for (const i of S.items.slice().reverse()) {
+    L.push("## [" + (T[i.type] || i.type) + "] " + (i.title || "Sem título"));
+    if (i.tags) L.push("Etiquetas: " + i.tags);
+    if (i.type == "link") L.push("Endereço: " + i.url);
+    if (i.type == "img") L.push("(imagem; não incluída neste arquivo)");
+    if (i.type == "audio") L.push("(áudio; não incluído neste arquivo)");
+    if (i.type == "quadro") (i.cards || []).forEach(c => { const r = c.ref && S.items.find(x => x.id == c.ref); L.push("- " + (c.kind == "g" ? "Grupo: " + (c.text || "") : c.kind == "ref" ? "Item: " + (r ? r.title : "(apagado)") : "Nota: " + (c.text || ""))); });
+    if (i.text) L.push("", i.type == "html" ? "```html\n" + i.text + "\n```" : i.text);
+    L.push("");
+  }
+  return L.join("\n");
+}
+async function fichaTamaki(){
+  const F = lerLS("tamaki");
+  if (F && Array.isArray(F.mods)) return F.mods.filter(m => m.inc).map(m => "## " + m.t + "\n" + m.f.map(x => "- " + x[0] + ": " + x[1]).join("\n")).join("\n\n")
+    + "\n\n## Links e ferramentas\n" + (F.links || []).map(l => "- " + l.n + (l.u ? " (" + l.u + ")" : "") + (l.d ? ": " + l.d : "")).join("\n");
+  // nunca editada: pede o texto pronto à própria ficha
+  await frame("tamaki", ABAS.tamaki.src);
+  try { const w = frames.tamaki.contentWindow; if (typeof w.gv == "function") return w.prompt(); } catch (e) {}
+  return "";
+}
+function escrita(){
+  const s = lerLS("kurogane:data"); if (!s) return "";
+  const L = [], ord = a => (a || []).slice().sort((x, y) => (x.order || 0) - (y.order || 0));
+  ord(s.chapters).forEach(c => L.push("## [Capítulo] " + (c.title || "Sem título"), texto(c.content), ""));
+  ord(s.personagens).forEach(p => L.push("## [Personagem] " + (p.nome || "Sem nome"), (p.blocks || []).filter(b => b.type == "texto").map(b => texto(b.content)).join("\n"), ""));
+  ord(s.cenarios).forEach(p => L.push("## [Cenário] " + (p.nome || "Sem nome"), (p.blocks || []).filter(b => b.type == "texto").map(b => texto(b.content)).join("\n"), ""));
+  ord(s.mundo).forEach(m => L.push("## [Mundo · " + (m.tipo || "item") + "] " + (m.titulo || "Sem título"), texto(m.content), ""));
+  return L.join("\n");
+}
+async function novel(){
+  let H = lerLS("vn_story");
+  if (!H || !H.cenas) return "";
+  return "Título: " + (H.titulo || "") + " · cena inicial: " + H.inicio + "\n\n" + Object.entries(H.cenas).map(([n, L]) =>
+    "## Cena " + n + "\n" + L.map(p => p.escolha ? "- Escolha: " + p.escolha.map(o => o.texto + " → " + (o.ir || "?")).join(" | ")
+      : p.texto !== undefined ? "- " + (p.nome ? p.nome + ": " : "(narração) ") + p.texto
+      : p.ir ? "- Vai para: " + p.ir : "").filter(Boolean).join("\n")).join("\n\n");
+}
+const CAB = ["=== INSTRUÇÕES PARA O CLAUDE ===",
+  "Responda sempre normalmente ao que eu pedir.",
+  "No final de cada resposta, entregue UM bloco de código em JSON válido, pronto para eu colar no app Universo (botão Colar resposta do Claude). Formato:",
+  '{"universo":1,"substituir":[{"de":"texto antigo","para":"texto novo"}],"atualizar":[{"titulo":"título exato do item","anexar":"texto a acrescentar"},{"titulo":"...","trocar":"trecho antigo exato","por":"trecho novo"},{"titulo":"...","texto":"novo texto completo"}],"criar":[{"titulo":"...","texto":"...","etiquetas":"a, b"}]}',
+  "Use só as chaves necessárias. Escape aspas e quebras de linha (\\n) para o JSON ser válido. Se nada precisar mudar, use \"criar\" com uma nota-resumo da conversa.",
+  "O bloco JSON altera só o Universo. Mudanças na Ficha da Tamaki, na Biblioteca de Escrita ou na visual novel: descreva o que mudar, que eu edito na aba de cada uma.",
+  "Se eu pedir algo em HTML, entregue um único arquivo HTML completo e autocontido, também em bloco de código.",
+  "=== FIM DAS INSTRUÇÕES ==="].join("\n");
+async function montar(){
+  $("#resumo").textContent = "Juntando tudo…";
+  const U = await lerIDB("universo", "s", "s"), F = await fichaTamaki(), E = escrita(), V = await novel();
+  const partes = [CAB, "", "# Reunião geral", "Exportado em " + new Date().toLocaleDateString("pt-BR"), ""];
+  const sec = (t, c) => { if (c && c.trim()) partes.push("", "# " + t, "", c.trim(), ""); };
+  sec("UNIVERSO", U && U.items ? biblia(U) : "");
+  sec("FICHA DA TAMAKI", F);
+  sec("BIBLIOTECA DE ESCRITA", E);
+  sec("VISUAL NOVEL", V);
+  $("#nota").value = partes.join("\n");
+  const r = [U && U.items ? "Universo: " + U.items.length + (U.items.length == 1 ? " item" : " itens") : "Universo: sem dados neste aparelho",
+    F ? "Ficha da Tamaki: incluída" : "Ficha da Tamaki: não encontrada",
+    E ? "Escrita: incluída" : "Escrita: vazia", V ? "Visual novel: incluída" : "Visual novel: vazia"];
+  $("#resumo").textContent = r.join(" · ");
+}
+$("#atualizar").onclick = montar;
+$("#copiar").onclick = async () => { const b = $("#copiar"), n = $("#nota");
+  try { await navigator.clipboard.writeText(n.value); } catch (e) { n.select(); document.execCommand("copy"); }
+  b.textContent = "Copiado!"; setTimeout(() => b.textContent = "Copiar nota", 1800); };
+$("#arquivo").onclick = async () => { const f = new File([$("#nota").value], "reuniao-geral.md", {type: "text/markdown"});
+  try { if (navigator.canShare && navigator.canShare({files: [f]})) return await navigator.share({files: [f], title: "Reunião geral"}); } catch (e) { return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); };
+
+// ---------- Colar resposta: usa o próprio Universo para mostrar e aplicar as mudanças ----------
+$("#colar").onclick = () => $("#dCola").showModal();
+$("#fechar").onclick = () => $("#dCola").close();
+$("#aplicar").onclick = async () => {
+  const t = $("#cola").value.trim(); if (!t) return;
+  $("#dCola").close(); ir("universo");
+  await prontos.universo; await new Promise(r => setTimeout(r, 700));
+  try { const d = frames.universo.contentWindow.document;
+    d.querySelector("#pb").value = t; d.querySelector("#ps").click(); $("#cola").value = ""; }
+  catch (e) { alert("Não consegui falar com o Universo. Abra a aba Universo e use Reunião > Colar resposta do Claude."); }
+};
+
+const salvo = localStorage.getItem("central_aba");
+ir(ABAS[salvo] ? salvo : "universo");
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>

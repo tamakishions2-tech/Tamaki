@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1b1b">
+<meta name="color-scheme" content="dark">
+<title>Motion · Tamaki Central</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@800&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#121212;--pn:#1b1b1b;--pn2:#242424;--ln:#313131;--tx:#f4f1e8;--mu:#a7a39a;--am:#f2b51d;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--tx);font:14px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--am);outline-offset:2px}
+#app{height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) 330px;grid-template-rows:auto minmax(0,1fr) 170px;grid-template-areas:"topo topo" "tela props" "linha props"}
+#topo{grid-area:topo;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;background:var(--pn);border-bottom:1px solid var(--ln)}
+.bt{background:var(--pn2);border:1px solid var(--ln);border-radius:12px;padding:0 13px;min-height:40px;white-space:nowrap}
+.bt.add{border-style:dashed}
+.bt.pri{background:var(--am);border-color:var(--am);color:#151515;font-weight:700}
+#play{width:46px;height:46px;border-radius:50%;border:0;background:var(--am);color:#151515;font-size:1.15rem;font-weight:700}
+#tempo{font-variant-numeric:tabular-nums;color:var(--mu);min-width:96px;text-align:center}
+.sep{width:1px;height:28px;background:var(--ln);margin:0 2px}
+#tela{grid-area:tela;position:relative;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden}
+#cv{flex:none;border-radius:10px;border:1px solid var(--ln);background:conic-gradient(#2c2c2c 25%,#1f1f1f 0 50%,#2c2c2c 0 75%,#1f1f1f 0) 0 0/24px 24px}
+#cv.verde{background:#00b140}#cv.preto{background:#000}
+/* linha do tempo */
+#linha{grid-area:linha;display:flex;flex-direction:column;background:var(--pn);border-top:1px solid var(--ln);min-height:0}
+#linhaIn{position:relative;flex:1;min-height:0;margin:0 12px;display:flex;flex-direction:column}
+#regua{position:relative;height:26px;flex:none;cursor:pointer;border-bottom:1px solid var(--ln);touch-action:none}
+#regua i{position:absolute;bottom:0;width:1px;height:7px;background:var(--mu)}
+#regua i b{position:absolute;bottom:8px;left:3px;font:10px system-ui;color:var(--mu);font-style:normal}
+#trilhas{flex:1;min-height:0;overflow-y:auto;padding:6px 0}
+.trilha{position:relative;height:34px;margin-bottom:5px;border-radius:9px;background:#191919}
+.barra{position:absolute;top:2px;bottom:2px;border-radius:9px;padding:0 18px 0 9px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font-size:.78rem;font-weight:700;color:#151515;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 2px transparent}
+.barra::after{content:"";position:absolute;right:4px;top:8px;bottom:8px;width:4px;border-radius:2px;background:#0005}
+.barra.on{box-shadow:inset 0 0 0 2px #fff}
+.t-intro{background:#f2b51d}.t-faixa{background:#5fd9cf}.t-legenda{background:#ff9f45}.t-texto{background:#b49cff}
+#cabeca{position:absolute;top:0;bottom:0;width:2px;background:#fff;pointer-events:none;box-shadow:0 0 6px #fff8}
+#cabeca::before{content:"";position:absolute;top:0;left:-6px;border:7px solid transparent;border-top-color:#fff}
+.vazio{color:var(--mu);text-align:center;padding:14px;margin:0}
+/* propriedades */
+#props{grid-area:props;overflow:auto;background:var(--pn);border-left:1px solid var(--ln);padding:12px}
+.cab{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.cab b{flex:1;font-size:1.05rem}
+.f{display:grid;gap:4px;font-size:.8rem;color:var(--mu);margin-bottom:10px}
+.f b{display:flex;justify-content:space-between;font-weight:600}
+.f b i{font-style:normal;color:var(--tx)}
+.f input[type=range]{width:100%;accent-color:var(--am)}
+.f select,.f input[type=text],.f textarea{background:#0d0d0d;border:1px solid var(--ln);border-radius:10px;padding:8px;width:100%}
+.f textarea{min-height:84px;resize:vertical}
+.f input[type=color]{width:100%;height:36px;border:1px solid var(--ln);border-radius:10px;background:#0d0d0d;padding:2px}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.dica{color:var(--mu);font-size:.78rem;margin:2px 0 10px;line-height:1.45}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.esc{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--am);color:#151515;font-weight:700;padding:8px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+#toast.on{opacity:1}
+@media (max-width:760px){
+  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) 140px 220px;grid-template-areas:"topo" "tela" "linha" "props"}
+  #props{border-left:0;border-top:1px solid var(--ln);border-radius:18px 18px 0 0}
+  .bt .t{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topo">
+    <button class="bt add" data-novo="intro" title="Nova intro">🎬<span class="t"> Intro</span></button>
+    <button class="bt add" data-novo="faixa" title="Nova faixa de nome">🏷<span class="t"> Faixa</span></button>
+    <button class="bt add" data-novo="legenda" title="Nova legenda">💬<span class="t"> Legenda</span></button>
+    <button class="bt add" data-novo="texto" title="Novo texto">🔤<span class="t"> Texto</span></button>
+    <span class="sep"></span>
+    <button id="play" aria-label="Tocar">▶</button>
+    <span id="tempo">0:00.0 / 0:12</span>
+    <span class="sep"></span>
+    <button class="bt" data-a="formato" id="bFmt">16:9</button>
+    <button class="bt" data-a="fundo" id="bFundo">Fundo</button>
+    <label class="bt" for="fAud" style="display:grid;place-items:center" title="Escolher áudio">🎵<span class="t"> Áudio</span></label>
+    <button class="bt pri" data-a="video">⬇<span class="t"> Vídeo</span></button>
+    <button class="bt" data-a="srt">⬇<span class="t"> .srt</span></button>
+  </div>
+  <div id="tela"><canvas id="cv"></canvas></div>
+  <div id="linha"><div id="linhaIn"><div id="regua"></div><div id="trilhas"></div><div id="cabeca"></div></div></div>
+  <aside id="props"></aside>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="fAud" accept="audio/*" class="esc">
+<input type="file" id="fSrt" accept=".srt,text/plain" class="esc">
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const copia = o => JSON.parse(JSON.stringify(o));
+const KEY = "motion-proj";
+const NOVO = {
+  intro: {tipo: "intro", texto: "TAMAKI SHION", sub: "Episódio 1", ini: 0, dur: 3, fonte: "bebas", tam: 15, cor: "#ffffff", cor2: "#f2b51d", x: 50, y: 45, anim: "pop", saida: "fade"},
+  faixa: {tipo: "faixa", texto: "Tamaki Shion", sub: "sua fofoqueira favorita", ini: 1, dur: 4, fonte: "redonda", tam: 5.5, cor: "#151515", cor2: "#f2b51d", x: 6, y: 72, anim: "deslizar", saida: "deslizar"},
+  legenda: {tipo: "legenda", texto: "Oi, gente!\nHoje eu vou contar tudo.\nTintim por tintim!", ini: 0, dur: 8, fonte: "redonda", tam: 5.5, cor: "#ffffff", cor2: "#f2b51d", x: 50, y: 84, anim: "pop", saida: "fade", estilo: "karaoke", srt: null},
+  texto: {tipo: "texto", texto: "Nem relógio trabalha de graça!", ini: 2, dur: 3, fonte: "pixel", tam: 4, cor: "#ffffff", cor2: "#151515", x: 50, y: 20, anim: "digitar", saida: "fade"}
+};
+const NOME = {intro: "🎬 Intro", faixa: "🏷 Faixa de nome", legenda: "💬 Legenda", texto: "🔤 Texto"};
+const ENTRADAS = [["fade", "Aparecer"], ["subir", "Subir"], ["pop", "Pop"], ["deslizar", "Deslizar"], ["quique", "Quicar"], ["digitar", "Digitando"], ["nenhuma", "Sem animação"]];
+const SAIDAS = [["fade", "Sumir"], ["deslizar", "Deslizar"], ["descer", "Descer"], ["nenhuma", "Corte seco"]];
+const ESTILOS = [["karaoke", "Karaokê (palavra acesa)"], ["contorno", "Contorno"], ["caixa", "Caixa"], ["pilula", "Pílula"]];
+const FONTES = [["bebas", "Bebas (títulos)"], ["redonda", "Arredondada"], ["pixel", "Pixel (jogo)"], ["classica", "Clássica"]];
+const FUNDOS = {transp: "Fundo: xadrez", verde: "Fundo: verde", preto: "Fundo: preto"};
+let P = {fmt: "16:9", dur: 12, bg: "transp", itens: [], sel: null}, T = 0, tocando = false, t0 = 0, T0 = 0, tm;
+const cv = $("#cv"), g = cv.getContext("2d");
+const uid = () => Math.random().toString(36).slice(2, 9);
+const item = () => P.itens.find(i => i.id == P.sel);
+function salvar(){ clearTimeout(tm); tm = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) {} }, 300); }
+function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 1800); }
+const relogio = s => Math.floor(s / 60) + ":" + (s % 60).toFixed(1).padStart(4, "0");
+
+/* ---------- animações ---------- */
+const cl = v => Math.max(0, Math.min(1, v));
+const eOut = p => 1 - Math.pow(1 - p, 3);
+const back = p => 1 + 2.70158 * Math.pow(p - 1, 3) + 1.70158 * Math.pow(p - 1, 2);
+const quica = p => { const n = 7.5625, d = 2.75; if (p < 1 / d) return n * p * p; if (p < 2 / d) return n * (p -= 1.5 / d) * p + .75; if (p < 2.5 / d) return n * (p -= 2.25 / d) * p + .9375; return n * (p -= 2.625 / d) * p + .984375; };
+function env(it, lt, dur){ // estado da animação no tempo local lt
+  const W = cv.width, H = cv.height, ent = Math.min(.5, dur / 2), sai = Math.min(.35, dur / 3), pe = cl(lt / ent), ps = cl((dur - lt) / sai);
+  const s = {a: 1, dx: 0, dy: 0, k: 1, chars: 1};
+  if (it.anim == "fade") s.a *= eOut(pe);
+  else if (it.anim == "subir") { s.dy += (1 - eOut(pe)) * H * .06; s.a *= pe; }
+  else if (it.anim == "pop") { s.k *= .5 + .5 * back(pe); s.a *= cl(pe * 3); }
+  else if (it.anim == "deslizar") { s.dx -= (1 - eOut(pe)) * W * .4; s.a *= cl(pe * 2); }
+  else if (it.anim == "quique") s.dy -= (1 - quica(pe)) * H * .12;
+  else if (it.anim == "digitar") s.chars = cl(lt / Math.max(.3, dur * .45));
+  if (ps < 1) {
+    if (it.saida == "fade") s.a *= ps;
+    else if (it.saida == "deslizar") { s.dx -= (1 - ps) * W * .4; s.a *= ps; }
+    else if (it.saida == "descer") { s.dy += (1 - ps) * H * .06; s.a *= ps; }
+  }
+  return s;
+}
+const fnt = (f, px) => f == "redonda" ? `800 ${px}px Nunito, system-ui, sans-serif` : f == "bebas" ? `${px}px 'Bebas Neue', Impact, sans-serif` : f == "pixel" ? `${px}px 'Press Start 2P', monospace` : `700 ${px}px Georgia, serif`;
+const corte = (t, ch) => ch >= 1 ? t : t.slice(0, Math.ceil(t.length * ch));
+
+/* ---------- legendas: tempos automáticos ou do .srt ---------- */
+function legendas(it){
+  if (it.srt && it.srt.length) return it.srt;
+  const L = String(it.texto || "").split("\n").map(s => s.trim()).filter(Boolean); if (!L.length) return [];
+  const pes = L.map(s => s.length + 8), tot = pes.reduce((a, b) => a + b, 0); let a = +it.ini;
+  return L.map((txt, i) => { const d = it.dur * pes[i] / tot, c = {a, b: a + d, txt}; a += d; return c; });
+}
+function quebrar(palavras, max){ const lin = []; let l = []; for (const w of palavras) { const t = [...l, w].join(" "); if (l.length && g.measureText(t).width > max) { lin.push(l); l = [w]; } else l.push(w); } if (l.length) lin.push(l); return lin; }
+
+/* ---------- desenho ---------- */
+function desenhar(){
+  const W = cv.width, H = cv.height, m = Math.min(W, H);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.clearRect(0, 0, W, H);
+  const bg = gravando && P.bg == "transp" ? "verde" : P.bg;
+  if (gravando || bg != "transp") { g.fillStyle = bg == "verde" ? "#00b140" : bg == "preto" ? "#000" : "#00b140"; g.fillRect(0, 0, W, H); }
+  for (const it of P.itens) {
+    if (T < it.ini || T > it.ini + it.dur) continue;
+    const fs = it.tam / 100 * m; g.save();
+    if (it.tipo == "legenda") { legenda(it, fs); g.restore(); continue; }
+    const s = env(it, T - it.ini, it.dur); g.globalAlpha = s.a;
+    if (it.tipo == "intro") {
+      g.translate(it.x / 100 * W + s.dx, it.y / 100 * H + s.dy); g.scale(s.k, s.k); g.textAlign = "center"; g.textBaseline = "middle"; g.font = fnt(it.fonte, fs);
+      const tx = corte(it.texto, s.chars), tw = g.measureText(it.texto).width, pr = eOut(cl((T - it.ini) / .8));
+      g.fillStyle = "rgba(0,0,0,.35)"; g.fillText(tx, fs * .04, fs * .06); g.fillStyle = it.cor; g.fillText(tx, 0, 0);
+      g.fillStyle = it.cor2; g.fillRect(-tw / 2 * pr, fs * .6, tw * pr, Math.max(4, fs * .07));
+      if (it.sub) { g.font = fnt("redonda", fs * .3); g.fillText(it.sub, 0, fs * 1.02); }
+    } else if (it.tipo == "faixa") {
+      g.translate(it.x / 100 * W + s.dx, it.y / 100 * H + s.dy); g.scale(s.k, s.k);
+      const pad = fs * .6, fs2 = fs * .55; g.font = fnt(it.fonte, fs); const tw = g.measureText(it.texto).width; g.font = fnt("redonda", fs2); const sw = it.sub ? g.measureText(it.sub).width : 0;
+      const bw = Math.max(tw, sw) + pad * 2, bh = fs * 1.35 + (it.sub ? fs2 * 1.35 : 0);
+      g.fillStyle = it.cor2; g.beginPath(); g.roundRect ? g.roundRect(0, 0, bw, bh, fs * .25) : g.rect(0, 0, bw, bh); g.fill();
+      g.fillStyle = it.cor; g.textAlign = "left"; g.textBaseline = "top"; g.font = fnt(it.fonte, fs); g.fillText(corte(it.texto, s.chars), pad, fs * .2);
+      if (it.sub) { g.font = fnt("redonda", fs2); g.globalAlpha *= .8; g.fillText(it.sub, pad, fs * 1.3); }
+    } else {
+      g.translate(it.x / 100 * W + s.dx, it.y / 100 * H + s.dy); g.scale(s.k, s.k); g.textAlign = "center"; g.textBaseline = "middle"; g.font = fnt(it.fonte, fs); g.lineJoin = "round";
+      const linhas = corte(it.texto, s.chars).split("\n"), lh = fs * (it.fonte == "pixel" ? 1.7 : 1.2);
+      linhas.forEach((l, i) => { const y = (i - (linhas.length - 1) / 2) * lh; g.lineWidth = fs * .2; g.strokeStyle = it.cor2; g.strokeText(l, 0, y); g.fillStyle = it.cor; g.fillText(l, 0, y); });
+    }
+    g.restore();
+  }
+}
+function legenda(it, fs){
+  const W = cv.width, H = cv.height, c = legendas(it).find(c => T >= c.a && T < c.b); if (!c) return;
+  const s = env(it, T - c.a, c.b - c.a), pal = c.txt.split(/\s+/).filter(Boolean);
+  const acesa = it.estilo == "karaoke" ? Math.floor(pal.length * cl((T - c.a) / ((c.b - c.a) * .9))) : -1;
+  g.font = fnt(it.fonte, fs); g.textBaseline = "middle"; g.lineJoin = "round"; g.globalAlpha = s.a;
+  const lin = quebrar(pal, W * .86), lh = fs * (it.fonte == "pixel" ? 1.8 : 1.3), sp = g.measureText(" ").width;
+  g.translate(it.x / 100 * W + s.dx, it.y / 100 * H + s.dy); g.scale(s.k, s.k);
+  const alt = lin.length * lh; let n = 0;
+  if (it.estilo == "caixa") { const mw = Math.max(...lin.map(l => g.measureText(l.join(" ")).width)); g.fillStyle = it.cor2; g.globalAlpha = s.a * .92; g.beginPath(); g.roundRect ? g.roundRect(-mw / 2 - fs * .6, -alt / 2 - fs * .35, mw + fs * 1.2, alt + fs * .7, fs * .35) : g.rect(-mw / 2 - fs * .6, -alt / 2 - fs * .35, mw + fs * 1.2, alt + fs * .7); g.fill(); g.globalAlpha = s.a; }
+  lin.forEach((l, i) => {
+    const y = -alt / 2 + lh * (i + .5), larg = g.measureText(l.join(" ")).width; let x = -larg / 2;
+    if (it.estilo == "pilula") { g.fillStyle = it.cor2; g.beginPath(); g.roundRect ? g.roundRect(x - fs * .55, y - lh * .45, larg + fs * 1.1, lh * .9, lh * .45) : g.rect(x - fs * .55, y - lh * .45, larg + fs * 1.1, lh * .9); g.fill(); }
+    for (const w of l) {
+      const ww = g.measureText(w).width; g.textAlign = "left";
+      if (it.estilo == "karaoke" || it.estilo == "contorno") { g.lineWidth = fs * .22; g.strokeStyle = it.estilo == "karaoke" ? "#000" : it.cor2; g.strokeText(w, x, y); }
+      g.fillStyle = it.estilo == "karaoke" && n < acesa ? it.cor2 : it.cor; g.fillText(w, x, y);
+      x += ww + sp; n++;
+    }
+  });
+}
+
+/* ---------- linha do tempo ---------- */
+function regua(){
+  const passo = P.dur > 40 ? 5 : P.dur > 16 ? 2 : 1; let h = "";
+  for (let s = 0; s <= P.dur; s += passo) h += `<i style="left:${s / P.dur * 100}%"><b>${s}s</b></i>`;
+  $("#regua").innerHTML = h;
+}
+function linha(){
+  regua();
+  $("#trilhas").innerHTML = P.itens.length ? P.itens.slice().reverse().map(it => `<div class="trilha"><div class="barra t-${it.tipo}${it.id == P.sel ? " on" : ""}" data-id="${it.id}" style="left:${it.ini / P.dur * 100}%;width:${Math.max(.5, it.dur / P.dur * 100)}%">${NOME[it.tipo].split(" ")[0]} ${esc(String(it.texto).split("\n")[0])}</div></div>`).join("")
+    : '<p class="vazio">Toque em 🎬 Intro, 🏷 Faixa, 💬 Legenda ou 🔤 Texto lá em cima para começar.</p>';
+  cabeca();
+}
+function cabeca(){ $("#cabeca").style.left = (T / P.dur * 100) + "%"; $("#tempo").textContent = relogio(T) + " / " + relogio(P.dur).replace(/\.0$/, ""); }
+let arr = null;
+$("#trilhas").addEventListener("pointerdown", e => {
+  const b = e.target.closest(".barra"); if (!b) return;
+  const it = P.itens.find(i => i.id == b.dataset.id); P.sel = it.id; const r = b.getBoundingClientRect();
+  arr = {it, x: e.clientX, ini: it.ini, dur: it.dur, modo: e.clientX > r.right - 18 ? "fim" : "mover", el: b, srt0: it.srt ? copia(it.srt) : null};
+  b.setPointerCapture(e.pointerId); document.querySelectorAll(".barra").forEach(x => x.classList.toggle("on", x == b)); props();
+});
+$("#trilhas").addEventListener("pointermove", e => {
+  if (!arr) return; const w = $("#trilhas").clientWidth, dt = (e.clientX - arr.x) / w * P.dur, sn = v => Math.round(v * 20) / 20;
+  if (arr.modo == "fim") arr.it.dur = sn(Math.max(.3, Math.min(P.dur - arr.it.ini, arr.dur + dt)));
+  else arr.it.ini = sn(Math.max(0, Math.min(P.dur - arr.it.dur, arr.ini + dt)));
+  arr.el.style.left = arr.it.ini / P.dur * 100 + "%"; arr.el.style.width = arr.it.dur / P.dur * 100 + "%";
+  if (arr.srt0 && arr.modo == "mover") { const d = arr.it.ini - arr.ini; arr.it.srt = arr.srt0.map(c => ({a: c.a + d, b: c.b + d, txt: c.txt})); }
+  sincronizar(); desenhar();
+});
+const solta = () => { if (arr) { arr = null; salvar(); props(); } };
+$("#trilhas").addEventListener("pointerup", solta); $("#trilhas").addEventListener("pointercancel", solta);
+function buscar(e){ const r = $("#regua").getBoundingClientRect(); T = cl((e.clientX - r.left) / r.width) * P.dur; if (tocando) { parar(); tocar(); } cabeca(); desenhar(); }
+$("#regua").addEventListener("pointerdown", e => { $("#regua").setPointerCapture(e.pointerId); buscar(e); $("#regua").onpointermove = buscar; });
+$("#regua").addEventListener("pointerup", () => { $("#regua").onpointermove = null; });
+
+/* ---------- áudio, tocar e gravar ---------- */
+let ac, audioBuf = null, fonte = null, destino, gravando = false, rec = null, partes = [];
+const ctx = () => { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); destino = ac.createMediaStreamDestination(); } if (ac.state == "suspended") ac.resume(); return ac; };
+function tocar(){
+  if (T >= P.dur - .05) T = 0;
+  tocando = true; t0 = performance.now(); T0 = T; $("#play").textContent = "❚❚"; $("#play").setAttribute("aria-label", "Pausar");
+  if (audioBuf && T < audioBuf.duration) { const c = ctx(); fonte = c.createBufferSource(); fonte.buffer = audioBuf; fonte.connect(c.destination); fonte.connect(destino); fonte.start(0, T); }
+}
+function parar(){ tocando = false; $("#play").textContent = "▶"; $("#play").setAttribute("aria-label", "Tocar"); if (fonte) { try { fonte.stop(); } catch (e) {} fonte = null; } }
+$("#play").onclick = () => tocando ? parar() : tocar();
+function loop(now){
+  requestAnimationFrame(loop);
+  if (tocando) { T = T0 + (now - t0) / 1000; if (T >= P.dur) { T = P.dur; parar(); if (gravando && rec) rec.stop(); } cabeca(); }
+  desenhar();
+}
+function gravar(){
+  if (gravando) return;
+  if (!window.MediaRecorder || !cv.captureStream) return toast("Este navegador não grava vídeo. Use o Chrome.");
+  ctx(); parar(); T = 0; gravando = true;
+  const s = cv.captureStream(30); if (audioBuf) destino.stream.getAudioTracks().forEach(t => s.addTrack(t));
+  const tipo = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(m => MediaRecorder.isTypeSupported(m));
+  rec = new MediaRecorder(s, tipo ? {mimeType: tipo} : {}); partes = [];
+  rec.ondataavailable = e => { if (e.data.size) partes.push(e.data); };
+  rec.onstop = () => { baixar(new Blob(partes, {type: "video/webm"}), "motion-tamaki.webm"); gravando = false; rec = null; toast("Vídeo pronto"); };
+  rec.start(); tocar(); toast(P.bg == "transp" ? "Gravando com fundo verde para recortar no CapCut…" : "Gravando…");
+}
+function baixar(blob, nome){ const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); }
+const idb = () => new Promise((ok, no) => { const r = indexedDB.open("motion", 1); r.onupgradeneeded = () => r.result.createObjectStore("a"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+async function guardarAudio(blob){ const d = await idb(); await new Promise(ok => { const t = d.transaction("a", "readwrite"); blob ? t.objectStore("a").put(blob, "audio") : t.objectStore("a").delete("audio"); t.oncomplete = ok; }); }
+async function lerAudio(){ try { const d = await idb(); return await new Promise(ok => { const q = d.transaction("a").objectStore("a").get("audio"); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); } catch (e) { return null; } }
+async function usarAudio(blob, avisar){
+  try { audioBuf = await ctx().decodeAudioData(await blob.arrayBuffer());
+    if (avisar) { if (audioBuf.duration > P.dur) P.dur = Math.ceil(audioBuf.duration); salvar(); toast("Áudio carregado (" + audioBuf.duration.toFixed(1) + " s)"); }
+    linha(); props();
+  } catch (e) { toast("Não consegui abrir esse áudio"); }
+}
+$("#fAud").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; P.audioNome = f.name; await guardarAudio(f); usarAudio(f, true); };
+
+/* ---------- .srt ---------- */
+const seg = t => { const m = t.trim().match(/(\d+):(\d+):(\d+)[,.](\d+)/); return m ? +m[1] * 3600 + +m[2] * 60 + +m[3] + +m[4] / 1000 : 0; };
+const hms = s => { const ms = Math.round(s * 1000), h = Math.floor(ms / 3600000), mi = Math.floor(ms / 60000) % 60, se = Math.floor(ms / 1000) % 60; return [h, mi, se].map(v => String(v).padStart(2, "0")).join(":") + "," + String(ms % 1000).padStart(3, "0"); };
+$("#fSrt").onchange = async e => {
+  const f = e.target.files[0], it = item(); e.target.value = ""; if (!f || !it) return;
+  const blocos = (await f.text()).replace(/\r/g, "").split(/\n\s*\n/), srt = [];
+  for (const b of blocos) { const l = b.split("\n").filter(Boolean), i = l.findIndex(x => x.includes("-->")); if (i < 0) continue; const [a, z] = l[i].split("-->"); srt.push({a: seg(a), b: seg(z), txt: l.slice(i + 1).join(" ")}); }
+  if (!srt.length) return toast("Não achei legendas nesse arquivo");
+  it.srt = srt; it.texto = srt.map(c => c.txt).join("\n"); it.ini = srt[0].a; it.dur = srt[srt.length - 1].b - srt[0].a; P.dur = Math.max(P.dur, Math.ceil(srt[srt.length - 1].b));
+  salvar(); linha(); props(); toast(srt.length + " legendas importadas");
+};
+function exportarSrt(){
+  const caps = P.itens.filter(i => i.tipo == "legenda").flatMap(legendas).sort((a, b) => a.a - b.a);
+  if (!caps.length) return toast("Crie uma 💬 Legenda primeiro");
+  baixar(new Blob([caps.map((c, i) => `${i + 1}\n${hms(c.a)} --> ${hms(c.b)}\n${c.txt}\n`).join("\n")], {type: "text/plain"}), "legendas-tamaki.srt");
+}
+
+/* ---------- painel de propriedades ---------- */
+const opt = (a, v) => a.map(([k, n]) => `<option value="${k}"${k == v ? " selected" : ""}>${n}</option>`).join("");
+const rg = (k, rot, min, max, st, v, at = "k") => `<label class="f"><b>${rot}<i>${v}</i></b><input type="range" data-${at}="${k}" min="${min}" max="${max}" step="${st}" value="${v}"></label>`;
+const sl = (k, rot, a, v, at = "k") => `<label class="f"><b>${rot}</b><select data-${at}="${k}">${opt(a, v)}</select></label>`;
+const co = (k, rot, v) => `<label class="f"><b>${rot}</b><input type="color" data-k="${k}" value="${esc(v)}"></label>`;
+function props(){
+  const it = item(), el = $("#props");
+  if (!it) {
+    el.innerHTML = `<div class="cab"><b>🎬 Projeto</b></div>
+      ${rg("dur", "Duração do vídeo (s)", 2, 180, 1, P.dur, "p")}
+      <p class="dica">🎵 Áudio: ${P.audioNome ? esc(P.audioNome) + (audioBuf ? " · " + audioBuf.duration.toFixed(1) + " s" : "") : "nenhum"}</p>
+      ${P.audioNome ? '<div class="btns"><button class="bt" data-a="semaudio">Tirar o áudio</button></div>' : ""}
+      <p class="dica">1. Crie os elementos com os botões de cima.<br>2. Arraste as barras na linha do tempo para mudar quando aparecem; puxe a ponta direita para mudar a duração.<br>3. ⬇ Vídeo grava tudo (com o áudio, se tiver). Com fundo xadrez, sai em verde para recortar no CapCut.<br>4. ⬇ .srt baixa as legendas para usar em outro editor.</p>`;
+    return;
+  }
+  const L = it.tipo == "legenda", ehTxt = L || it.tipo == "texto";
+  el.innerHTML = `<div class="cab"><b>${NOME[it.tipo]}</b><button class="bt" data-a="dup" title="Duplicar">⧉</button><button class="bt" data-a="apaga" title="Apagar">🗑</button><button class="bt" data-a="fechar" title="Fechar">✕</button></div>
+    <label class="f"><b>${L ? "Legendas (uma por linha)" : "Texto"}</b>${ehTxt ? `<textarea data-k="texto">${esc(it.texto)}</textarea>` : `<input type="text" data-k="texto" value="${esc(it.texto)}">`}</label>
+    ${L && it.srt ? '<p class="dica">Usando os tempos do .srt. <button class="bt" data-a="auto">Voltar ao automático</button></p>' : ""}
+    ${it.tipo == "intro" || it.tipo == "faixa" ? `<label class="f"><b>Subtítulo</b><input type="text" data-k="sub" value="${esc(it.sub || "")}"></label>` : ""}
+    <div class="duas">${rg("ini", "Começa em (s)", 0, P.dur, .05, it.ini)}${rg("dur", "Dura (s)", .3, P.dur, .05, it.dur)}</div>
+    <div class="duas">${sl("anim", "Entrada", ENTRADAS, it.anim)}${sl("saida", "Saída", SAIDAS, it.saida)}</div>
+    ${L ? sl("estilo", "Estilo da legenda", ESTILOS, it.estilo) : ""}
+    <div class="duas">${sl("fonte", "Fonte", FONTES, it.fonte)}${rg("tam", "Tamanho", 1.5, 25, .1, it.tam)}</div>
+    <div class="duas">${co("cor", "Cor do texto", it.cor)}${co("cor2", L ? (it.estilo == "karaoke" ? "Cor da palavra acesa" : "Cor do fundo / contorno") : it.tipo == "faixa" ? "Cor da faixa" : it.tipo == "intro" ? "Cor do detalhe" : "Cor do contorno", it.cor2)}</div>
+    <div class="duas">${rg("x", "Horizontal (%)", 0, 100, .5, it.x)}${rg("y", "Vertical (%)", 0, 100, .5, it.y)}</div>
+    ${L ? `<div class="btns"><button class="bt" data-a="impsrt">Importar .srt</button>${audioBuf ? '<button class="bt" data-a="noaudio">Esticar no áudio</button>' : ""}</div><p class="dica">Sem .srt, cada linha ganha um tempo proporcional ao tamanho, dentro da barra da legenda.</p>` : ""}`;
+}
+function sincronizar(){ const it = item(); document.querySelectorAll("#props input[type=range][data-k]").forEach(i => { if (it && it[i.dataset.k] != null) { i.value = it[i.dataset.k]; i.closest(".f").querySelector("i").textContent = it[i.dataset.k]; } }); }
+function entrada(e){
+  const t = e.target, d = t.dataset; if (!t.closest("#props")) return;
+  const v = t.type == "range" ? parseFloat(t.value) : t.value, l = t.closest(".f") && t.closest(".f").querySelector("b i"); if (l) l.textContent = v;
+  if (d.p) { P[d.p] = v; T = Math.min(T, P.dur); P.itens.forEach(i => { i.ini = Math.min(i.ini, P.dur - .3); i.dur = Math.min(i.dur, P.dur - i.ini); }); linha(); salvar(); return; }
+  const it = item(); if (!it || !d.k) return;
+  if (d.k == "texto" && it.srt && e.type == "input") it.srt = null;
+  it[d.k] = v;
+  if (d.k == "ini" || d.k == "dur") { it.dur = Math.min(it.dur, P.dur - it.ini); if (T < it.ini || T > it.ini + it.dur) { T = it.ini + Math.min(.6, it.dur / 2); } }
+  if (["ini", "dur", "texto"].includes(d.k)) linha();
+  if (e.type == "change" && d.k == "estilo") props();
+  salvar();
+}
+document.addEventListener("input", entrada); document.addEventListener("change", entrada);
+function novo(tipo){ const it = Object.assign(copia(NOVO[tipo]), {id: uid()}); it.ini = Math.min(T, Math.max(0, P.dur - it.dur)); if (it.dur > P.dur) it.dur = P.dur; P.itens.push(it); P.sel = it.id; T = it.ini + Math.min(.8, it.dur / 2); salvar(); linha(); props(); }
+document.addEventListener("click", e => {
+  const n = e.target.closest("[data-novo]"); if (n) return novo(n.dataset.novo);
+  const b = e.target.closest("[data-a]"); if (!b) return;
+  const a = b.dataset.a, it = item();
+  if (a == "formato") { P.fmt = P.fmt == "16:9" ? "9:16" : "16:9"; tamanho(); topo(); salvar(); }
+  else if (a == "fundo") { const o = Object.keys(FUNDOS); P.bg = o[(o.indexOf(P.bg) + 1) % o.length]; topo(); salvar(); }
+  else if (a == "video") gravar();
+  else if (a == "srt") exportarSrt();
+  else if (a == "semaudio") { audioBuf = null; P.audioNome = ""; guardarAudio(null); salvar(); props(); }
+  else if (a == "fechar") { P.sel = null; linha(); props(); }
+  else if (!it) return;
+  else if (a == "dup") { const c = Object.assign(copia(it), {id: uid()}); c.ini = Math.min(P.dur - c.dur, c.ini + c.dur); P.itens.push(c); P.sel = c.id; salvar(); linha(); props(); }
+  else if (a == "apaga") { if (!b.dataset.s) { b.dataset.s = 1; b.textContent = "Confirmar"; return; } P.itens = P.itens.filter(i => i != it); P.sel = null; salvar(); linha(); props(); }
+  else if (a == "auto") { it.srt = null; salvar(); props(); }
+  else if (a == "impsrt") $("#fSrt").click();
+  else if (a == "noaudio" && audioBuf) { it.ini = 0; it.dur = Math.min(P.dur, +audioBuf.duration.toFixed(2)); it.srt = null; salvar(); linha(); props(); toast("Legenda esticada no áudio"); }
+});
+$("#trilhas").addEventListener("click", e => { if (!e.target.closest(".barra")) { P.sel = null; linha(); props(); } });
+
+/* ---------- tela ---------- */
+function tamanho(){ const v = P.fmt == "9:16"; cv.width = v ? 720 : 1280; cv.height = v ? 1280 : 720; caber(); }
+function caber(){ const t = $("#tela"), w = t.clientWidth - 20, h = t.clientHeight - 20; if (w <= 0 || h <= 0) return; const k = Math.min(w / cv.width, h / cv.height); cv.style.width = Math.floor(cv.width * k) + "px"; cv.style.height = Math.floor(cv.height * k) + "px"; }
+new ResizeObserver(caber).observe($("#tela"));
+function topo(){ $("#bFmt").textContent = P.fmt; $("#bFundo").textContent = FUNDOS[P.bg]; cv.className = P.bg == "verde" ? "verde" : P.bg == "preto" ? "preto" : ""; }
+(async () => {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.itens)) P = Object.assign(P, s); } catch (e) {}
+  tamanho(); topo(); linha(); props(); requestAnimationFrame(loop);
+  const a = await lerAudio(); if (a) usarAudio(a, false);
+  if (document.fonts) document.fonts.ready.then(desenhar);
+})();
+})();
+</script>
+</body>
+</html>
