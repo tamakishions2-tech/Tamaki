@@ -140,7 +140,7 @@ const esqueceFrame = k => { if (frames[k]) { frames[k].remove(); delete frames[k
 function frame(k, src){
   if (!frames[k]) {
     const f = document.createElement("iframe");
-    f.title = ABAS[k].n; f.className = "hide"; f.allow = "fullscreen; clipboard-write; autoplay";
+    f.title = ABAS[k].n; f.className = "hide"; f.allow = "fullscreen; clipboard-write; autoplay; microphone";
     prontos[k] = new Promise(ok => f.addEventListener("load", ok, {once: true}));
     f.src = src; $("#area").appendChild(f); frames[k] = f;
   }
