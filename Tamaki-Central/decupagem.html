@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1b1b">
+<meta name="color-scheme" content="dark">
+<title>Decupagem · Tamaki Central</title>
+<style>
+:root{--bg:#121212;--pn:#1b1b1b;--pn2:#242424;--ln:#313131;--tx:#f4f1e8;--mu:#a7a39a;--am:#f2b51d;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--tx);font:14px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--am);outline-offset:2px}
+#app{height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto minmax(0,1fr) auto auto;grid-template-areas:"topo topo" "video lado" "linha lado" "ctrl lado"}
+#topo{grid-area:topo;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;background:var(--pn);border-bottom:1px solid var(--ln)}
+#topo h1{margin:0 6px 0 2px;font:700 1.05rem Georgia,serif;color:var(--am);letter-spacing:.08em}
+#nome{color:var(--mu);font-size:.82rem;flex:1;min-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt{background:var(--pn2);border:1px solid var(--ln);border-radius:12px;padding:0 12px;min-height:40px;white-space:nowrap;display:inline-grid;place-items:center}
+.bt.pri{background:var(--am);border-color:var(--am);color:#151515;font-weight:700}
+.bt.on{border-color:var(--am);color:var(--am)}
+.bt.mini{min-height:34px;padding:0 9px;border-radius:10px}
+#video{grid-area:video;min-height:0;display:flex;align-items:center;justify-content:center;background:#000;position:relative}
+video{width:100%;height:100%;object-fit:contain;display:block}
+#vazio.esc{display:none}
+#vazio{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--mu);padding:20px}
+#vazio b{display:block;color:var(--tx);font:700 1.3rem Georgia,serif;margin-bottom:6px}
+#linha{grid-area:linha;padding:8px 10px 0;background:var(--pn)}
+#tl{width:100%;height:64px;display:block;border-radius:10px;background:#191919;touch-action:none;cursor:pointer}
+#ctrl{grid-area:ctrl;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;background:var(--pn);border-bottom:1px solid var(--ln)}
+#tempo{font-variant-numeric:tabular-nums;color:var(--mu);min-width:120px;text-align:center}
+#play{width:46px;height:46px;border-radius:50%;border:0;background:var(--am);color:#151515;font-size:1.15rem;font-weight:700}
+#pend{color:var(--am);font-size:.8rem}
+#lado{grid-area:lado;display:flex;flex-direction:column;min-height:0;background:var(--pn);border-left:1px solid var(--ln)}
+#abas{display:flex;border-bottom:1px solid var(--ln)}
+#abas button{flex:1;background:none;border:0;border-bottom:3px solid transparent;min-height:46px;color:var(--mu)}
+#abas button.on{color:var(--am);border-bottom-color:var(--am);font-weight:700}
+#painel{flex:1;min-height:0;overflow:auto;padding:10px}
+.m{display:grid;grid-template-columns:auto 1fr auto;gap:6px 8px;align-items:center;background:var(--pn2);border:1px solid var(--ln);border-left:4px solid var(--c,#666);border-radius:12px;padding:8px;margin-bottom:6px}
+.m.on{box-shadow:0 0 0 1px var(--am)}
+.m .tm{font:600 .78rem ui-monospace,Menlo,monospace;color:var(--mu);display:flex;gap:4px;align-items:center}
+.m .tm input{width:74px;background:#0d0d0d;border:1px solid var(--ln);border-radius:8px;padding:4px;font:inherit;color:var(--tx)}
+.m .ds{grid-column:1/-1;background:#0d0d0d;border:1px solid var(--ln);border-radius:8px;padding:7px;width:100%}
+.est{display:flex;gap:2px}
+.est button{background:none;border:0;font-size:1.1rem;color:#555;padding:2px;min-width:28px;min-height:30px}
+.est button.on{color:var(--am)}
+.acoes{display:flex;gap:4px;justify-content:flex-end}
+.mut{color:var(--mu);font-size:.82rem;margin:0 0 10px;line-height:1.45}
+.mut b{color:var(--tx)}
+.lin{display:flex;gap:8px;align-items:flex-start;padding:7px 8px;border-radius:10px;cursor:pointer}
+.lin:hover,.lin.on{background:var(--pn2)}
+.lin .t{font:600 .75rem ui-monospace,monospace;color:var(--am);flex:none;padding-top:2px}
+.lin .x{flex:1}
+.lin mark{background:var(--am);color:#151515;border-radius:3px}
+.lin button{flex:none}
+.busca{width:100%;background:#0d0d0d;border:1px solid var(--ln);border-radius:10px;padding:9px;margin-bottom:8px}
+.sug{display:flex;gap:8px;align-items:center;padding:7px 8px;border:1px solid var(--ln);border-radius:10px;margin-bottom:6px}
+.sug .t{font:600 .78rem ui-monospace,monospace;flex:1}
+.sug i{font-style:normal;color:var(--am)}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.esc{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--am);color:#151515;font-weight:700;padding:8px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+#toast.on{opacity:1}
+@media (max-width:820px){
+  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(120px,32vh) auto auto minmax(0,1fr);grid-template-areas:"topo" "video" "linha" "ctrl" "lado"}
+  #lado{border-left:0}
+  .bt .t{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topo">
+    <h1>DECUPAGEM</h1>
+    <label class="bt pri" for="fVid">📂<span class="t">&nbsp;Abrir gravação</span></label>
+    <span id="nome">Nenhum arquivo</span>
+    <button class="bt" data-a="vel" id="bVel" title="Velocidade">1×</button>
+    <button class="bt" data-a="copiar">📋<span class="t">&nbsp;Copiar p/ Claude</span></button>
+    <button class="bt" data-a="csv">⬇ .csv</button>
+    <button class="bt" data-a="srt">⬇ .srt</button>
+  </div>
+  <div id="video"><video id="v" playsinline preload="metadata"></video>
+    <div id="vazio"><div><b>Assista e marque o que vale a pena</b>Abra a gravação (vídeo ou áudio). Nada é enviado para a internet: o arquivo fica só no aparelho.</div></div></div>
+  <div id="linha"><canvas id="tl" aria-label="Linha do tempo da gravação"></canvas></div>
+  <div id="ctrl">
+    <button class="bt mini" data-a="volta" title="Voltar 5 s (J)">⏪ 5s</button>
+    <button id="play" aria-label="Tocar">▶</button>
+    <button class="bt mini" data-a="avanca" title="Avançar 5 s (L)">5s ⏩</button>
+    <span id="tempo">0:00:00 / 0:00:00</span>
+    <button class="bt" data-a="entrada" title="Marcar entrada (I)">[ Entrada</button>
+    <button class="bt" data-a="saida" title="Marcar saída (O)">Saída ]</button>
+    <button class="bt pri" data-a="marcar" title="Marcar momento: 10 s antes até 5 s depois (M)">★ Marcar</button>
+    <span id="pend"></span>
+  </div>
+  <aside id="lado">
+    <nav id="abas"><button data-t="momentos" class="on">Momentos</button><button data-t="fala">Transcrição</button><button data-t="auto">Achar sozinho</button></nav>
+    <div id="painel"></div>
+  </aside>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="fVid" accept="video/*,audio/*" class="esc">
+<input type="file" id="fSrt" accept=".srt,.vtt,text/plain" class="esc">
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const v = $("#v"), cv = $("#tl"), g = cv.getContext("2d");
+const CORES = ["#5f6b7a", "#4fc3f7", "#9ccc65", "#f2b51d"]; // sem nota, ★, ★★, ★★★
+const VELS = [1, 1.5, 2, 3, 4];
+let ultimo = null, arq = null, chave = "", D = {marcas: [], srt: [], sons: null, sug: []}, ent = null, aba = "momentos", busca = "", sel = null, tm;
+const uid = () => Math.random().toString(36).slice(2, 9);
+const hms = s => { s = Math.max(0, s || 0); const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = Math.floor(s % 60); return h + ":" + String(m).padStart(2, "0") + ":" + String(x).padStart(2, "0"); };
+const seg = t => { const p = String(t).trim().replace(",", ".").split(":").map(Number); if (p.some(isNaN)) return null; return p.reduce((a, b) => a * 60 + b, 0); };
+function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 1900); }
+// Os momentos ficam guardados por arquivo (nome + tamanho): abrir a mesma gravação de novo traz tudo de volta.
+function salvar(){ clearTimeout(tm); tm = setTimeout(() => { if (!chave) return; try { localStorage.setItem(chave, JSON.stringify(D)); } catch (e) { toast("Sem espaço para salvar"); } }, 300); }
+const dur = () => isFinite(v.duration) ? v.duration : 0;
+const ordena = () => D.marcas.sort((a, b) => a.a - b.a);
+
+/* ---------- abrir a gravação ---------- */
+$("#fVid").onchange = e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  arq = f; chave = "decupagem:" + f.name + ":" + f.size; $("#nome").textContent = f.name;
+  try { D = Object.assign({marcas: [], srt: [], sons: null, sug: []}, JSON.parse(localStorage.getItem(chave)) || {}); } catch (x) { D = {marcas: [], srt: [], sons: null, sug: []}; }
+  if (v.src) URL.revokeObjectURL(v.src); v.src = URL.createObjectURL(f); $("#vazio").classList.add("esc");
+  ent = null; pend(); painel(); if (D.marcas.length) toast(D.marcas.length + " momentos recuperados");
+};
+v.addEventListener("loadedmetadata", () => { desenhar(); relogio(); });
+v.addEventListener("timeupdate", () => { relogio(); desenhar(); if (sel && sel.fim != null && v.currentTime >= sel.fim) { v.pause(); sel.fim = null; } if (aba == "fala") acompanha(); });
+v.addEventListener("play", () => { $("#play").textContent = "❚❚"; $("#play").setAttribute("aria-label", "Pausar"); });
+v.addEventListener("pause", () => { $("#play").textContent = "▶"; $("#play").setAttribute("aria-label", "Tocar"); });
+function relogio(){ $("#tempo").textContent = hms(v.currentTime) + " / " + hms(dur()); }
+const ir = t => { if (!dur()) return; v.currentTime = Math.max(0, Math.min(dur(), t)); desenhar(); relogio(); };
+function tocarTrecho(m){ sel = {fim: m.b}; ir(m.a); v.play(); }
+
+/* ---------- linha do tempo: volume, momentos e agulha ---------- */
+function desenhar(){
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1, W = Math.round(r.width * dpr), H = Math.round(r.height * dpr);
+  if (cv.width != W || cv.height != H) { cv.width = W; cv.height = H; }
+  g.clearRect(0, 0, W, H); const T = dur(); if (!T) return;
+  const x = t => t / T * W;
+  if (D.sons && D.sons.length) { const n = D.sons.length, mx = Math.max(...D.sons) || 1; g.fillStyle = "#3a3a3a"; for (let i = 0; i < W; i += 2) { const k = D.sons[Math.floor(i / W * n)] / mx, h = k * H * .8; g.fillRect(i, H - h, 1.5, h); } }
+  for (const s of D.sug) { g.fillStyle = "#f2b51d44"; g.fillRect(x(s.a), 0, Math.max(2, x(s.b) - x(s.a)), H); }
+  for (const m of D.marcas) { g.fillStyle = CORES[m.n || 0]; g.fillRect(x(m.a), H * .12, Math.max(3, x(m.b) - x(m.a)), H * .5); }
+  if (ent != null) { g.fillStyle = "#f2b51d"; g.fillRect(x(ent) - 1, 0, 2, H); }
+  const p = x(v.currentTime); g.fillStyle = "#fff"; g.fillRect(p - 1, 0, 2 * dpr, H);
+  g.fillStyle = "#a7a39a"; g.font = `${10 * dpr}px system-ui`; g.textBaseline = "bottom";
+  const passo = [60, 300, 600, 1800, 3600].find(s => T / s <= 8) || 7200; for (let s = 0; s <= T; s += passo) { g.fillRect(x(s), H - 5 * dpr, 1, 5 * dpr); g.fillText(hms(s).replace(/^0:/, ""), x(s) + 3, H - 1); }
+}
+new ResizeObserver(desenhar).observe(cv);
+const busca1 = e => { const r = cv.getBoundingClientRect(); ir((e.clientX - r.left) / r.width * dur()); };
+cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); busca1(e); cv.onpointermove = busca1; });
+cv.addEventListener("pointerup", () => { cv.onpointermove = null; });
+
+/* ---------- marcar ---------- */
+function pend(){ $("#pend").textContent = ent != null ? "Entrada em " + hms(ent) + " · agora marque a saída" : ""; desenhar(); }
+function novo(a, b, txt, n){
+  if (!dur()) return toast("Abra uma gravação primeiro");
+  const m = {id: uid(), a: +Math.max(0, a).toFixed(1), b: +Math.min(dur(), Math.max(a + 1, b)).toFixed(1), txt: txt || "", n: n || 0};
+  D.marcas.push(m); ultimo = m.id; ordena(); salvar(); aba = "momentos"; painel(); desenhar();
+  setTimeout(() => { const i = document.querySelector(`[data-m="${m.id}"]`); if (i) i.scrollIntoView({block: "nearest"}); }, 50);
+  toast("Momento marcado ★"); return m;
+}
+const acoes = {
+  volta: () => ir(v.currentTime - 5), avanca: () => ir(v.currentTime + 5),
+  entrada: () => { if (!dur()) return toast("Abra uma gravação primeiro"); ent = v.currentTime; pend(); },
+  saida: () => { const t = v.currentTime; novo(ent != null && ent < t ? ent : t - 10, t); ent = null; pend(); },
+  marcar: () => { const t = v.currentTime; novo(t - 10, t + 5); },
+  vel: () => { const i = (VELS.indexOf(v.playbackRate) + 1) % VELS.length; v.playbackRate = VELS[i]; $("#bVel").textContent = VELS[i] + "×"; $("#bVel").classList.toggle("on", VELS[i] != 1); },
+  copiar: async () => { const t = textoClaude(); if (!t) return; try { await navigator.clipboard.writeText(t); toast("Copiado! Cole numa conversa com o Claude"); } catch (e) { prompt("Copie:", t); } },
+  csv: () => { if (!D.marcas.length) return toast("Nenhum momento marcado"); baixar("﻿entrada;saida;duracao;nota;o que acontece\n" + D.marcas.map(m => [hms(m.a), hms(m.b), Math.round(m.b - m.a) + "s", "★".repeat(m.n || 0), '"' + String(m.txt).replace(/"/g, '""') + '"'].join(";")).join("\n"), base() + "-momentos.csv"); },
+  srt: () => { if (!D.marcas.length) return toast("Nenhum momento marcado"); const h = s => { const ms = Math.round(s * 1000); return [Math.floor(ms / 3600000), Math.floor(ms / 60000) % 60, Math.floor(ms / 1000) % 60].map(x => String(x).padStart(2, "0")).join(":") + "," + String(ms % 1000).padStart(3, "0"); };
+    baixar(D.marcas.map((m, i) => `${i + 1}\n${h(m.a)} --> ${h(m.b)}\n${"★".repeat(m.n || 0)} ${m.txt || "Momento " + (i + 1)}\n`).join("\n"), base() + "-momentos.srt"); },
+  srtfala: () => $("#fSrt").click(), semfala: () => { D.srt = []; salvar(); painel(); },
+  analisar, limpasug: () => { D.sug = []; salvar(); painel(); desenhar(); }
+};
+const base = () => (arq ? arq.name.replace(/\.[^.]+$/, "") : "decupagem");
+function baixar(txt, nome){ const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], {type: "text/plain;charset=utf-8"})); a.download = nome; a.click(); }
+function textoClaude(){
+  if (!D.marcas.length) { toast("Nenhum momento marcado"); return ""; }
+  const tot = D.marcas.reduce((s, m) => s + m.b - m.a, 0);
+  return ["# Decupagem: " + (arq ? arq.name : ""), "Gravação bruta: " + hms(dur()) + " · " + D.marcas.length + " momentos · " + hms(tot) + " aproveitados", "",
+    "| Entrada | Saída | O que acontece | Nota |", "|---|---|---|---|", ...D.marcas.map(m => `| ${hms(m.a)} | ${hms(m.b)} | ${String(m.txt || "").replace(/\|/g, "/")} | ${"★".repeat(m.n || 0) || "-"} |`), "",
+    "Me ajude a montar o roteiro do vídeo com esses momentos: ordem, ganchos para o começo, onde usar motions (título de episódio, terminal, fato/estatística, passo a passo, mapa) e ideias de título e thumbnail."].join("\n");
+}
+
+/* ---------- transcrição (.srt do CapCut ou de outro programa) ---------- */
+$("#fSrt").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const out = []; for (const b of (await f.text()).replace(/\r/g, "").split(/\n\s*\n/)) { const l = b.split("\n").filter(Boolean), i = l.findIndex(x => x.includes("-->")); if (i < 0) continue; const [a, z] = l[i].split("-->"); const A = seg(a.trim().split(" ")[0]), B = seg(z.trim().split(" ")[0]); if (A == null || B == null) continue; out.push({a: A, b: B, txt: l.slice(i + 1).join(" ").replace(/<[^>]+>/g, "")}); }
+  if (!out.length) return toast("Não achei falas nesse arquivo"); D.srt = out; salvar(); painel(); toast(out.length + " falas importadas");
+};
+function acompanha(){ const t = v.currentTime, i = D.srt.findIndex(c => t >= c.a && t < c.b); document.querySelectorAll(".lin.on").forEach(e => e.classList.remove("on")); const el = document.querySelector(`.lin[data-i="${i}"]`); if (el) el.classList.add("on"); }
+
+/* ---------- achar sozinho: momentos em que o volume dispara (gritos, risadas, sustos) ---------- */
+async function analisar(){
+  if (!arq) return toast("Abra uma gravação primeiro");
+  if (arq.size > 700 * 1024 * 1024) return toast("Arquivo grande demais para analisar no aparelho. Exporte só o áudio (.m4a/.mp3) e abra ele aqui.");
+  const msg = $("#amsg"); if (msg) msg.textContent = "Lendo o áudio… (pode levar um minuto)";
+  try {
+    const ctx = new OfflineAudioContext(1, 1, 8000), ab = await ctx.decodeAudioData(await arq.arrayBuffer()), d = ab.getChannelData(0), sr = ab.sampleRate, n = Math.floor(d.length / sr), sons = new Array(n);
+    for (let i = 0; i < n; i++) { let s = 0; for (let j = i * sr, f = j + sr; j < f; j += 4) s += d[j] * d[j]; sons[i] = Math.sqrt(s / (sr / 4)); }
+    D.sons = sons;
+    // nota de cada segundo = volume ÷ volume típico do minuto em volta
+    const nota = sons.map((x, i) => { const viz = sons.slice(Math.max(0, i - 60), i + 60).slice().sort((a, b) => a - b); return x / (viz[Math.floor(viz.length / 2)] || 1e-4); });
+    const quantos = Math.max(3, Math.min(20, Math.round(n / 240))), usados = [];
+    nota.map((x, i) => [x, i]).sort((a, b) => b[0] - a[0]).forEach(([x, i]) => { if (usados.length < quantos && x > 1.6 && usados.every(u => Math.abs(u.i - i) > 45)) usados.push({i, x}); });
+    D.sug = usados.sort((a, b) => a.i - b.i).map(u => ({a: Math.max(0, u.i - 12), b: Math.min(n, u.i + 6), pico: u.i, forca: +u.x.toFixed(1)}));
+    salvar(); painel(); desenhar(); toast(D.sug.length ? D.sug.length + " momentos sugeridos" : "Não achei picos de volume");
+  } catch (e) { if (msg) msg.textContent = "Não consegui ler o áudio deste arquivo (" + e.message + "). Tente exportar só o áudio."; }
+}
+
+/* ---------- painel lateral ---------- */
+function painel(){
+  document.querySelectorAll("#abas button").forEach(b => b.classList.toggle("on", b.dataset.t == aba));
+  const P = $("#painel");
+  if (aba == "momentos") {
+    const tot = D.marcas.reduce((s, m) => s + m.b - m.a, 0);
+    P.innerHTML = (D.marcas.length ? `<p class="mut"><b>${D.marcas.length}</b> momentos · <b>${hms(tot)}</b> de ${hms(dur())} aproveitados</p>` : `<p class="mut"><b>Como usar:</b> assista (dá para acelerar em 1×). Quando algo bom acontecer, toque <b>★ Marcar</b> (pega 10 s antes e 5 s depois) ou use <b>[ Entrada</b> e <b>Saída ]</b>. Escreva o que acontece e dê de 1 a 3 estrelas.<br><br>Teclado: <b>espaço</b> toca, <b>J</b>/<b>L</b> pulam 5 s, <b>I</b>/<b>O</b> entrada e saída, <b>M</b> marca, <b>1</b>–<b>3</b> dão nota ao último momento.<br><br>No fim, <b>📋 Copiar p/ Claude</b> manda a lista para montar o roteiro; <b>⬇ .srt</b> vira marcadores no CapCut.</p>`)
+      + D.marcas.map(m => `<div class="m${sel && sel.id == m.id ? " on" : ""}" data-m="${m.id}" style="--c:${CORES[m.n || 0]}">
+        <div class="tm"><input value="${hms(m.a)}" data-campo="a" aria-label="Entrada">→<input value="${hms(m.b)}" data-campo="b" aria-label="Saída"></div>
+        <div class="est">${[1, 2, 3].map(k => `<button data-nota="${k}" class="${(m.n || 0) >= k ? "on" : ""}" aria-label="${k} estrela${k > 1 ? "s" : ""}">★</button>`).join("")}</div>
+        <div class="acoes"><button class="bt mini" data-tocar title="Tocar o trecho">▶</button><button class="bt mini" data-apagar title="Apagar">🗑</button></div>
+        <input class="ds" data-campo="txt" value="${esc(m.txt)}" placeholder="O que acontece? Ex.: Boss caiu no primeiro try"></div>`).join("");
+  } else if (aba == "fala") {
+    const q = busca.trim().toLowerCase(), re = q ? new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi") : null;
+    P.innerHTML = D.srt.length ? `<input class="busca" id="busca" placeholder="Procurar na fala (ex.: boss, morri, bug)" value="${esc(busca)}"><div class="row"><button class="bt mini" data-a="semfala">Tirar transcrição</button></div>`
+      + D.srt.map((c, i) => [c, i]).filter(([c]) => !q || c.txt.toLowerCase().includes(q)).map(([c, i]) => `<div class="lin" data-i="${i}"><span class="t">${hms(c.a)}</span><span class="x">${re ? esc(c.txt).replace(re, "<mark>$1</mark>") : esc(c.txt)}</span><button class="bt mini" data-linha="${i}" title="Virar momento">＋</button></div>`).join("")
+      : `<p class="mut"><b>Transcrição:</b> gere as legendas automáticas no CapCut (ou outro programa), exporte o <b>.srt</b> e abra aqui. Dá para procurar palavras ("boss", "morri") e tocar numa fala para ir até ela. O ＋ transforma a fala num momento.</p><button class="bt pri" data-a="srtfala">Abrir .srt</button>`;
+  } else {
+    P.innerHTML = `<p class="mut"><b>Achar sozinho</b> ouve a gravação e sugere os trechos em que o volume dispara (gritos, risadas, sustos). É só um atalho: confira cada um.<br>Funciona até ~700 MB. Para lives longas, exporte só o áudio e abra ele aqui.</p>
+      <div class="row"><button class="bt pri" data-a="analisar">🔎 Analisar volume</button>${D.sug.length ? '<button class="bt" data-a="limpasug">Limpar sugestões</button>' : ""}</div><p class="mut" id="amsg"></p>`
+      + D.sug.map((s, i) => `<div class="sug"><span class="t">${hms(s.a)} → ${hms(s.b)} <i>${"▮".repeat(Math.min(5, Math.round(s.forca - 1)))}</i></span><button class="bt mini" data-sugir="${i}" title="Ouvir">▶</button><button class="bt mini" data-sugadd="${i}" title="Virar momento">＋</button></div>`).join("");
+  }
+}
+document.addEventListener("click", e => {
+  const q = s => e.target.closest(s); let b;
+  if ((b = q("[data-a]"))) return acoes[b.dataset.a] && acoes[b.dataset.a]();
+  if ((b = q("#abas [data-t]"))) { aba = b.dataset.t; return painel(); }
+  if ((b = q("[data-linha]"))) { const c = D.srt[+b.dataset.linha]; return novo(c.a - 1, c.b + 1, c.txt); }
+  if ((b = q(".lin"))) return ir(D.srt[+b.dataset.i].a);
+  if ((b = q("[data-sugir]"))) { const s = D.sug[+b.dataset.sugir]; return tocarTrecho(s); }
+  if ((b = q("[data-sugadd]"))) { const s = D.sug.splice(+b.dataset.sugadd, 1)[0]; novo(s.a, s.b, "", 0); return desenhar(); }
+  const M = q("[data-m]"), m = M && D.marcas.find(x => x.id == M.dataset.m); if (!m) return;
+  if ((b = q("[data-nota]"))) { m.n = m.n == +b.dataset.nota ? +b.dataset.nota - 1 : +b.dataset.nota; salvar(); painel(); desenhar(); }
+  else if (q("[data-tocar]")) { sel = {id: m.id, fim: m.b}; ir(m.a); v.play(); painel(); }
+  else if ((b = q("[data-apagar]"))) { if (!b.dataset.s) { b.dataset.s = 1; b.textContent = "Apagar?"; return; } D.marcas = D.marcas.filter(x => x != m); salvar(); painel(); desenhar(); }
+});
+document.addEventListener("input", e => {
+  if (e.target.id == "busca") { busca = e.target.value; const p = e.target.selectionStart; painel(); const i = $("#busca"); i.focus(); i.setSelectionRange(p, p); return; }
+  const M = e.target.closest("[data-m]"), m = M && D.marcas.find(x => x.id == M.dataset.m), k = e.target.dataset.campo; if (!m || !k) return;
+  if (k == "txt") m.txt = e.target.value; else { const t = seg(e.target.value); if (t == null) return; m[k] = t; if (m.b <= m.a) return; desenhar(); }
+  salvar();
+});
+document.addEventListener("change", e => { if (e.target.dataset.campo == "a" || e.target.dataset.campo == "b") { ordena(); salvar(); painel(); } });
+$("#play").onclick = () => { if (!dur()) return toast("Abra uma gravação primeiro"); sel = null; v.paused ? v.play() : v.pause(); };
+document.addEventListener("keydown", e => {
+  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k == " ") { e.preventDefault(); $("#play").click(); }
+  else if (k == "j") acoes.volta(); else if (k == "l") acoes.avanca();
+  else if (k == "i") acoes.entrada(); else if (k == "o") acoes.saida(); else if (k == "m") acoes.marcar();
+  else if (/^[0-3]$/.test(k)) { const m = D.marcas.find(x => x.id == ultimo); if (!m) return; m.n = +k; salvar(); painel(); desenhar(); }
+});
+painel();
+})();
+</script>
+</body>
+</html>

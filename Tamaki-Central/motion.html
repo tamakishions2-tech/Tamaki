@@ -136,6 +136,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const copia = o => JSON.parse(JSON.stringify(o));
 const KEY = "motion-proj", PLUG = "motion-plugins", FPS = 30;
+let sujo = true; // o palco só é redesenhado quando algo muda ou está tocando
 let P = {fmt: "16:9", dur: 12, bg: "transp", itens: [], sel: null, zoom: 1, ima: 1, loop: 0}, T = 0, tocando = false, t0 = 0, T0 = 0, tm, editTraj = null;
 const cv = $("#cv"), g = cv.getContext("2d");
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -217,8 +218,8 @@ const imgs = {};
 const idb = () => new Promise((ok, no) => { const r = indexedDB.open("motion", 1); r.onupgradeneeded = () => r.result.createObjectStore("a"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
 async function dbPut(k, v){ const d = await idb(); await new Promise(ok => { const t = d.transaction("a", "readwrite"); v == null ? t.objectStore("a").delete(k) : t.objectStore("a").put(v, k); t.oncomplete = ok; }); }
 async function dbGet(k){ try { const d = await idb(); return await new Promise(ok => { const q = d.transaction("a").objectStore("a").get(k); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); } catch (e) { return null; } }
-function img(k){ if (!k) return null; if (!imgs[k]) { imgs[k] = new Image(); dbGet(k).then(b => { if (b) imgs[k].src = URL.createObjectURL(b); }); } return imgs[k].complete && imgs[k].naturalWidth ? imgs[k] : null; }
-async function guardarImg(f){ const k = "img:" + uid(); await dbPut(k, f); imgs[k] = new Image(); imgs[k].src = URL.createObjectURL(f); return k; }
+function img(k){ if (!k) return null; if (!imgs[k]) { imgs[k] = new Image(); imgs[k].onload = () => sujo = true; dbGet(k).then(b => { if (b) imgs[k].src = URL.createObjectURL(b); }); } return imgs[k].complete && imgs[k].naturalWidth ? imgs[k] : null; }
+async function guardarImg(f){ const k = "img:" + uid(); await dbPut(k, f); imgs[k] = new Image(); imgs[k].onload = () => sujo = true; imgs[k].src = URL.createObjectURL(f); return k; }
 function capa(im, x, y, w, h){ const r = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * r, ih = im.naturalHeight * r; g.drawImage(im, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih); }
 
 /* ---------- registro de tipos de motion (os de fábrica e os instalados) ---------- */
@@ -308,6 +309,56 @@ function mapa(g, it, s, c){
   }
   g.restore();
 }
+
+/* ---------- motions de edição: episódio, terminal, fato e passo a passo ---------- */
+const mono = (px, peso) => `${peso || 600} ${px}px ui-monospace, Menlo, Consolas, monospace`;
+Motion.registrar({tipo: "episodio", nome: "Título de episódio", icone: "📺", desc: "Episódio #00 com glitch e linhas de TV", cor: "#e57373", usa: ["texto", "sub", "fonte", "cor", "cor2", "tam", "pos"], rot: {cor2: "Cor do episódio"},
+  campos: [["forca", "Força do glitch", "num", 0, 10, .5], ["linhas", "Linhas de TV", "chk"]],
+  padrao: {sub: "EPISÓDIO #00", texto: "O BUG DO PVP", dur: 3.5, fonte: "classica", tam: 9, cor: "#f2d27a", cor2: "#f2b51d", x: 50, y: 50, anim: "glitch", saida: "glitch", cont: "glitch", forca: 5, linhas: 1},
+  desenhar(g, it, s, c){ const fs = c.fs, f = +it.forca || 0, p = eOut(cl(c.lt / .6)), sub = String(it.sub || "").split("").join(" ");
+    g.font = fnt("redonda", fs * .26); g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = it.cor2; g.fillText(sub, 0, -fs * .85);
+    const sw = g.measureText(sub).width, lw = fs * .9 * p, lh = Math.max(2, fs * .03); g.fillRect(-sw / 2 - fs * .2 - lw, -fs * .85 - lh / 2, lw, lh); g.fillRect(sw / 2 + fs * .2, -fs * .85 - lh / 2, lw, lh);
+    g.font = fnt(it.fonte, fs); const rajada = f && (c.lt < .35 || Math.sin(c.T * 7.3) + Math.sin(c.T * 3.1) > 1.6) ? f * fs * .012 : 0;
+    if (rajada) for (const [dx, cor] of [[-rajada, "#ff2a6d"], [rajada, "#05d9e8"]]) { g.save(); g.translate(dx, 0); g.globalAlpha *= .7; c.texto(it.texto, s, {fs, cor}); g.restore(); }
+    c.texto(it.texto, s, {fs, cor: it.cor});
+    if (rajada) for (let i = 0; i < 3; i++) { const y = (Math.random() - .5) * fs, h = fs * (.05 + Math.random() * .12); g.save(); g.beginPath(); g.rect(-c.W, y, c.W * 2, h); g.clip(); g.translate((Math.random() - .5) * rajada * 6, 0); c.texto(it.texto, s, {fs, cor: it.cor}); g.restore(); }
+    if (+it.linhas) { g.save(); g.globalAlpha *= .22; g.fillStyle = "#000"; const w = g.measureText(it.texto).width + fs; for (let y = -fs * 1.1; y < fs * .7; y += 4) g.fillRect(-w / 2, y, w, 2); g.restore(); } }});
+Motion.registrar({tipo: "terminal", nome: "Terminal (changelog)", icone: "💻", desc: "O que mudou, digitado estilo hacker", cor: "#39ff88", usa: ["area", "sub", "cor", "tam", "pos"], rot: {cor: "Cor do texto"},
+  campos: [["titulo", "Título da janela", "texto"], ["vel", "Letras por segundo", "num", 5, 80, 1], ["pausa", "Pausa entre linhas (s)", "num", 0, 2, .05]],
+  padrao: {titulo: "root@live:~/tamaki", sub: "o que mudou", texto: "+ Balão de fala novo\n~ Ajuste na voz da Tamaki\n- Bug do pulo removido", dur: 6, cor: "#39ff88", tam: 3, x: 32, y: 30, anim: "pop", vel: 28, pausa: .4},
+  desenhar(g, it, s, c){ const fs = c.fs, L = String(it.texto || "").split("\n").filter(l => l.trim()), lh = fs * 1.7, pad = fs * 1.1, vel = +it.vel || 28, pau = +it.pausa || 0;
+    const tag = l => /^\+/.test(l) ? ["ADD", "#39ff88"] : /^-/.test(l) ? ["DEL", "#ff5d5d"] : /^~/.test(l) ? ["FIX", "#f2b51d"] : null, lin = L.map((l, i) => String(i + 1).padStart(2, "0") + "  " + l);
+    g.font = mono(fs); const larg = Math.max(fs * 22, ...lin.map(l => g.measureText(l).width + fs * 6)), alt = pad * 2 + fs * 2.6 + lh * Math.max(1, L.length + 1), x0 = -larg / 2 + pad, y0 = -alt / 2 + pad;
+    g.fillStyle = "rgba(6,14,9,.93)"; rr(-larg / 2, -alt / 2, larg, alt, fs * .5); g.fill(); g.strokeStyle = it.cor; g.lineWidth = Math.max(1.5, fs * .08); g.stroke();
+    g.fillStyle = it.cor; g.textBaseline = "middle"; g.font = mono(fs * .72, 400); g.textAlign = "left"; g.fillText(it.titulo || "", x0, y0); g.textAlign = "right"; g.fillStyle = "#ff5d5d"; g.fillText("● LIVE", larg / 2 - pad, y0);
+    g.fillStyle = it.cor; g.textAlign = "left"; g.font = mono(fs, 700); g.fillText("▸ " + (it.sub || ""), x0, y0 + fs * 1.5); g.globalAlpha *= .5; g.fillRect(x0, y0 + fs * 2.3, larg - pad * 2, Math.max(1, fs * .06)); g.globalAlpha /= .5;
+    let tempo = c.lt - .3, cur = null; g.font = mono(fs);
+    lin.forEach((l, i) => { if (tempo < 0) return; const n = Math.min(l.length, Math.floor(tempo * vel)), y = y0 + fs * 2.4 + lh * (i + .8), t = tag(L[i]);
+      g.fillStyle = t ? t[1] : it.cor; g.fillText(l.slice(0, n), x0, y);
+      if (n >= l.length && t) { g.textAlign = "right"; g.fillText("[" + t[0] + "]", larg / 2 - pad, y); g.textAlign = "left"; }
+      if (n < l.length) cur = [x0 + g.measureText(l.slice(0, n)).width, y]; else { tempo -= l.length / vel + pau; if (tempo < 0) cur = [x0 + g.measureText(l).width + fs * .3, y]; } });
+    if (!cur) cur = [x0, y0 + fs * 2.4 + lh * (lin.length + .8)];
+    if (Math.floor(c.T * 2.5) % 2 == 0) { g.fillStyle = it.cor; g.fillRect(cur[0], cur[1] - fs * .55, fs * .55, fs * 1.1); } }});
+Motion.registrar({tipo: "fato", nome: "Fato / estatística", icone: "📊", desc: "Número grande e frase: \"10% dos jogadores…\"", cor: "#f06292", usa: ["texto", "fonte", "cor", "cor2", "tam", "pos"], rot: {cor2: "Cor do número"},
+  campos: [["num", "Número", "num", 0, 1000, 1], ["pre", "Antes do número", "texto"], ["suf", "Depois do número", "texto"], ["barra", "Barra de porcentagem", "chk"], ["cartao", "Cartão de fundo", "chk"]],
+  padrao: {pre: "", num: 10, suf: "%", texto: "dos jogadores têm isso", dur: 4, fonte: "bebas", tam: 10, cor: "#ffffff", cor2: "#f2b51d", x: 50, y: 50, anim: "pop", barra: 1, cartao: 1},
+  desenhar(g, it, s, c){ const fs = c.fs, p = eOut(cl((c.lt - .15) / Math.max(.4, c.dur * .45))), v = Math.round(+it.num * p), nt = (it.pre || "") + v.toLocaleString("pt-BR") + (it.suf || ""), f2 = fs * .3;
+    g.font = fnt(it.fonte, fs); const nw = g.measureText((it.pre || "") + (+it.num).toLocaleString("pt-BR") + (it.suf || "")).width; g.font = fnt("redonda", f2); const tw = g.measureText(it.texto || "").width;
+    const w = Math.max(nw, tw, fs * 3) + fs * .9, h = fs * 1.05 + f2 * 1.6 + (+it.barra ? f2 * 1.4 : 0) + fs * .5;
+    if (+it.cartao) { g.fillStyle = "rgba(15,15,15,.88)"; rr(-w / 2, -h / 2, w, h, fs * .18); g.fill(); g.fillStyle = it.cor2; g.fillRect(-w / 2, -h / 2, fs * .08, h); }
+    let y = -h / 2 + fs * .25 + fs * .5; g.textAlign = "center"; g.textBaseline = "middle"; g.font = fnt(it.fonte, fs); g.fillStyle = it.cor2; g.fillText(nt, 0, y);
+    y += fs * .55 + f2 * .8; g.font = fnt("redonda", f2); g.fillStyle = it.cor; g.fillText(it.texto || "", 0, y);
+    if (+it.barra) { y += f2 * 1.2; const bw = w - fs * .9, bh = f2 * .45; g.fillStyle = "#ffffff22"; rr(-bw / 2, y, bw, bh, bh / 2); g.fill(); g.fillStyle = it.cor2; rr(-bw / 2, y, bw * cl(+it.num / 100) * p, bh, bh / 2); g.fill(); } }});
+Motion.registrar({tipo: "passos", nome: "Passo a passo", icone: "✅", desc: "Lista que vai marcando cada etapa (explicar código na live)", cor: "#64b5f6", usa: ["area", "sub", "fonte", "cor", "cor2", "tam", "pos"], rot: {cor2: "Cor do ✓"},
+  padrao: {sub: "Agora editando", texto: "Abrir o arquivo do balão\nTrocar a cor da borda\nTestar na live", dur: 6, fonte: "redonda", tam: 3.4, cor: "#ffffff", cor2: "#39ff88", x: 22, y: 40, anim: "deslizar", saida: "deslizar"},
+  desenhar(g, it, s, c){ const fs = c.fs, L = String(it.texto || "").split("\n").filter(l => l.trim()), n = Math.max(1, L.length), passo = (c.dur * .8 - .4) / n, lh = fs * 1.9, atual = Math.floor((c.lt - .4) / passo);
+    g.font = fnt(it.fonte, fs); const w = Math.max(fs * 12, ...L.map(l => g.measureText(l).width)) + fs * 3.4, h = fs * 2.2 + lh * n + fs * .4;
+    g.fillStyle = "rgba(15,15,15,.88)"; rr(-w / 2, -h / 2, w, h, fs * .45); g.fill();
+    g.textAlign = "left"; g.textBaseline = "middle"; g.font = fnt("redonda", fs * .75); g.fillStyle = it.cor2; g.fillText("● " + (it.sub || ""), -w / 2 + fs * .8, -h / 2 + fs * 1.1);
+    L.forEach((l, i) => { const ap = cl((c.lt - .4 - i * passo) / .35); if (ap <= 0) return; const y = -h / 2 + fs * 2.2 + lh * (i + .5), x = -w / 2 + fs * .8 + (1 - eOut(ap)) * fs * 2, feito = i < atual;
+      g.save(); g.globalAlpha *= ap * (feito ? .6 : 1); g.font = fnt(it.fonte, fs); g.fillStyle = feito ? it.cor2 : it.cor;
+      g.fillText(feito ? "✓" : i == atual ? "▸" : "•", x, y); g.fillStyle = it.cor; g.fillText(l, x + fs * 1.4, y);
+      if (feito) { g.fillRect(x + fs * 1.4, y, g.measureText(l).width, Math.max(1.5, fs * .07)); } g.restore(); }); }});
 
 /* ---------- legendas: tempos automáticos ou do .srt ---------- */
 function legendas(it){
@@ -410,13 +461,14 @@ function tocar(){
   tocando = true; t0 = performance.now(); T0 = T; $("#play").textContent = "❚❚"; $("#play").setAttribute("aria-label", "Pausar");
   if (audioBuf && T < audioBuf.duration) { const c = ctx(); fonte = c.createBufferSource(); fonte.buffer = audioBuf; fonte.connect(c.destination); fonte.connect(destino); fonte.start(0, T); }
 }
-function parar(){ tocando = false; $("#play").textContent = "▶"; $("#play").setAttribute("aria-label", "Tocar"); if (fonte) { try { fonte.stop(); } catch (e) {} fonte = null; } }
+function parar(){ tocando = false; sujo = true; $("#play").textContent = "▶"; $("#play").setAttribute("aria-label", "Tocar"); if (fonte) { try { fonte.stop(); } catch (e) {} fonte = null; } }
 $("#play").onclick = () => tocando ? parar() : tocar();
 function loop(now){
   requestAnimationFrame(loop);
   if (tocando) { T = T0 + (now - t0) / 1000; if (T >= P.dur) { if (gravando && rec) { T = P.dur; parar(); rec.stop(); } else if (P.loop) { parar(); T = 0; tocar(); } else { T = P.dur; parar(); } } cabeca(); }
-  desenhar();
+  if (tocando || gravando || sujo) { sujo = false; desenhar(); }
 }
+for (const t of ["input", "change", "click", "pointerdown", "pointermove", "keydown"]) document.addEventListener(t, () => sujo = true, true);
 function gravar(){
   if (gravando) return;
   if (!window.MediaRecorder || !cv.captureStream) return toast("Este navegador não grava vídeo. Use o Chrome.");
@@ -545,7 +597,7 @@ $("#fJs").onchange = async e => { const f = e.target.files[0]; e.target.value = 
 
 function novo(tipo){
   const d = TIPOS[tipo], it = Object.assign({x: 50, y: 50, anim: "fade", saida: "fade", cont: "nenhum", te: .5, ts: .35, tam: 6}, copia(d.padrao || {}), {id: uid(), tipo});
-  if (it.dur > P.dur) it.dur = P.dur; it.ini = Math.min(T, Math.max(0, P.dur - it.dur));
+  if (it.dur > P.dur) it.dur = P.dur; it.ini = +Math.min(T, Math.max(0, P.dur - it.dur)).toFixed(2);
   P.itens.push(it); P.sel = it.id; T = it.ini + Math.min(.8, it.dur / 2); salvar(); linha(); props(); $("#dAdd").close();
   if (tipo == "mapa") { modoTrajeto(it.id); toast("Escolha o mapa no painel e toque no palco para desenhar o caminho"); }
 }
@@ -600,7 +652,7 @@ document.addEventListener("keydown", e => {
 });
 
 /* ---------- tela ---------- */
-function tamanho(){ const v = P.fmt == "9:16"; cv.width = v ? 720 : 1280; cv.height = v ? 1280 : 720; caber(); }
+function tamanho(){ const v = P.fmt == "9:16"; cv.width = v ? 720 : 1280; cv.height = v ? 1280 : 720; sujo = true; caber(); }
 function caber(){ const t = $("#tela"), w = t.clientWidth - 20, h = t.clientHeight - 20; if (w <= 0 || h <= 0) return; const k = Math.min(w / cv.width, h / cv.height); cv.style.width = Math.floor(cv.width * k) + "px"; cv.style.height = Math.floor(cv.height * k) + "px"; }
 new ResizeObserver(caber).observe($("#tela"));
 new ResizeObserver(() => regua()).observe($("#rolo"));
@@ -610,7 +662,7 @@ function topo(){ $("#bFmt").textContent = P.fmt; $("#bFundo").textContent = FUND
   P.zoom = P.zoom || 1; if (P.ima == null) P.ima = 1;
   tamanho(); topo(); linha(); props(); requestAnimationFrame(loop);
   const a = await dbGet("audio"); if (a) usarAudio(a, false);
-  if (document.fonts) document.fonts.ready.then(desenhar);
+  if (document.fonts) document.fonts.ready.then(() => sujo = true);
 })();
 window.Motion = Motion;
 })();

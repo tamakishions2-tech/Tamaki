@@ -133,6 +133,7 @@ fieldset:disabled{opacity:.45}
 <input type="file" id="fImp" accept=".json,application/json" class="esc">
 <input type="file" id="fIco" accept="image/*" class="esc">
 <input type="file" id="fPose" accept="image/*" class="esc">
+<input type="file" id="fSpr" accept="image/*" multiple class="esc">
 
 <script>
 (() => {
@@ -140,7 +141,7 @@ fieldset:disabled{opacity:.45}
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const KEY = "palco-cfg"; // mesmos dados do Palco da Ficha da Tamaki
-const DEF = {url:"http://127.0.0.1:8765", motor:"termux", voice:"pf_dora", speed:1.05, pause:0.4, bg:"check", gain:4, thr:0.15, guides:1, text:"", layers:[], folders:[], sel:null, fmt:"16:9",
+const DEF = {expr: 0, exprVolta: 0, url:"http://127.0.0.1:8765", motor:"termux", voice:"pf_dora", speed:1.05, pause:0.4, bg:"check", gain:4, thr:0.15, guides:1, text:"", layers:[], folders:[], sel:null, fmt:"16:9",
   bal:{on:1, lock:0, estilo:"rpg", fundo:"#06050f", opF:1, borda:"#ffffff", texto:"#ffffff", fonte:"pixel", tam:3.2, alinh:"left", digitar:1, nome:"", nomeCor:"#ff9f45", rabo:"baixo", raboX:.25, seguir:"", cam:0,
     pos:{"16:9":{x:50, y:82, w:94, h:28}, "9:16":{x:50, y:84, w:94, h:24}}},
   fx:{zoom:1, px:0, py:0, rot:0, reage:0, dur:1, intro:"titulo", titulo:"TAMAKI SHION", sub:"", cor:"#ff9f45", gIntro:0, gEntrada:1, gSaida:1}};
@@ -152,8 +153,12 @@ const PRESET = {natural: {tom: 0, vel: 1, variar: .4, pausa: 1, calor: 2, clarez
   original: {tom: 0, vel: 1, variar: 0, pausa: 1, calor: 0, clareza: 0, brilho: 0, sala: 0, vol: 1, comp: 0}};
 const VOZDEF = {azVoz: "pt-BR-FranciscaNeural", azEstilo: "", elVoz: "", elModelo: "eleven_multilingual_v2", elEst: .45, elSim: .8, elStyle: .15, navVoz: ""};
 const PAPEIS = [["always","Sempre visível"],["open","Boca aberta (falando)"],["closed","Boca fechada (parada)"],["eyeopen","Olho aberto"],["eyeclosed","Olho fechado (piscar)"]];
-const PARADA = [["none","Nenhuma"],["bob","Flutuar"],["sway","Balançar"],["breathe","Respirar"],["flicker","Cintilar"]];
-const FALANDO = [["none","Nenhuma"],["hop","Pular"],["shake","Tremer"],["grow","Esticar"],["tilt","Inclinar"]];
+const PARADA = [["none","Nenhuma"],["bob","Flutuar"],["sway","Balançar"],["breathe","Respirar"],["squash","Respirar (amassa e estica)"],["flicker","Cintilar"]];
+const FALANDO = [["none","Nenhuma"],["hop","Pular"],["shake","Tremer"],["grow","Esticar"],["squash","Amassar e esticar"],["tilt","Inclinar"]];
+// Folha de sprites: a imagem é uma grade de quadros que o palco vai trocando.
+const SPRDEF = {on: 0, cols: 4, rows: 1, n: 4, fps: 8, modo: "loop", cada: 4};
+const MODOS = [["loop","Repetir sempre"],["vaievem","Vai e volta"],["fala","Só enquanto fala"],["pisca","Uma vez a cada piscada"],["vez","Uma vez de tempos em tempos"]];
+const EXPRS = [["0","Sempre (todas as expressões)"],["-1","Só sem expressão (some nas expressões)"],...[1,2,3,4,5,6,7,8,9].map(n => [String(n), "Só na expressão " + n])];
 const TIPOS = [["personagem","Personagem"],["decoracao","Decoração"],["cenario","Cenário"]];
 const NOMEPOSE = {parada: "Parada", falando: "Falando", falando2: "Falando 2"};
 const ICONES = ["📁","⭐","🎀","👀","👄","💇","👕","🖐","🌙","🔥","🐔","🐱","🎮","📚","💬","✨"];
@@ -171,7 +176,7 @@ function normalizar(c){
   c.voz = Object.assign(copia(VOZDEF), c.voz || {}); c.ed = Object.assign(copia(PRESET.natural), c.ed || {});
   return c;
 }
-let subV = "motor", subP = "parada", subA = "mov", verPose = null, mostrada = {}, ultimoAlto = -1e9;
+let subV = "motor", subP = "parada", subA = "mov", mov = {}, mola = {}, sprE = {}, piscaIni = 0, exprAte = 0, verPose = null, mostrada = {}, ultimoAlto = -1e9;
 const estados = {};
 let cfg = normalizar(copia(DEF)), imgs = {}, aba = "camada", subB = "pos", subE = "cam", tm, hist = [], fut = [];
 const cv = $("#cv"), g = cv.getContext("2d");
@@ -500,6 +505,17 @@ function tamanho(){ const v = cfg.fmt == "9:16"; cv.width = v ? 720 : 1280; cv.h
 function caber(){ const t = $("#tela"), w = t.clientWidth - 16, h = t.clientHeight - 16; if (w <= 0 || h <= 0) return;
   const k = Math.min(w / cv.width, h / cv.height); cv.style.width = Math.floor(cv.width * k) + "px"; cv.style.height = Math.floor(cv.height * k) + "px"; }
 new ResizeObserver(caber).observe(document.querySelector("#tela"));
+function quadro(L, im, now, falando){ // pedaço da imagem a desenhar (folha de sprites ou imagem inteira)
+  const S = L.spr; if (!S || !S.on || (+S.n || 1) < 2) return {sx: 0, sy: 0, sw: im.naturalWidth, sh: im.naturalHeight};
+  const cols = Math.max(1, +S.cols || 1), rows = Math.max(1, +S.rows || 1), n = Math.min(+S.n || 1, cols * rows), fps = Math.max(.5, +S.fps || 8), dq = 1000 / fps;
+  const e = sprE[L.id] || (sprE[L.id] = {t: now, prox: now + (+S.cada || 4) * 1000}); let f = 0;
+  if (S.modo == "vaievem") { const c = Math.floor((now - e.t) / dq) % (2 * n - 2); f = c < n ? c : 2 * n - 2 - c; }
+  else if (S.modo == "fala") { if (falando) { if (!e.ativo) { e.ativo = 1; e.t = now; } f = Math.floor((now - e.t) / dq) % n; } else e.ativo = 0; }
+  else if (S.modo == "pisca") { const q = Math.floor((now - piscaIni) / dq); f = q < n ? q : 0; }
+  else if (S.modo == "vez") { if (now > e.prox) { e.t = now; e.prox = now + n * dq + (+S.cada || 4) * 1000 * (.6 + Math.random() * .8); } const q = Math.floor((now - e.t) / dq); f = q < n ? q : 0; }
+  else f = Math.floor((now - e.t) / dq) % n;
+  const sw = im.naturalWidth / cols, sh = im.naturalHeight / rows; return {sx: (f % cols) * sw, sy: Math.floor(f / cols) * sh, sw, sh};
+}
 function tick(now){
   requestAnimationFrame(tick);
   const t = now / 1000, W = cv.width, H = cv.height;
@@ -523,8 +539,9 @@ function tick(now){
     const vendo = verPose && verPose.pers == nome; if (vendo) al = verPose.pose;
     e.alvo = al; e.P = P; e.p = vendo ? 1 : Math.min(1, (now - e.t) / Math.max(1, +P.dur || 1)); e.visto = al;
   }
-  if (now > proxPisca) { piscaAte = now + 140; proxPisca = now + 2500 + Math.random() * 3000; }
+  if (now > proxPisca) { piscaIni = now; piscaAte = now + 140; proxPisca = now + 2500 + Math.random() * 3000; }
   const pisca = now < piscaAte;
+  if (exprAte && now > exprAte) { exprAte = 0; cfg.expr = 0; gravarLS(); if (aba == "fala") painel(); }
   for (const a of A.slice()) if (now > a.t0 + a.dur) { A.splice(A.indexOf(a), 1); fim(a); }
   const c = camera(now); camAtual = c;
   g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.clearRect(0, 0, W, H);
@@ -533,15 +550,23 @@ function tick(now){
   const base = () => { g.setTransform(1, 0, 0, 1, 0, 0); g.translate(W / 2, H / 2); g.rotate(c.rot * Math.PI / 180); g.scale(c.z, c.z); g.translate(-W / 2 - c.px / 100 * W, -H / 2 - c.py / 100 * H); };
   ancora = {}; const soma = {};
   for (const L of cfg.layers) {
-    let dx = 0, dy = 0, dr = 0, ds = 1, op = L.op ?? 1; const k = L.is * 2, G = geo(L);
+    let dx = 0, dy = 0, dr = 0, ds = 1, sq = 1, op = L.op ?? 1; const k = L.is * 2, G = geo(L);
     if (L.idle == "bob") dy += Math.sin(t * k) * L.ia * .5;
     else if (L.idle == "sway") dr += Math.sin(t * k) * L.ia;
     else if (L.idle == "breathe") ds += Math.sin(t * k) * L.ia / 100;
+    else if (L.idle == "squash") sq *= 1 + Math.sin(t * k) * L.ia / 100;
     else if (L.idle == "flicker") op *= 1 - (L.ia / 10) * (.5 + .5 * Math.sin(t * k * 3 + Math.sin(t * k * 7)));
     if (L.talk == "hop") dy -= lvl * L.ta;
     else if (L.talk == "shake") dx += (Math.random() - .5) * lvl * L.ta;
     else if (L.talk == "grow") ds += lvl * L.ta / 100;
     else if (L.talk == "tilt") dr += Math.sin(t * 12) * lvl * L.ta;
+    else if (L.talk == "squash") sq *= 1 + lvl * L.ta / 100;
+    if (L.mola && mov[L.mola]) { // segue outra camada com atraso, como cabelo e roupa
+      const alvo = mov[L.mola], m = mola[L.id] || (mola[L.id] = {x: alvo.dx, y: alvo.dy, r: alvo.dr, vx: 0, vy: 0, vr: 0}), f = (+L.molaF || 5) / 10, kk = .05 + .2 * (1 - f), am = .72 + .2 * f;
+      for (const [a, v, b] of [["x", "vx", "dx"], ["y", "vy", "dy"], ["r", "vr", "dr"]]) { m[v] = (m[v] + (alvo[b] - m[a]) * kk) * am; m[a] += m[v]; }
+      dx += m.x; dy += m.y; dr += m.r - m.vx * 6 * f;
+    }
+    mov[L.id] = {dx, dy, dr};
     ancora[L.id] = {x: G.X + dx, y: G.Y + dy};
     if (L.parent) { const s = soma[L.parent] || (soma[L.parent] = {x: 0, y: 0, n: 0}); s.x += G.X + dx; s.y += G.Y + dy; s.n++; }
     let im = imgs[L.img], ox = 0, oy = 0, kk = 1;
@@ -555,12 +580,14 @@ function tick(now){
       else if (troca && tr == "deslize") { dy += amp * (1 - p); op *= p; }
     }
     if (!visivel(L) || !im || !im.complete || !im.naturalWidth) continue;
+    const ex = +L.expr || 0; if ((ex > 0 && cfg.expr != ex) || (ex < 0 && cfg.expr)) continue;
     if ((!L.tipo || L.tipo == "decoracao") && ((L.role == "open" && !falando) || (L.role == "closed" && falando) || (L.role == "eyeopen" && pisca) || (L.role == "eyeclosed" && !pisca))) continue;
-    mostrada[L.id] = {im, ox, oy, kk};
-    const w = G.w * kk / 100 * W, h = w * im.naturalHeight / im.naturalWidth;
+    const Q = quadro(L, im, now, falando);
+    mostrada[L.id] = {im, ox, oy, kk, Q};
+    const w = G.w * kk / 100 * W, h = w * Q.sh / Q.sw;
     base(); g.globalAlpha = Math.max(0, Math.min(1, op));
-    g.translate((G.X + ox + dx) / 100 * W, (G.Y + oy + dy) / 100 * H); g.rotate((L.r + dr) * Math.PI / 180); g.scale((L.flip ? -1 : 1) * ds, ds);
-    g.drawImage(im, -L.px * w, -L.py * h, w, h);
+    g.translate((G.X + ox + dx) / 100 * W, (G.Y + oy + dy) / 100 * H); g.rotate((L.r + dr) * Math.PI / 180); g.scale((L.flip ? -1 : 1) * ds / sq, ds * sq);
+    g.drawImage(im, Q.sx, Q.sy, Q.sw, Q.sh, -L.px * w, -L.py * h, w, h);
     const sel = L.id == cfg.sel, daPasta = L.parent && cfg.sel == "f:" + L.parent;
     if (cfg.guides && !rec && (sel || daPasta)) { g.globalAlpha = 1; g.setLineDash([10, 8]); g.strokeStyle = sel ? "#5fd9cf" : "#f2b632"; g.lineWidth = 3 / c.z; g.strokeRect(-L.px * w, -L.py * h, w, h); g.setLineDash([]); if (sel) { g.fillStyle = "#ff9f45"; g.beginPath(); g.arc(0, 0, 9, 0, 7); g.fill(); } }
   }
@@ -575,7 +602,7 @@ const pontos = new Map(); let arr = null;
 function ponto(e){ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * cv.width, (e.clientY - r.top) / r.height * cv.height]; }
 function acertou(L, x, y){
   const M = mostrada[L.id]; if (!M) return false; const im = M.im; if (!im || !im.naturalWidth) return false;
-  const W = cv.width, H = cv.height, G = geo(L), w = G.w * M.kk / 100 * W, h = w * im.naturalHeight / im.naturalWidth, a = -L.r * Math.PI / 180;
+  const W = cv.width, H = cv.height, G = geo(L), w = G.w * M.kk / 100 * W, h = w * M.Q.sh / M.Q.sw, a = -L.r * Math.PI / 180;
   let px = x - (G.X + M.ox) / 100 * W, py = y - (G.Y + M.oy) / 100 * H; [px, py] = [px * Math.cos(a) - py * Math.sin(a), px * Math.sin(a) + py * Math.cos(a)];
   if (L.flip) px = -px; px += L.px * w; py += L.py * h; return px >= 0 && py >= 0 && px <= w && py <= h;
 }
@@ -728,14 +755,19 @@ const PAINEIS = {
     }
     return `<fieldset${tr ? " disabled" : ""}><div class="g">${tipo}${extra}${tx("k", "name", "Nome", L.name)}
       ${sl("k", "parent", "Pasta", [["", "(sem pasta)"], ...cfg.folders.map(f => [f.id, (f.icon || "📁") + " " + f.name])], L.parent || "")}
-      ${per || L.tipo == "cenario" ? "" : sl("k", "role", "Papel da peça", PAPEIS, L.role)}</div><div class="g">
+      ${per || L.tipo == "cenario" ? "" : sl("k", "role", "Papel da peça", PAPEIS, L.role)}${sl("k", "expr", "Expressão", EXPRS, String(+L.expr || 0))}</div><div class="g">
       ${rg("k", "op", "Opacidade", 0, 1, .01, L.op ?? 1)}${rg("k", "w", "Tamanho (%)", 2, 300, .5, L.w)}
       ${rg("k", "x", "Horizontal (%)", -20, 120, .1, L.x)}${rg("k", "y", "Vertical (%)", -20, 120, .1, L.y)}${rg("k", "r", "Rotação (°)", -180, 180, 1, L.r)}
       <div class="btns">${ck("k", "flip", "Espelhar", L.flip)}<button class="bt" data-a="centro">Centralizar</button><button class="bt" data-a="trocaimg">Trocar imagem</button></div></div></fieldset>${dica}${trava}`;
   },
   anim: () => {
     const L = camada(); if (!L) return tipoSel() == "camada" ? semNada : '<p class="vazio">A animação é por camada. Escolha uma camada.</p>';
-    const per = L.tipo == "personagem", c = per ? subs("a", subA, [["mov", "Movimento"], ["trans", "Transição da fala"]]) : "";
+    const per = L.tipo == "personagem", c = subs("a", subA, [["mov", "Movimento"], ["spr", "Sprite"], ...(per ? [["trans", "Transição da fala"]] : [])]);
+    if (subA == "spr") { const S = Object.assign(copia(SPRDEF), L.spr || {}); return c + `<fieldset class="g"${travada(L) ? " disabled" : ""}>
+      ${ck("s", "on", "Usar como folha de sprites", S.on)}${rg("s", "cols", "Colunas", 1, 16, 1, S.cols)}${rg("s", "rows", "Linhas", 1, 16, 1, S.rows)}${rg("s", "n", "Quadros", 1, 64, 1, S.n)}
+      ${rg("s", "fps", "Quadros por segundo", 1, 30, 1, S.fps)}${sl("s", "modo", "Quando anima", MODOS, S.modo)}${S.modo == "vez" ? rg("s", "cada", "Intervalo médio (s)", 1, 20, .5, S.cada) : ""}
+      <div class="btns"><label class="bt pri" for="fSpr" style="display:grid;place-items:center">Montar com vários PNG</label><button class="bt" data-a="teste">Testar fala</button></div></fieldset>
+      <p class="dica">Uma imagem com os quadros lado a lado (ou em grade), como num jogo antigo. "Montar com vários PNG" junta os quadros para você, na ordem do nome do arquivo. Para piscar os olhos com vários quadros, use "Uma vez a cada piscada"; para mexer o pé ou o cabelo de vez em quando, "Uma vez de tempos em tempos".</p>`; }
     if (per && subA == "trans") { const P = persDe(L); return c + `<div class="g">
       ${sl("q", "trans", "Ao começar e ao parar de falar", [["corte", "Corte seco"], ["fade", "Esmaecer"], ["pulo", "Pulinho"], ["pulsar", "Pulsar"], ["deslize", "Deslizar"]], P.trans)}
       ${rg("q", "dur", "Duração da transição (ms)", 40, 600, 10, P.dur)}${rg("q", "amp", "Intensidade", 0, 10, .1, P.amp)}
@@ -748,8 +780,9 @@ const PAINEIS = {
       ${sl("k", "idle", "Parada", PARADA, L.idle)}${rg("k", "ia", "Intensidade parada", 0, 10, .1, L.ia)}${rg("k", "is", "Velocidade parada", .2, 4, .1, L.is)}
       ${sl("k", "talk", "Falando", FALANDO, L.talk)}${rg("k", "ta", "Intensidade falando", 0, 20, .5, L.ta)}
       ${rg("k", "px", "Pivô horizontal", 0, 1, .01, L.px)}${rg("k", "py", "Pivô vertical", 0, 1, .01, L.py)}
+      ${sl("k", "mola", "Segue com atraso (cabelo, roupa)", [["", "Não"], ...cfg.layers.filter(x => x != L).slice().reverse().map(x => [x.id, x.name])], L.mola || "")}${L.mola ? rg("k", "molaF", "Moleza", 1, 10, .5, +L.molaF || 5) : ""}
       <div class="btns"><button class="bt" data-a="teste">Testar movimento</button></div></fieldset>
-      <p class="dica">O pivô é a bolinha laranja, o ponto onde a peça gira. Para a cabeça, coloque no pescoço.</p>`;
+      <p class="dica">O pivô é a bolinha laranja, o ponto onde a peça gira. Para a cabeça, coloque no pescoço; para "amassa e estica", nos pés (vertical 1). "Segue com atraso" faz a peça ir atrás da outra como uma mola: bom para cabelo, laço e saia.</p>`;
   },
   balao: () => {
     const B = cfg.bal, P = B.pos[cfg.fmt];
@@ -772,8 +805,8 @@ const PAINEIS = {
       <div class="btns">${ck("b", "digitar", "Letra por letra", B.digitar)}<button class="bt" data-a="testebal">Testar balão</button></div></div>`;
     return c;
   },
-  fala: () => `<div class="fala"><textarea data-c="text" placeholder="O que a Tamaki vai falar. Uma frase por linha.">${esc(cfg.text)}</textarea>
-    <div class="lado"><button class="bt pri" data-a="falar">▶ Falar</button><button class="bt" data-a="audio">Tocar áudio…</button><button class="bt" data-a="testebal">Testar balão</button><p class="dica" id="msg">Cada linha vira uma fala no balão.</p></div></div>`,
+  fala: () => `<div class="fala"><div style="display:flex;flex-direction:column;gap:6px;min-height:0"><div class="chips">${exprBotoes()}</div><textarea data-c="text" style="flex:1;height:auto" placeholder="O que a Tamaki vai falar. Uma frase por linha.">${esc(cfg.text)}</textarea></div>
+    <div class="lado"><button class="bt pri" data-a="falar">▶ Falar</button><button class="bt" data-a="audio">Tocar áudio…</button><button class="bt" data-a="testebal">Testar balão</button><label class="f"><b>Voltar ao normal depois de (s)<i>${cfg.exprVolta || "nunca"}</i></b><input type="range" data-c="exprVolta" min="0" max="20" step="1" value="${+cfg.exprVolta || 0}"></label><p class="dica" id="msg">Cada linha vira uma fala no balão. Teclas 0–9 trocam a expressão.</p></div></div>`,
   efeitos: () => {
     const F = cfg.fx, bot = (k, n) => `<button class="bt" data-fx="${k}">${n}</button>`;
     let c = subs("e", subE, [["cam", "Câmera"], ["trans", "Transições"], ["intro", "Intros"], ["grav", "Ao gravar"]]);
@@ -819,10 +852,17 @@ const PAINEIS = {
     return c;
   }
 };
+function exprBotoes(){
+  const usadas = [...new Set(cfg.layers.map(L => +L.expr || 0).filter(n => n > 0))].sort((a, b) => a - b);
+  const nome = n => { const L = cfg.layers.find(x => +x.expr == n); return n + (L ? " · " + esc(L.name) : ""); };
+  return [0, ...usadas].map(n => `<button data-expr="${n}" class="${(+cfg.expr || 0) == n ? "on" : ""}">${n ? nome(n) : "😐 Normal"}</button>`).join("") + (usadas.length ? "" : '<span class="dica">Para criar expressões, escolha uma camada e mude "Expressão" na aba Camada.</span>');
+}
+function expressao(n){ cfg.expr = n; exprAte = n && +cfg.exprVolta ? performance.now() + cfg.exprVolta * 1000 : 0; gravarLS(); if (aba == "fala") painel(); toast(n ? "Expressão " + n : "Expressão normal"); }
 function painel(){ const Lp = camada(); verPose = aba == "camada" && Lp && Lp.tipo == "personagem" && Lp.pose != "parada" ? {pers: Lp.pers, pose: Lp.pose} : null; $("#painel").innerHTML = PAINEIS[aba](); document.querySelectorAll("#ferr button").forEach(b => b.classList.toggle("on", b.dataset.t == aba)); }
 function alvoDe(d){
   if (d.ch) return [chaves, d.ch]; if (d.v) return [cfg.voz, d.v]; if (d.ed) return [cfg.ed, d.ed];
   if (d.q) { const L = camada(); return [L && L.tipo == "personagem" ? persDe(L) : null, d.q]; }
+  if (d.s) { const L = camada(); if (!L) return [null]; L.spr = Object.assign(copia(SPRDEF), L.spr || {}); return [L.spr, d.s]; }
   if (d.k) return [camada(), d.k]; if (d.p) return [pastaSel(), d.p]; if (d.bp) return [cfg.bal.pos[cfg.fmt], d.bp];
   if (d.b) return [cfg.bal, d.b]; if (d.x) return [cfg.fx, d.x]; if (d.c) return [cfg, d.c]; return [null];
 }
@@ -855,6 +895,7 @@ function entrada(e){
   if (d.ch) { guardarChaves(); return; }
   if (d.ed && cadV) cadV.ajustar();
   if (e.type == "change" && (d.c == "motor" || d.v == "azVoz")) painel();
+  if (d.s == "modo" || d.s == "on" || d.k == "mola") { if (e.type == "change") painel(); }
   if (["name", "role", "op", "parent", "estilo", "seguir", "on", "lock", "tipo", "pose", "pers"].includes(k) && (d.k || d.p || d.b)) { $("#lista").innerHTML = listaHTML(); if (e.type == "change" && (k == "parent" || k == "lock" || k == "seguir" || k == "tipo" || k == "pose" || k == "pers")) painel(); }
   salvar();
 }
@@ -864,6 +905,7 @@ document.addEventListener("click", e => {
   let b;
   if ((b = q("button[data-a]"))) return acao(b.dataset.a, b);
   if ((b = q("[data-fx]"))) return disparar(b.dataset.fx);
+  if ((b = q("[data-expr]"))) return expressao(+b.dataset.expr);
   if ((b = q("[data-preset]"))) { Object.assign(cfg.ed, PRESET[b.dataset.preset]); if (cadV) cadV.ajustar(); salvar(); painel(); toast("Predefinição: " + b.textContent); return; }
   if ((b = q("[data-icone]"))) { const f = pastaSel(); if (f) { f.icon = b.dataset.icone; f.iconImg = null; salvar(); desenharLista(); painel(); } return; }
   if ((b = q("[data-membro]"))) { const f = pastaSel(), L = cfg.layers.find(l => l.id == b.dataset.membro); if (f && L) { L.parent = L.parent == f.id ? null : f.id; salvar(); desenharLista(); painel(); } return; }
@@ -875,6 +917,7 @@ document.addEventListener("click", e => {
   if ((b = q("[data-sub]"))) { const [n, v] = b.dataset.sub.split(":"); if (n == "b") subB = v; else if (n == "a") subA = v; else if (n == "v") subV = v; else subE = v; painel(); }
 });
 function topo(){ $("#bFmt").textContent = cfg.fmt; $("#bFundo").textContent = FUNDOS[cfg.bg] || FUNDOS.check; $("#guias").checked = !!cfg.guides; }
+document.addEventListener("keydown", e => { if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) || e.ctrlKey || e.metaKey || e.altKey) return; if (/^[0-9]$/.test(e.key)) expressao(+e.key); });
 $("#guias").onchange = e => { cfg.guides = e.target.checked ? 1 : 0; salvar(); };
 $("#fPng").onchange = async e => { await adicionar(e.target.files); e.target.value = ""; };
 $("#fAud").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; audio(); try { await tocar(f, ""); } catch (x) { aviso("Não consegui tocar esse arquivo."); } };
@@ -888,6 +931,17 @@ $("#fPose").onchange = async e => {
     cfg.layers.splice(cfg.layers.indexOf(base) + 1, 0, n); cfg.sel = n.id; toast("Pose " + NOMEPOSE[pose] + " adicionada na posição da Parada");
   } else L.img = k;
   im.onload = () => { desenharLista(); painel(); }; salvar(); desenharLista(); painel();
+};
+$("#fSpr").onchange = async e => { // junta vários quadros numa folha de sprites
+  const L = camada(), fs = [...e.target.files].filter(f => /^image\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true})); e.target.value = "";
+  if (!L || fs.length < 2) return toast("Escolha pelo menos 2 imagens");
+  const ims = await Promise.all(fs.map(f => new Promise(ok => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = URL.createObjectURL(f); }))), ok = ims.filter(Boolean);
+  const qw = Math.max(...ok.map(i => i.naturalWidth)), qh = Math.max(...ok.map(i => i.naturalHeight)), n = ok.length, cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols);
+  const k = Math.min(1, 4096 / (qw * cols), 4096 / (qh * rows)), w = Math.floor(qw * k), h = Math.floor(qh * k), c = document.createElement("canvas"); c.width = w * cols; c.height = h * rows;
+  const x = c.getContext("2d"); ok.forEach((im, i) => { const s = Math.min(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * s, ih = im.naturalHeight * s; x.drawImage(im, (i % cols) * w + (w - iw) / 2, Math.floor(i / cols) * h + (h - ih), iw, ih); });
+  const blob = await new Promise(ok2 => c.toBlob(ok2, "image/png")), id = uid(); await idbPut(id, blob); const im = carregarImg(id, blob);
+  L.img = id; L.spr = Object.assign(copia(SPRDEF), L.spr || {}, {on: 1, cols, rows, n}); delete sprE[L.id];
+  im.onload = () => { desenharLista(); painel(); }; salvar(); toast(n + " quadros juntados numa folha");
 };
 $("#fIco").onchange = async e => { const fl = e.target.files[0], f = pastaSel(); e.target.value = ""; if (!fl || !f) return; const k = uid(); await idbPut(k, fl); const im = carregarImg(k, fl); f.iconImg = k; im.onload = () => { desenharLista(); painel(); }; salvar(); };
 
