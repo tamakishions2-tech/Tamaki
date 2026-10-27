@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0b1e"><meta name="color-scheme" content="dark"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><title>Tamaki Shion · Ficha viva</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0b1e;--pn:#171431;--ln:#2c2757;--tx:#ece6f6;--mu:#9a94c2;--ac:#ffae5c;--te:#5fd9cf;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse 90% 38% at 50% -6%,rgba(255,174,92,.16),transparent 70%),radial-gradient(1.2px 1.2px at 12% 18%,#fff9,transparent),radial-gradient(1px 1px at 78% 9%,#fff8,transparent),radial-gradient(1.4px 1.4px at 63% 34%,#fff7,transparent),radial-gradient(1px 1px at 30% 52%,#fff6,transparent),radial-gradient(1.2px 1.2px at 90% 70%,#fff6,transparent),radial-gradient(1px 1px at 8% 82%,#fff5,transparent),var(--bg);background-attachment:fixed;color:var(--tx);font:16px/1.5 Nunito,system-ui,sans-serif}
+.w{max-width:760px;margin:0 auto;padding:18px 16px 40px}
+h1{font:15px/1.4 "Press Start 2P",monospace;color:var(--ac);margin:0;text-shadow:0 0 18px rgba(255,174,92,.45)}
+.m{color:var(--mu);font-size:14px;margin:6px 0 0}
+nav{display:flex;gap:6px;overflow-x:auto;padding:14px 0 6px}
+button,input,textarea,select{font:inherit;color:inherit}
+nav button{white-space:nowrap;background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
+nav button.on{background:var(--ac);border-color:var(--ac);color:#1b1230}
+.c{background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:14px;margin:12px 0}
+.r{display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:12px}
+.r textarea,.r input.f{grid-column:1/3}
+input,textarea,select{background:transparent;border:1px solid var(--ln);border-radius:6px;padding:8px;width:100%;box-sizing:border-box}option{background:#171431;color:#ece6f6}
+textarea{field-sizing:content;min-height:44px;resize:vertical}
+.lb{font-weight:800;color:var(--mu);font-size:14px}
+.ti{font-weight:800;font-size:18px;margin-bottom:12px}
+.x{background:none;border:1px solid var(--ln);border-radius:6px;width:36px;cursor:pointer;color:var(--mu)}
+.ab{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:14px;color:var(--mu)}
+.ab input{width:auto}
+.b,.g{border-radius:8px;padding:9px 14px;font-weight:800;cursor:pointer}
+.b{background:var(--ac);color:#1b1230;border:0}
+.g{background:none;border:1px solid var(--ln)}
+a{color:var(--te);font-weight:700}
+.dlg{background:#06050f;color:#fff;border:4px double #fff;border-radius:4px;padding:14px;margin:12px 0}
+.dlg .cap{font:10px "Press Start 2P",monospace;color:#ffb36b}
+.dlg textarea{border:0;color:#fff;font:13px/1.6 ui-monospace,Menlo,monospace;min-height:300px;margin-top:10px;padding:0}
+.code{font:12px/1.5 ui-monospace,Menlo,monospace}
+:focus-visible{outline:2px solid var(--te);outline-offset:2px}
+</style></head><body><div class="w">
+<h1>TAMAKI SHION</h1>
+<p class="m">Ficha viva da personagem · <span id="st">carregando</span></p>
+<div class="ab" style="margin-top:10px"><button class="b" onclick="SV()">Salvar…</button></div><div id="sp"></div>
+<nav id="nv"></nav><main id="mn"></main></div>
+<script src="palco.js"></script>
+<script>
+window.claude=window.claude||{use:async()=>null};
+const D={mods:[
+{id:'perfil',t:'Perfil',inc:1,f:[['Nome','Tamaki Shion'],['Idade','25 anos'],['Espécie','Elfa'],['Aparência','Pele morena, cabelo cacheado azul-arroxeado com mecha laranja, olhos verde-água, orelhas de elfa e presinhas.'],['Roupa casual','Moletom preto e calça cargo bege.'],['Roupa de protagonista','A definir (transformação estilo Sailor Moon no Ep. 1).'],['Companheiros','Galinha de pelúcia (ela conversa com a galinha) e gato preto de pelúcia.'],['Manias','Dobra as páginas dos livros, enrola a mecha do cabelo quando está desatenta, dorme mal por causa dos jogos.'],['Gostos','Ler, videogames, Pokémon FireRed.'],['Frase de assinatura','A definir, conforme conhecerem melhor a personagem.'],['Aviso de IA','Personagem criada com IA; isso fica explícito no perfil.']]},
+{id:'pers',t:'Personalidade',inc:1,f:[['Jeito de falar','Primeira pessoa, tom de conversa em call com o público, português brasileiro informal.'],['Temperamento','Fofoqueira divertida, dramática, sarcástica e competitiva (“não vou dar palco pra maluco”).'],['Afetos','A mãe e o Bobasauro, que ela cuida com carinho.'],['Rivalidade','Gary, o “moleque mimado de apartamento”.'],['Bordões','“gente”, “amiga”, “tintim por tintim”, “nem relógio trabalha de graça”.'],['Palavrões','Sempre suavizados (regra para o YouTube).'],['Despedida','“Nos vemos no próximo sábado! Beijão!”']]},
+{id:'voz',t:'Voz',inc:1,f:[['Motor','Kokoro-82M (Apache 2.0), rodando no Google Colab pelo tablet.'],['Voz (id)','pf_dora','voz'],['Velocidade','1.05','vel'],['Pausa entre frases (s)','0.4','pa'],['Mix no CapCut (escala 0–1000)','Voz 100–170 · música com fala ~13 (8–18) · música nas pausas ~25 · efeitos 70–100 · impacto 100.'],['Reservas','Voxphera (app no tablet) e ElevenLabs (ler os termos antes de usar o áudio para clonar).'],['Ajuste opcional','Tom +1 a +2 semitons e leve equalização para dar timbre único.'],['Trechos','Melhor com 100–200 tokens por trecho: juntar frases curtas e quebrar as longas.']]},
+{id:'visual',t:'Visual',inc:1,f:[['Formato Short','Vertical 9:16: topo = Tamaki PNGtuber; meio = caixa de diálogo com a legenda; baixo = gameplay do FireRed.'],['Poses PNGtuber','Neutra, falando, rindo e surpresa, cada uma com boca aberta e fechada.'],['Legenda','Fonte pixelada, até 2 linhas, texto aparecendo letra por letra, sem emotes.'],['Expressões mínimas','Neutra, feliz, brava, surpresa, triste, deboche (para cada personagem).'],['Template “Objection”','3 camadas separadas: fundo com linhas de impacto, personagem apontando, plaquinha com nome. Mesmo enquadramento sempre.'],['Regras de arte','9:16 nos Shorts e 16:9 na longplay; PNG com fundo transparente; paleta e traço consistentes.'],['Nome de arquivo','ep01_V04_carvalho_objection.png'],['Cenário da call','Quarto aconchegante: estantes, plantas, luminária com raposa, cadeira gamer roxa, polaroids na mesa.']]},
+{id:'uni',t:'Universo',inc:1,f:[['Mundo','Kurogane: mistura de Oriente e Ocidente. Mesmo universo do jogo Corvos de Ferro, sem ligação direta.'],['Livros dela','Fictícios; cada um é um exercício de escrita do Tama. Kurogane pode ser um deles.'],['Apartamento','Pequeno: sala com cozinha integrada, quarto, banheiro e varanda. Cartoon quente, cores chapadas, sem cruzes.'],['Prof. Carvalho','Oak com rosto de tronco de carvalho: anéis de crescimento, olhos pequenos, bigode de folhas.'],['Gary','Cabelo espetado, sorriso de deboche, roupa roxa/azul de moleque mimado.'],['Elenco de apoio','Mãe, Bobasauro (o Bulbasaur dela), Daisy (irmã do Gary, simpática) e o vendedor de Viridian.'],['Série','Ep. 1 “Como eu me tornei a melhor treinadora”: Tamaki em call com o público, episódios aos sábados; roteiro em 4 partes (V01–V06, V07–V10, V11–V13, V14–V16).']]}],
+links:[
+{n:'Google Colab',u:'https://colab.research.google.com',d:'Roda o Kokoro no tablet e gera o áudio.'},
+{n:'Kokoro-82M',u:'https://huggingface.co/hexgrad/Kokoro-82M',d:'Modelo de voz (Apache 2.0); vozes pt-BR: pf_dora, pm_alex, pm_santa.'},
+{n:'Vozes Piper',u:'https://huggingface.co/rhasspy/piper-voices',d:'Vozes importáveis no Voxphera (.onnx e .json).'},
+{n:'Amostras Piper',u:'https://rhasspy.github.io/piper-samples',d:'Ouvir as vozes antes de baixar.'},
+{n:'ElevenLabs',u:'https://elevenlabs.io',d:'Plano pago por período; o que foi gerado no plano mantém a licença comercial.'},
+{n:'Termos do ElevenLabs',u:'https://elevenlabs.io/terms',d:'Proíbem usar o áudio para criar modelos concorrentes.'},
+{n:'CapCut',u:'https://www.capcut.com',d:'Edição dos vídeos; volume na escala 0–1000.'},
+{n:'Voxphera',u:'',d:'App de TTS no tablet; clonar voz exige baixar o motor (~200 MB).'}]};
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let S=JSON.parse(JSON.stringify(D)),tab='0',ref=null,tm;
+function st(t){$('#st').textContent=t}
+function save(){clearTimeout(tm);st('salvando…');tm=setTimeout(async()=>{try{localStorage.setItem('tamaki',JSON.stringify(S))}catch(e){}try{if(ref)await ref.set(S)}catch(e){}st('salvo')},700)}
+function cp(t){const f=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()};try{navigator.clipboard.writeText(t).then(()=>st('copiado'),()=>{f();st('copiado')})}catch(e){f();st('copiado')}}
+function gv(k,d){for(const m of S.mods)for(const x of m.f)if(x[2]==k){const v=String(x[1]).trim().split(/\s+/)[0];if(v)return v}return d}
+function code(){const t=(S.txt||'').replace(/\\/g,'\\\\').replace(/"""/g,"'''");const p=parseFloat(gv('pa','0.4'));
+return '!pip install -q kokoro-onnx soundfile\n!wget -q -nc https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx\n!wget -q -nc https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin\n\nimport numpy as np, soundfile as sf\nfrom kokoro_onnx import Kokoro\nfrom google.colab import files\n\nk = Kokoro("kokoro-v1.0.onnx", "voices-v1.0.bin")\ntexto = """'+t+'"""\n\npartes = []\nfor linha in texto.splitlines():\n    if not linha.strip(): continue\n    s, sr = k.create(linha, voice=\''+gv('voz','pf_dora')+'\', speed='+(parseFloat(gv('vel','1.05'))||1.05)+', lang=\'pt-br\')\n    partes += [s, np.zeros(int(sr * '+(isNaN(p)?0.4:p)+'))]\n\nsf.write(\'tamaki.wav\', np.concatenate(partes), sr)\nfiles.download(\'tamaki.wav\')'}
+function prompt(){let o='Você é a assistente criativa do projeto da personagem Tamaki Shion. Use esta ficha como fonte única sobre ela e o universo dela. Não invente fatos que contradigam a ficha; quando eu pedir uma mudança, devolva só os campos alterados.\n';
+S.mods.filter(m=>m.inc).forEach(m=>{o+='\n## '+m.t+'\n'+m.f.map(x=>'- '+x[0]+': '+x[1]).join('\n')+'\n'});
+return o+'\n## Links e ferramentas\n'+S.links.map(l=>'- '+l.n+(l.u?' ('+l.u+')':'')+(l.d?': '+l.d:'')).join('\n')}
+function mv(i){const m=S.mods[i];return `<div class="c"><input class="ti" data-w="t" data-m="${i}" value="${esc(m.t)}" oninput="E(this)" aria-label="Nome do módulo">`+m.f.map((x,j)=>`<div class="r"><input class="lb" data-w="f" data-m="${i}" data-f="${j}" data-p="0" value="${esc(x[0])}" oninput="E(this)" aria-label="Nome do campo"><button class="x" onclick="A('delf',${i},${j})" aria-label="Remover campo">×</button><textarea data-w="f" data-m="${i}" data-f="${j}" data-p="1" oninput="E(this)" aria-label="${esc(x[0])}">${esc(x[1])}</textarea></div>`).join('')+`<div class="ab"><button class="b" onclick="A('addf',${i})">+ Campo</button><label><input type="checkbox" data-w="i" data-m="${i}" ${m.inc?'checked':''} onchange="E(this)"> Incluir no prompt</label><button class="g" onclick="A('delm',${i},this)">Excluir módulo</button></div></div>`+(m.id=='voz'?`<div class="c"><b>Gerador de áudio (Colab)</b><p class="m">Cole a fala, uma frase por linha. O código usa a voz, a velocidade e a pausa definidas acima.</p><textarea oninput="S.txt=this.value;save();$('#cd').value=code()" placeholder="Fala da Tamaki">${esc(S.txt||'')}</textarea><textarea id="cd" class="code" readonly style="margin:10px 0">${esc(code())}</textarea><button class="b" onclick="cp($('#cd').value)">Copiar código</button></div>`:'')}
+function lv(){return `<div class="c">`+S.links.map((l,j)=>`<div class="r"><input class="lb" data-w="l" data-l="${j}" data-p="n" value="${esc(l.n)}" oninput="E(this)" aria-label="Nome"><button class="x" onclick="A('dell',${j})" aria-label="Remover link">×</button><input class="f" data-w="l" data-l="${j}" data-p="u" value="${esc(l.u)}" placeholder="https://" oninput="E(this)" aria-label="Endereço"><input class="f" data-w="l" data-l="${j}" data-p="d" value="${esc(l.d)}" placeholder="Para que serve" oninput="E(this)" aria-label="Uso">${/^https?:\/\//i.test(l.u)?`<a href="${esc(l.u)}" target="_blank" rel="noopener noreferrer">Abrir ${esc(l.n)}</a>`:''}</div>`).join('')+`<div class="ab"><button class="b" onclick="A('addl')">+ Link</button></div></div>`}
+function pv(){return `<div class="dlg"><span class="cap">PROMPT DA TAMAKI</span><textarea id="pr" readonly>${esc(prompt())}</textarea></div><div class="ab"><button class="b" onclick="cp($('#pr').value)">Copiar prompt</button><span>Módulos desmarcados ficam de fora.</span></div><div class="c"><b>Backup</b><p class="m">Copie este texto para guardar. Para restaurar, cole um backup aqui e toque em Restaurar.</p><textarea id="bk">${esc(JSON.stringify(S))}</textarea><div class="ab" style="margin-top:10px"><button class="g" onclick="cp($('#bk').value)">Copiar backup</button><button class="g" onclick="rs()">Restaurar do texto</button><label class="g" style="cursor:pointer;display:inline-block">Abrir arquivo .json<input type="file" accept=".json,application/json" hidden onchange="OF(this)"></label></div></div>`}
+function rs(){try{const o=JSON.parse($('#bk').value);if(!Array.isArray(o.mods)||!Array.isArray(o.links))throw 0;S=o;tab='0';save();render()}catch(e){st('backup inválido')}}
+function render(){if(tab!='L'&&tab!='P'&&tab!='S'&&!S.mods[tab])tab=S.mods.length?'0':'L';if(tab!='S'&&window.Palco)Palco.unmount();
+$('#nv').innerHTML=[...S.mods.map((m,i)=>[String(i),m.t]),['L','Links'],['P','Prompt'],['S','Palco']].map(([k,n])=>`<button class="${k==tab?'on':''}" onclick="A('tab','${k}')">${esc(n)}</button>`).join('')+`<button onclick="A('addm')">+ Módulo</button>`;
+if(tab=='S'){$('#mn').innerHTML='';if(window.Palco)Palco.mount($('#mn'));else $('#mn').innerHTML='<div class="c"><b>Palco não carregou</b><p class="m">O arquivo palco.js precisa estar na mesma pasta do index.html.</p></div>'}else $('#mn').innerHTML=tab=='L'?lv():tab=='P'?pv():mv(tab)}
+function SV(){$('#sp').innerHTML=`<div class="c"><b>Salvar ficha</b><p class="m">Nome</p><input id="sn" value="tamaki-ficha" aria-label="Nome do arquivo"><p class="m">Onde salvar</p><select id="sw" aria-label="Onde salvar"><option value="d">Neste dispositivo (arquivo .json)</option><option value="a">Dentro do app (cópia com este nome)</option><option value="t">Copiar como texto</option></select><div class="ab" style="margin-top:10px"><button class="b" onclick="DO()">Salvar</button><button class="g" onclick="$('#sp').innerHTML=''">Fechar</button></div><div id="cl"></div></div>`;LC()}
+async function DO(){const n=($('#sn').value.trim()||'tamaki-ficha').replace(/[\\/:*?"<>|]+/g,'-'),w=$('#sw').value,j=JSON.stringify(S,null,1);
+if(w=='t'){cp(j);return}
+try{if(w=='d'){const u=URL.createObjectURL(new Blob([j],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download=n+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);st('arquivo salvo');return}
+const sl=n.toLowerCase().replace(/[^a-z0-9_-]+/g,'-'),o={nome:n,em:new Date().toISOString(),json:j};let ok=0;
+try{const db=await claude.use('db');if(db){await db.doc('copias/'+sl).set(o);ok=1}}catch(e){}
+try{localStorage.setItem('tamaki:c:'+sl,JSON.stringify(o));ok=1}catch(e){}
+st(ok?'cópia “'+n+'” guardada':'não foi possível salvar');LC()}catch(e){st(e&&e.code=='declined'?'cancelado':'não foi possível salvar')}}
+async function LC(){const m={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('tamaki:c:'))m[k.slice(9)]=JSON.parse(localStorage.getItem(k))}}catch(e){}
+try{const db=await claude.use('db');if(db){(await db.collection('copias').get()).docs.forEach(x=>{if(x.exists)m[x.id]=x.data()})}}catch(e){}
+const el=$('#cl');if(!el)return;window.CP=m;const ks=Object.keys(m);
+el.innerHTML=ks.length?'<p class="m">Cópias guardadas no app</p>'+ks.map(k=>`<div class="ab" style="margin:6px 0"><span>${esc(m[k].nome)} · ${esc((m[k].em||'').slice(0,10))}</span><button class="g" onclick="RC('${esc(k)}')">Restaurar</button></div>`).join(''):''}
+function RC(k){try{const o=JSON.parse(window.CP[k].json);if(!Array.isArray(o.mods)||!Array.isArray(o.links))throw 0;S=o;tab='0';save();render();st('cópia restaurada')}catch(e){st('cópia inválida')}}
+window.OF=async i=>{try{const o=JSON.parse(await i.files[0].text());if(!Array.isArray(o.mods)||!Array.isArray(o.links))throw 0;S=o;tab='0';save();render();st('arquivo restaurado')}catch(e){st('arquivo inválido')}};
+window.E=el=>{const d=el.dataset;if(d.w=='f')S.mods[d.m].f[d.f][d.p]=el.value;else if(d.w=='t')S.mods[d.m].t=el.value;else if(d.w=='i')S.mods[d.m].inc=el.checked?1:0;else if(d.w=='l')S.links[d.l][d.p]=el.value;save();const c=$('#cd');if(c)c.value=code()};
+window.A=(a,i,j)=>{if(a=='tab')tab=i;else if(a=='addf')S.mods[i].f.push(['Novo campo','']);else if(a=='delf')S.mods[i].f.splice(j,1);else if(a=='addm'){S.mods.push({id:'m'+Date.now(),t:'Novo módulo',inc:1,f:[['Campo','']]});tab=String(S.mods.length-1)}else if(a=='delm'){if(!j.dataset.s){j.dataset.s=1;j.textContent='Toque de novo para excluir';return}S.mods.splice(i,1);tab='0'}else if(a=='addl')S.links.push({n:'Novo link',u:'',d:''});else if(a=='dell')S.links.splice(i,1);if(a!='tab')save();render()};
+(async()=>{try{const t=localStorage.getItem('tamaki');if(t)S=JSON.parse(t)}catch(e){}render();st('pronto');
+try{const db=await claude.use('db');if(db){ref=db.doc('tamaki/ficha');const s=await ref.get();if(s.exists){S=JSON.parse(JSON.stringify(s.data()));render();st('salvo')}else save()}}catch(e){}})();
+if('serviceWorker'in navigator&&location.protocol.indexOf('http')==0)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
