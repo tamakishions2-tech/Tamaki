@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1b1b">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="Tamaki-Central/icon-192.png">
+<link rel="apple-touch-icon" href="Tamaki-Central/icon-192.png">
+<title>Tamaki</title>
+<style>
+:root{--bg:#121212;--bar:#1b1b1b;--pn:#242424;--ln:#313131;--tx:#f4f1e8;--mut:#a7a39a;--am:#f2b51d;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+body{display:grid;grid-template-rows:auto 1fr;grid-template-columns:minmax(0,1fr);height:100dvh}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,textarea:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--am);outline-offset:2px}
+header{position:relative;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top,0px)) 10px 8px;background:var(--bar);border-bottom:1px solid var(--ln);z-index:5}
+.logo{flex:none;width:42px;height:42px;border-radius:50%;box-shadow:0 0 0 2px var(--am);border:0;padding:0;background:none}
+.logo img{width:100%;height:100%;border-radius:50%;display:block}
+#abas{position:relative;flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+#abas::-webkit-scrollbar{display:none}
+#abas button{flex:none;display:flex;align-items:center;gap:7px;min-height:44px;padding:0 15px;border:0;border-radius:14px;background:var(--pn);color:var(--mut);font-weight:600;white-space:nowrap}
+#abas button .i{font-size:1.15rem}
+#abas button.on{background:var(--am);color:#151515}
+#abas button.add{background:none;border:1.5px dashed var(--am);color:var(--am)}
+#mais{flex:none;width:44px;height:44px;border:0;border-radius:14px;background:var(--pn);font-size:1.4rem;line-height:1}
+#menu{position:absolute;right:10px;top:calc(100% + 6px);min-width:230px;background:var(--pn);border:1px solid var(--ln);border-radius:16px;padding:6px;box-shadow:0 14px 40px #000b}
+#menu a,#menu button{display:flex;gap:10px;align-items:center;width:100%;padding:12px;border:0;border-radius:10px;background:none;text-decoration:none;color:var(--tx);text-align:left}
+#menu a:hover,#menu button:hover{background:#2f2f2f}
+#area{position:relative;min-height:0}
+#area>*{position:absolute;inset:0}
+#area iframe{width:100%;height:100%;border:0;background:#000}
+.hide{display:none!important}
+.pn{display:flex;flex-direction:column;gap:14px;padding:16px;max-width:900px;margin:0 auto;height:100%;overflow-y:auto}
+.pn h2{margin:0;font:700 1.3rem Georgia,serif}
+.pn h3{margin:6px 0 0;font:700 1rem Georgia,serif;color:var(--mut)}
+.mut{color:var(--mut);margin:0;font-size:.9rem}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.bt{background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:10px 14px;min-height:44px;text-decoration:none;color:var(--tx);display:inline-flex;align-items:center}
+.bt.pri{background:var(--am);border-color:var(--am);color:#151515;font-weight:700}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.card{display:flex;flex-direction:column;gap:8px;background:var(--pn);border:1px solid var(--ln);border-radius:16px;padding:14px}
+.card .top{display:flex;align-items:center;gap:10px;border:0;background:none;padding:0;text-align:left;font-weight:700}
+.card .top .i{font-size:1.6rem}
+.card .orig{font-size:.78rem;color:var(--mut)}
+.card .acoes{display:flex;gap:6px;margin-top:auto}
+.card .acoes button{flex:1;min-height:38px;border:1px solid var(--ln);border-radius:10px;background:#1b1b1b;font-size:.85rem}
+.card.add{border:1.5px dashed var(--am);color:var(--am);align-items:center;justify-content:center;min-height:120px;font-weight:700}
+.card.arq{opacity:.7}
+dialog{background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:18px;width:min(520px,92vw)}
+dialog::backdrop{background:#000b}
+dialog textarea{width:100%;min-height:36vh;background:#0d0d0d;color:var(--tx);border:1px solid var(--ln);border-radius:12px;padding:10px;font:.85rem ui-monospace,monospace}
+.tuto{background:#1b1b1b;border:1px solid var(--ln);border-radius:14px;padding:10px 14px;font-size:.88rem}
+.tuto b{color:var(--am)}.tuto ol{margin:6px 0 0;padding-left:20px;color:var(--mut);line-height:1.5}.tuto ol b{color:var(--tx)}
+.tuto a{color:var(--am)}
+.campo{display:grid;gap:4px;margin-bottom:10px;font-size:.85rem;color:var(--mut)}
+.campo input,.campo select{background:#0d0d0d;color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:10px;font:inherit}
+@media (max-width:700px){#abas button:not(.on) .t{display:none}#abas button{padding:0 12px}}
+</style>
+</head>
+<body>
+<header>
+  <button class="logo" id="logo" aria-label="Início" title="Início"><img src="Tamaki-Central/icon-192.png" alt=""></button>
+  <nav id="abas" aria-label="Páginas"></nav>
+  <button id="mais" aria-label="Mais opções" aria-haspopup="true" aria-expanded="false">⋮</button>
+  <div id="menu" class="hide" role="menu">
+    <a id="sozinho" target="_blank" rel="noopener" role="menuitem">↗ Abrir esta aba sozinha</a>
+    <button id="recarregar" role="menuitem">⟳ Recarregar esta aba</button>
+    <button id="editar" role="menuitem" class="hide">✎ Editar esta aba</button>
+    <button id="arquivar" role="menuitem">🗄 Arquivar esta aba</button>
+    <button id="remover" role="menuitem" class="hide">🗑 Remover esta aba</button>
+  </div>
+</header>
+<main id="area">
+  <section id="v-inicio" class="hide"><div class="pn">
+    <h2>Tamaki</h2>
+    <p class="mut">Todas as páginas num lugar só. Toque numa para abrir aqui mesmo.</p>
+    <div class="grade" id="ativas"></div>
+    <h3 id="arqTit">Arquivadas</h3>
+    <p class="mut" id="arqVazio">Nada arquivado. Use 🗄 em uma página para tirá-la da barra sem apagar.</p>
+    <div class="grade" id="arquivadas"></div>
+  </div></section>
+</main>
+
+<dialog id="dNova">
+  <h2 style="margin:0 0 10px;font-family:Georgia,serif" id="novaTit">Adicionar página</h2>
+  <div class="row" style="gap:10px"><label class="campo" style="flex:1">Nome<input id="nNome" maxlength="24" placeholder="Ex.: Agenda"></label><label class="campo" style="width:90px">Ícone<input id="nIco" maxlength="4" placeholder="📅"></label></div>
+  <label class="campo">Como vai entrar<select id="nTipo">
+    <option value="html">Colar o código HTML</option>
+    <option value="arquivo">Arquivo .html do aparelho</option>
+    <option value="url">Endereço (link ou pasta do repositório)</option>
+    <option value="site">Publicar no site (aparece em todos os aparelhos)</option>
+  </select></label>
+  <textarea id="nCod" placeholder="Cole aqui o código HTML completo"></textarea>
+  <label class="campo hide" id="nUrlBox">Endereço<input id="nUrl" placeholder="Ex.: universo/gerador.html ou https://..."></label>
+  <div class="tuto hide" id="nSite"><b>Para a página ficar no site para sempre</b><ol>
+    <li>Abra <a href="https://github.com/tamakishions2-tech/Tamaki/upload/main/paginas" target="_blank" rel="noopener">a pasta paginas no GitHub</a>.</li>
+    <li>Arraste o arquivo <b>.html</b> (ou uma pasta com <b>index.html</b>) e toque em <b>Commit changes</b>.</li>
+    <li>Em 1 ou 2 minutos ela aparece sozinha aqui, como uma aba nova.</li></ol></div>
+  <input type="file" id="nArq" accept=".html,text/html" class="hide">
+  <p class="mut" id="nMsg" style="margin:8px 0 0"></p>
+  <div class="row" style="margin-top:10px"><button class="bt pri" id="nSalvar">Salvar aba</button><button class="bt" id="nFechar">Cancelar</button></div>
+</dialog>
+
+<script>
+window.tamakiHub = true; // a Central usa isto para saber que está aberta aqui dentro, e não nela mesma
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const lerLS = (k, p) => { try { return JSON.parse(localStorage.getItem(k)) ?? p; } catch (e) { return p; } };
+const gravarLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+// Os cinco projetos que vieram dos repositórios antigos.
+const BASE = {
+  central: {i: "🧭", n: "Central", src: "Tamaki-Central/", orig: "Tamaki-Central"},
+  universo: {i: "🌌", n: "Universo", src: "universo/", orig: "universo"},
+  tamaki: {i: "📇", n: "Tamaki", src: "Tamaki_Personagem/", orig: "Tamaki_Personagem"},
+  novel: {i: "📖", n: "Visual Novel", src: "Visual-novel-/", orig: "Visual-novel-"},
+  emulador: {i: "🎮", n: "Emulador", src: "emulador-retro/", orig: "emulador-retro"}
+};
+// Páginas que entram pela pasta paginas/ do repositório: o site descobre sozinho pela API do GitHub.
+const API = "https://api.github.com/repos/tamakishions2-tech/Tamaki/contents/paginas";
+let achadas = lerLS("tamaki-hub-achadas", []);
+// Páginas extras criadas pela aba ＋, guardadas só neste aparelho.
+let extras = lerLS("tamaki-hub-extras", []);
+let arquivo = lerLS("tamaki-hub-arquivo", []);
+let ABAS = {};
+const cdb = () => new Promise((ok, no) => { const r = indexedDB.open("tamaki-hub", 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+async function cPut(k, v){ const d = await cdb(); await new Promise(ok => { const t = d.transaction("h", "readwrite"); v == null ? t.objectStore("h").delete(k) : t.objectStore("h").put(v, k); t.oncomplete = ok; }); }
+async function cGet(k){ const d = await cdb(); return new Promise(ok => { const q = d.transaction("h").objectStore("h").get(k); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); }
+const bonito = s => s.replace(/\.html?$/i, "").replace(/[-_]+/g, " ").trim().replace(/^./, c => c.toUpperCase());
+
+function montarAbas(){
+  ABAS = {...BASE};
+  for (const p of achadas) ABAS["p-" + p.nome] = {i: "📄", n: bonito(p.nome), src: p.src, orig: "paginas/" + p.nome};
+  for (const x of extras) ABAS["x-" + x.id] = {i: x.i || "⭐", n: x.n, src: x.tipo == "url" ? x.src : null, extra: x, orig: "só neste aparelho"};
+  const vis = Object.entries(ABAS).filter(([k]) => !arquivo.includes(k));
+  $("#abas").innerHTML = vis.map(([k, a]) => `<button data-k="${k}" aria-label="${esc(a.n)}" title="${esc(a.n)}"><span class="i" aria-hidden="true">${esc(a.i)}</span><span class="t">${esc(a.n)}</span></button>`).join("")
+    + '<button class="add" id="addAba" aria-label="Adicionar página" title="Adicionar página"><span class="i" aria-hidden="true">＋</span><span class="t">Adicionar</span></button>';
+  const card = ([k, a], arq) => `<div class="card${arq ? " arq" : ""}"><button class="top" data-abrir="${k}"><span class="i" aria-hidden="true">${esc(a.i)}</span>${esc(a.n)}</button><span class="orig">${esc(a.orig)}</span>`
+    + `<div class="acoes">${arq ? `<button data-rest="${k}">↩ Restaurar</button>` : `<button data-abrir="${k}">Abrir</button><button data-arq="${k}">🗄 Arquivar</button>`}</div></div>`;
+  $("#ativas").innerHTML = vis.map(e => card(e)).join("") + '<button class="card add" id="addCard">＋ Adicionar página</button>';
+  const arqs = Object.entries(ABAS).filter(([k]) => arquivo.includes(k));
+  $("#arquivadas").innerHTML = arqs.map(e => card(e, true)).join("");
+  $("#arqVazio").classList.toggle("hide", arqs.length > 0);
+  marcar();
+}
+function marcar(){ document.querySelectorAll("#abas [data-k]").forEach(b => b.classList.toggle("on", b.dataset.k == atual)); }
+async function srcDe(k){ const a = ABAS[k]; if (a.src) return a.src; const h = await cGet("x-" + a.extra.id); return URL.createObjectURL(new Blob([h || "<p style='font-family:sans-serif;color:#fff'>Código desta aba não encontrado neste aparelho.</p>"], {type: "text/html"})); }
+const frames = {};
+let atual = "";
+const esqueceFrame = k => { if (frames[k]) { frames[k].remove(); delete frames[k]; } };
+function fecharMenu(){ $("#menu").classList.add("hide"); $("#mais").setAttribute("aria-expanded", "false"); }
+async function ir(k){
+  if (k != "inicio" && (!ABAS[k] || arquivo.includes(k))) k = "inicio";
+  atual = k;
+  document.querySelectorAll("#area>*").forEach(e => e.classList.add("hide"));
+  marcar(); fecharMenu();
+  const a = ABAS[k];
+  $("#sozinho").classList.toggle("hide", !a || !a.src); if (a && a.src) $("#sozinho").href = a.src;
+  $("#recarregar").classList.toggle("hide", !a); $("#arquivar").classList.toggle("hide", !a);
+  $("#editar").classList.toggle("hide", !a || !a.extra); $("#remover").classList.toggle("hide", !a || !a.extra);
+  try { localStorage.setItem("tamaki-hub-aba", k); } catch (e) {}
+  if (!a) return $("#v-inicio").classList.remove("hide");
+  if (!frames[k]) {
+    const f = document.createElement("iframe");
+    f.title = a.n; f.className = "hide"; f.allow = "fullscreen; clipboard-write; autoplay; microphone; camera; gamepad";
+    f.src = await srcDe(k); $("#area").appendChild(f); frames[k] = f;
+  }
+  if (atual == k) frames[k].classList.remove("hide");
+  const b = $(`#abas [data-k="${k}"]`), nv = $("#abas"); if (b) nv.scrollLeft = b.offsetLeft - (nv.clientWidth - b.offsetWidth) / 2;
+}
+function arquivar(k){ if (!arquivo.includes(k)) arquivo.push(k); gravarLS("tamaki-hub-arquivo", arquivo); esqueceFrame(k); montarAbas(); if (atual == k) ir("inicio"); }
+function restaurar(k){ arquivo = arquivo.filter(x => x != k); gravarLS("tamaki-hub-arquivo", arquivo); montarAbas(); }
+
+$("#logo").onclick = () => ir("inicio");
+$("#abas").onclick = e => { if (e.target.closest("#addAba")) return abrirNova(null); const b = e.target.closest("[data-k]"); if (b) ir(b.dataset.k); };
+$("#v-inicio").onclick = e => { const t = e.target.closest("button"); if (!t) return;
+  if (t.id == "addCard") abrirNova(null);
+  else if (t.dataset.abrir) ir(t.dataset.abrir);
+  else if (t.dataset.arq) arquivar(t.dataset.arq);
+  else if (t.dataset.rest) restaurar(t.dataset.rest); };
+$("#arquivar").onclick = () => { if (ABAS[atual]) arquivar(atual); };
+
+// ---------- Adicionar / editar página ----------
+let editando = null;
+function tipoNova(){ const t = $("#nTipo").value; $("#nCod").classList.toggle("hide", t != "html"); $("#nUrlBox").classList.toggle("hide", t != "url"); $("#nSite").classList.toggle("hide", t != "site"); $("#nSalvar").classList.toggle("hide", t == "site"); if (t == "arquivo") $("#nArq").click(); }
+$("#nTipo").onchange = tipoNova;
+$("#nArq").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; $("#nCod").value = await f.text(); $("#nTipo").value = "html"; tipoNova(); $("#nMsg").textContent = "Arquivo carregado: " + f.name; if (!$("#nNome").value) $("#nNome").value = bonito(f.name); };
+async function abrirNova(x){
+  editando = x; $("#novaTit").textContent = x ? "Editar aba" : "Adicionar página"; $("#nMsg").textContent = "";
+  $("#nNome").value = x ? x.n : ""; $("#nIco").value = x ? x.i : ""; $("#nTipo").value = x ? x.tipo : "html"; $("#nUrl").value = x && x.tipo == "url" ? x.src : "";
+  $("#nCod").value = x && x.tipo == "html" ? (await cGet("x-" + x.id)) || "" : ""; tipoNova(); fecharMenu(); $("#dNova").showModal();
+}
+$("#nFechar").onclick = () => $("#dNova").close();
+$("#nSalvar").onclick = async () => {
+  const n = $("#nNome").value.trim(), t = $("#nTipo").value, cod = $("#nCod").value.trim(), url = $("#nUrl").value.trim();
+  if (!n) return $("#nMsg").textContent = "Dê um nome para a aba.";
+  if (t == "html" && !/<[a-z!]/i.test(cod)) return $("#nMsg").textContent = "Cole o código HTML completo.";
+  if (t == "url" && !url) return $("#nMsg").textContent = "Escreva o endereço.";
+  const x = editando || {id: Math.random().toString(36).slice(2, 9)}; Object.assign(x, {n, i: $("#nIco").value.trim() || "⭐", tipo: t == "url" ? "url" : "html", src: t == "url" ? url : null});
+  await cPut("x-" + x.id, x.tipo == "html" ? cod : null);
+  if (!editando) extras.push(x); gravarLS("tamaki-hub-extras", extras);
+  esqueceFrame("x-" + x.id); montarAbas(); $("#dNova").close(); ir("x-" + x.id);
+};
+$("#editar").onclick = () => { const a = ABAS[atual]; if (a && a.extra) abrirNova(a.extra); };
+$("#remover").onclick = async () => { const a = ABAS[atual]; if (!a || !a.extra) return; fecharMenu();
+  if (!confirm("Remover a aba " + a.n + " de vez? Para só esconder, use Arquivar.")) return;
+  extras = extras.filter(x => x != a.extra); gravarLS("tamaki-hub-extras", extras); await cPut("x-" + a.extra.id, null); esqueceFrame(atual); montarAbas(); ir("inicio"); };
+
+$("#mais").onclick = e => { e.stopPropagation(); const m = $("#menu"); m.classList.toggle("hide"); $("#mais").setAttribute("aria-expanded", String(!m.classList.contains("hide"))); };
+document.addEventListener("click", e => { if (!e.target.closest("#menu")) fecharMenu(); });
+document.addEventListener("keydown", e => { if (e.key == "Escape") fecharMenu(); });
+window.addEventListener("blur", fecharMenu); // toque dentro de uma página (iframe) também fecha o menu
+$("#recarregar").onclick = () => { const f = frames[atual]; if (f) f.src = f.src; fecharMenu(); };
+
+// ---------- Descobre páginas novas na pasta paginas/ ----------
+async function descobrir(){
+  try {
+    const r = await fetch(API, {cache: "no-store"}); if (!r.ok) return;
+    const L = (await r.json()).filter(f => f.type == "dir" || /\.html?$/i.test(f.name))
+      .map(f => ({nome: f.name, src: "paginas/" + f.name + (f.type == "dir" ? "/" : "")}));
+    if (JSON.stringify(L) == JSON.stringify(achadas)) return;
+    achadas = L; gravarLS("tamaki-hub-achadas", achadas); montarAbas();
+  } catch (e) {}
+}
+
+montarAbas();
+let salva = ""; try { salva = localStorage.getItem("tamaki-hub-aba"); } catch (e) {}
+ir(salva || "inicio");
+descobrir();
+</script>
+</body>
+</html>

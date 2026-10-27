@@ -101,7 +101,9 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
 
 <script>
 // Se a Central abrir dentro dela mesma, o index.html dela foi parar no repositório de outro projeto.
-if (window.self !== window.top) {
+// Dentro do site Tamaki (window.tamakiHub) ela pode abrir normalmente.
+let noHub = false; try { noHub = !!window.parent.tamakiHub; } catch (e) {}
+if (window.self !== window.top && !noHub) {
   document.body.innerHTML = '<div style="padding:24px;font:16px/1.5 system-ui,sans-serif;color:#f4f1e8;background:#121212;height:100%;box-sizing:border-box">⚠️ <b>Arquivo no lugar errado.</b><br>Este endereço deveria abrir outro projeto, mas está abrindo a Central. O <b>index.html</b> da Central foi enviado para o repositório errado. Coloque de volta o index.html original desse projeto.</div>';
   throw new Error("Central aberta dentro dela mesma");
 }
