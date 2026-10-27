@@ -24,6 +24,9 @@ fieldset:disabled{opacity:.45}
 .ly{display:flex;align-items:center;gap:6px;padding:5px;border:1px solid transparent;border-radius:10px;margin-bottom:4px;background:var(--pn2);cursor:pointer}
 .ly.on{border-color:var(--or);background:#2f2552}
 .ly.filho{margin-left:18px}
+.pc{display:grid;grid-template-columns:minmax(0,2fr) 1fr 1fr;gap:6px;align-items:end;margin-bottom:6px}
+.pc .ly{margin:0}
+@media (max-width:760px){.pc{grid-template-columns:1fr 1fr}.pc .ly{grid-column:1/-1}}
 .ly.pasta{background:#2a2350}
 .th{width:46px;height:46px;flex:none;object-fit:contain;border-radius:6px;background:conic-gradient(#3a3560 25%,#2a2650 0 50%,#3a3560 0 75%,#2a2650 0) 0 0/12px 12px}
 .fi{width:46px;height:46px;flex:none;display:grid;place-items:center;font-size:1.6rem;border-radius:8px;background:#3a3166;object-fit:cover}
@@ -120,6 +123,7 @@ fieldset:disabled{opacity:.45}
       <button class="so-retrato" data-t="camadas">Camadas</button>
       <button data-t="camada">Camada</button>
       <button data-t="anim">Animação</button>
+      <button data-t="rosto">Rosto</button>
       <button data-t="balao">Balão</button>
       <button data-t="fala">Fala</button>
       <button data-t="efeitos">Efeitos</button>
@@ -134,6 +138,8 @@ fieldset:disabled{opacity:.45}
 <input type="file" id="fIco" accept="image/*" class="esc">
 <input type="file" id="fPose" accept="image/*" class="esc">
 <input type="file" id="fSpr" accept="image/*" multiple class="esc">
+<input type="file" id="fFace" accept="image/*" multiple class="esc">
+<input type="file" id="fFaceSpr" accept="image/*" multiple class="esc">
 
 <script>
 (() => {
@@ -176,7 +182,7 @@ function normalizar(c){
   c.voz = Object.assign(copia(VOZDEF), c.voz || {}); c.ed = Object.assign(copia(PRESET.natural), c.ed || {});
   return c;
 }
-let subV = "motor", subP = "parada", subA = "mov", mov = {}, mola = {}, sprE = {}, piscaIni = 0, exprAte = 0, verPose = null, mostrada = {}, ultimoAlto = -1e9;
+let subV = "motor", subP = "parada", subA = "mov", TR = {}, mov = {}, mola = {}, sprE = {}, piscaIni = 0, exprAte = 0, verPose = null, mostrada = {}, ultimoAlto = -1e9;
 const estados = {};
 let cfg = normalizar(copia(DEF)), imgs = {}, aba = "camada", subB = "pos", subE = "cam", tm, hist = [], fut = [];
 const cv = $("#cv"), g = cv.getContext("2d");
@@ -184,7 +190,7 @@ const chavesImgs = () => [...cfg.layers.flatMap(L => [L.img, ...(L.poses ? Objec
 const persDe = L => cfg.pers[L.pers] || (cfg.pers[L.pers] = copia(PDEF));
 const irmas = L => cfg.layers.filter(x => x != L && x.tipo == "personagem" && x.pers == L.pers);
 const paradaDe = nome => cfg.layers.find(x => x.tipo == "personagem" && x.pers == nome && x.pose == "parada");
-const GEO = ["x", "y", "w", "r", "px", "py", "flip", "parent", "idle", "ia", "is", "talk", "ta", "op"];
+const GEO = ["x", "y", "w", "r", "px", "py", "flip", "parent", "idle", "ia", "is", "talk", "ta", "op", "gruda", "gx", "gy", "gw"];
 function copiarParada(o){ const p = paradaDe(o.pers); if (p && p != o) GEO.forEach(k => o[k] = p[k]); }
 function proximaPose(nome, excl){ const tem = new Set(cfg.layers.filter(x => x != excl && x.tipo == "personagem" && x.pers == nome).map(x => x.pose)); return ["parada", "falando", "falando2"].find(p => !tem.has(p)) || "falando2"; }
 
@@ -505,6 +511,25 @@ function tamanho(){ const v = cfg.fmt == "9:16"; cv.width = v ? 720 : 1280; cv.h
 function caber(){ const t = $("#tela"), w = t.clientWidth - 16, h = t.clientHeight - 16; if (w <= 0 || h <= 0) return;
   const k = Math.min(w / cv.width, h / cv.height); cv.style.width = Math.floor(cv.width * k) + "px"; cv.style.height = Math.floor(cv.height * k) + "px"; }
 new ResizeObserver(caber).observe(document.querySelector("#tela"));
+function maeDe(L){ const A = L.gruda && cfg.layers.find(x => x.id == L.gruda); return A && A != L ? A : null; }
+const chaveTR = A => A.tipo == "personagem" ? "pers:" + A.pers : A.id;
+function grudaDe(L){ // null: peça livre; false: a peça-mãe sumiu; senão, a matriz da peça-mãe neste quadro
+  const A = maeDe(L); if (!A) return null; if (!visivel(A)) return false; return TR[chaveTR(A)] || false;
+}
+const descendentes = L => { const out = new Set([L.id]); let mudou = true; while (mudou) { mudou = false; for (const x of cfg.layers) if (x.gruda && out.has(x.gruda) && !out.has(x.id)) { out.add(x.id); mudou = true; } } return out; };
+function prender(L, alvo){ // gruda ou solta sem a peça pular de lugar
+  const T = TR[L.id], W = cv.width, H = cv.height, A = alvo && cfg.layers.find(x => x.id == alvo);
+  if (A) { const P = TR[chaveTR(A)];
+    if (T && P) { const rel = P.m.inverse().multiply(T.m), k = Math.hypot(rel.a, rel.b), fl = L.flip ? -1 : 1;
+      Object.assign(L, {gx: +(rel.e / P.w).toFixed(4), gy: +(rel.f / P.w).toFixed(4), gw: +(T.w * k / P.w).toFixed(4), r: Math.round(Math.atan2(rel.b * fl, rel.a * fl) * 180 / Math.PI)}); }
+    else Object.assign(L, {gx: 0, gy: 0, gw: .3});
+    L.gruda = A.id;
+  } else if (L.gruda) {
+    if (T) { const [sx, sy] = cena(T.m.e, T.m.f, true), f = fDe(L), s = f ? +f.s || 1 : 1, k = Math.hypot(T.m.a, T.m.b) / (camAtual.z || 1), fl = L.flip ? -1 : 1;
+      Object.assign(L, {x: +((sx / W * 100 - 50 - (f ? +f.dx || 0 : 0)) / s + 50).toFixed(1), y: +((sy / H * 100 - 50 - (f ? +f.dy || 0 : 0)) / s + 50).toFixed(1), w: +(T.w * k / W * 100 / s).toFixed(1), r: Math.round(Math.atan2(T.m.b * fl, T.m.a * fl) * 180 / Math.PI - camAtual.rot)}); }
+    L.gruda = "";
+  }
+}
 function quadro(L, im, now, falando){ // pedaço da imagem a desenhar (folha de sprites ou imagem inteira)
   const S = L.spr; if (!S || !S.on || (+S.n || 1) < 2) return {sx: 0, sy: 0, sw: im.naturalWidth, sh: im.naturalHeight};
   const cols = Math.max(1, +S.cols || 1), rows = Math.max(1, +S.rows || 1), n = Math.min(+S.n || 1, cols * rows), fps = Math.max(.5, +S.fps || 8), dq = 1000 / fps;
@@ -580,14 +605,18 @@ function tick(now){
       else if (troca && tr == "deslize") { dy += amp * (1 - p); op *= p; }
     }
     if (!visivel(L) || !im || !im.complete || !im.naturalWidth) continue;
+    const gp = grudaDe(L); if (gp === false) continue;
     const ex = +L.expr || 0; if ((ex > 0 && cfg.expr != ex) || (ex < 0 && cfg.expr)) continue;
     if ((!L.tipo || L.tipo == "decoracao") && ((L.role == "open" && !falando) || (L.role == "closed" && falando) || (L.role == "eyeopen" && pisca) || (L.role == "eyeclosed" && !pisca))) continue;
     const Q = quadro(L, im, now, falando);
     mostrada[L.id] = {im, ox, oy, kk, Q};
-    const w = G.w * kk / 100 * W, h = w * Q.sh / Q.sw;
-    base(); g.globalAlpha = Math.max(0, Math.min(1, op));
-    g.translate((G.X + ox + dx) / 100 * W, (G.Y + oy + dy) / 100 * H); g.rotate((L.r + dr) * Math.PI / 180); g.scale((L.flip ? -1 : 1) * ds / sq, ds * sq);
+    const w = gp ? (+L.gw || .3) * gp.w : G.w * kk / 100 * W, h = w * Q.sh / Q.sw;
+    if (gp) { g.setTransform(gp.m); g.translate((+L.gx || 0) * gp.w + dx / 100 * W, (+L.gy || 0) * gp.w + dy / 100 * H); } // fica onde você deixou na peça-mãe
+    else { base(); g.translate((G.X + ox + dx) / 100 * W, (G.Y + oy + dy) / 100 * H); }
+    g.globalAlpha = Math.max(0, Math.min(1, op)); g.rotate((L.r + dr) * Math.PI / 180); g.scale((L.flip ? -1 : 1) * ds / sq, ds * sq);
     g.drawImage(im, Q.sx, Q.sy, Q.sw, Q.sh, -L.px * w, -L.py * h, w, h);
+    TR[L.id] = {m: g.getTransform(), w, h}; if (L.tipo == "personagem") TR["pers:" + L.pers] = TR[L.id];
+    if (gp) { const [ax, ay] = cena(TR[L.id].m.e, TR[L.id].m.f, true); ancora[L.id] = {x: ax / W * 100, y: ay / H * 100}; }
     const sel = L.id == cfg.sel, daPasta = L.parent && cfg.sel == "f:" + L.parent;
     if (cfg.guides && !rec && (sel || daPasta)) { g.globalAlpha = 1; g.setLineDash([10, 8]); g.strokeStyle = sel ? "#5fd9cf" : "#f2b632"; g.lineWidth = 3 / c.z; g.strokeRect(-L.px * w, -L.py * h, w, h); g.setLineDash([]); if (sel) { g.fillStyle = "#ff9f45"; g.beginPath(); g.arc(0, 0, 9, 0, 7); g.fill(); } }
   }
@@ -601,7 +630,8 @@ function tick(now){
 const pontos = new Map(); let arr = null;
 function ponto(e){ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * cv.width, (e.clientY - r.top) / r.height * cv.height]; }
 function acertou(L, x, y){
-  const M = mostrada[L.id]; if (!M) return false; const im = M.im; if (!im || !im.naturalWidth) return false;
+  const M = mostrada[L.id], T = TR[L.id]; if (!M || !T) return false; const im = M.im; if (!im || !im.naturalWidth) return false;
+  const q = T.m.inverse().transformPoint({x, y}); return q.x + L.px * T.w >= 0 && q.y + L.py * T.h >= 0 && q.x + L.px * T.w <= T.w && q.y + L.py * T.h <= T.h;
   const W = cv.width, H = cv.height, G = geo(L), w = G.w * M.kk / 100 * W, h = w * M.Q.sh / M.Q.sw, a = -L.r * Math.PI / 180;
   let px = x - (G.X + M.ox) / 100 * W, py = y - (G.Y + M.oy) / 100 * H; [px, py] = [px * Math.cos(a) - py * Math.sin(a), px * Math.sin(a) + py * Math.cos(a)];
   if (L.flip) px = -px; px += L.px * w; py += L.py * h; return px >= 0 && py >= 0 && px <= w && py <= h;
@@ -611,6 +641,7 @@ function inicioArraste(){
   if (tp == "bal") { if (cfg.bal.lock) return toast("Balão travado 🔒"), null; const P = cfg.bal.pos[cfg.fmt]; return {o: P, x0: +P.x, y0: +P.y, w0: +P.w, h0: +P.h, cam: !!cfg.bal.cam}; }
   if (tp == "pasta") { const f = pastaSel(); if (!f) return null; if (f.lock) return toast("Pasta travada 🔒"), null; return {o: f, x0: +f.dx || 0, y0: +f.dy || 0, s0: +f.s || 1, cam: true}; }
   const L = camada(); if (!L) return null; if (travada(L)) return toast("Camada travada 🔒"), null;
+  const gp = grudaDe(L); if (gp) return {o: L, gruda: gp, inv: gp.m.inverse(), gx0: +L.gx || 0, gy0: +L.gy || 0, gw0: +L.gw || .3};
   return {o: L, x0: L.x, y0: L.y, w0: L.w, cam: true, s: geo(L).s, irm: L.tipo == "personagem" && persDe(L).juntas ? irmas(L).map(x => [x, x.x, x.y, x.w]) : []};
 }
 cv.addEventListener("pointerdown", e => {
@@ -618,7 +649,7 @@ cv.addEventListener("pointerdown", e => {
   if (pontos.size == 1) {
     const [x, y] = ponto(e); let alvo = null;
     if (cfg.bal.on && !cfg.bal.lock && balR) { const [bx, by] = cena(x, y, balR.cam); if (bx >= balR.x && by >= balR.y && bx <= balR.x + balR.w && by <= balR.y + balR.h) alvo = "balao"; }
-    if (!alvo) { const [sx, sy] = cena(x, y, true), L = [...cfg.layers].reverse().find(L => visivel(L) && !travada(L) && acertou(L, sx, sy)); if (L) alvo = L.parent && cfg.sel == "f:" + L.parent ? cfg.sel : L.id; }
+    if (!alvo) { const L = [...cfg.layers].reverse().find(L => visivel(L) && !travada(L) && acertou(L, x, y)); if (L) alvo = L.parent && cfg.sel == "f:" + L.parent ? cfg.sel : L.id; }
     if (alvo && alvo != cfg.sel) selecionar(alvo, true);
   }
   const it = inicioArraste(); if (!it) { arr = null; return; }
@@ -632,10 +663,13 @@ cv.addEventListener("pointermove", e => {
     const [a, b] = [...pontos.values()], k = Math.hypot(a[0] - b[0], a[1] - b[1]) / arr.d;
     if (tp == "bal") { o.w = +Math.max(10, Math.min(100, arr.w0 * k)).toFixed(1); o.h = +Math.max(5, Math.min(70, arr.h0 * k)).toFixed(1); }
     else if (tp == "pasta") o.s = +Math.max(.2, Math.min(3, arr.s0 * k)).toFixed(2);
+    else if (arr.gruda) o.gw = +Math.max(.01, Math.min(4, arr.gw0 * k)).toFixed(4);
     else { o.w = +Math.max(2, Math.min(300, arr.w0 * k)).toFixed(1); (arr.irm || []).forEach(([x, , , w0]) => x.w = +(w0 * o.w / arr.w0).toFixed(1)); }
   } else if (pontos.size == 1) {
     const dx = (e.clientX - arr.cx) / r.width * 100 / z, dy = (e.clientY - arr.cy) / r.height * 100 / z;
-    if (tp == "pasta") { o.dx = +(arr.x0 + dx).toFixed(1); o.dy = +(arr.y0 + dy).toFixed(1); }
+    if (arr.gruda) { const a = arr.inv.transformPoint({x: (arr.cx - r.left) / r.width * cv.width, y: (arr.cy - r.top) / r.height * cv.height}), b = arr.inv.transformPoint({x: (e.clientX - r.left) / r.width * cv.width, y: (e.clientY - r.top) / r.height * cv.height});
+      o.gx = +(arr.gx0 + (b.x - a.x) / arr.gruda.w).toFixed(4); o.gy = +(arr.gy0 + (b.y - a.y) / arr.gruda.w).toFixed(4); }
+    else if (tp == "pasta") { o.dx = +(arr.x0 + dx).toFixed(1); o.dy = +(arr.y0 + dy).toFixed(1); }
     else if (tp == "bal") { o.x = +(arr.x0 + dx).toFixed(1); o.y = +(arr.y0 + dy).toFixed(1); }
     else { o.x = +(arr.x0 + dx / arr.s).toFixed(1); o.y = +(arr.y0 + dy / arr.s).toFixed(1); (arr.irm || []).forEach(([x, x0, y0]) => { x.x = +(x0 + o.x - arr.x0).toFixed(1); x.y = +(y0 + o.y - arr.y0).toFixed(1); }); }
   }
@@ -753,11 +787,13 @@ const PAINEIS = {
       dica = `<p class="dica">${esc(L.pers)}: ${Object.entries(NOMEPOSE).map(([k, n]) => n + (tem.has(k) ? " ✓" : " —")).join(" · ")}. Só a pose da vez aparece: Parada calada, Falando quando ela fala. Pose nova começa na posição e tamanho da Parada.</p>`;
       extra += `<div class="btns">${ck("q", "juntas", "Mover as poses juntas", P.juntas)}<button class="bt pri" data-a="novapose">+ Pose (PNG)</button></div>`;
     }
+    if (maeDe(L)) dica += `<p class="dica">📌 Grudada em ${esc(maeDe(L).name)}: fica onde você deixar e acompanha tudo que ela fizer. Arraste no palco para reposicionar.</p>`;
     return `<fieldset${tr ? " disabled" : ""}><div class="g">${tipo}${extra}${tx("k", "name", "Nome", L.name)}
       ${sl("k", "parent", "Pasta", [["", "(sem pasta)"], ...cfg.folders.map(f => [f.id, (f.icon || "📁") + " " + f.name])], L.parent || "")}
       ${per || L.tipo == "cenario" ? "" : sl("k", "role", "Papel da peça", PAPEIS, L.role)}${sl("k", "expr", "Expressão", EXPRS, String(+L.expr || 0))}</div><div class="g">
-      ${rg("k", "op", "Opacidade", 0, 1, .01, L.op ?? 1)}${rg("k", "w", "Tamanho (%)", 2, 300, .5, L.w)}
-      ${rg("k", "x", "Horizontal (%)", -20, 120, .1, L.x)}${rg("k", "y", "Vertical (%)", -20, 120, .1, L.y)}${rg("k", "r", "Rotação (°)", -180, 180, 1, L.r)}
+      ${sl("k", "gruda", "Grudar em (acompanha a peça)", [["", "Nada (peça livre)"], ...cfg.layers.filter(x => !descendentes(L).has(x.id)).slice().reverse().map(x => [x.id, x.name + (x.tipo == "personagem" ? " · " + NOMEPOSE[x.pose] : "")])], L.gruda || "")}
+      ${rg("k", "op", "Opacidade", 0, 1, .01, L.op ?? 1)}${maeDe(L) ? rg("k", "gw", "Tamanho na peça", .01, 2, .005, +L.gw || .3) + rg("k", "gx", "Horizontal na peça", -1.5, 1.5, .001, +L.gx || 0) + rg("k", "gy", "Vertical na peça", -1.5, 1.5, .001, +L.gy || 0)
+        : rg("k", "w", "Tamanho (%)", 2, 300, .5, L.w) + rg("k", "x", "Horizontal (%)", -20, 120, .1, L.x) + rg("k", "y", "Vertical (%)", -20, 120, .1, L.y)}${rg("k", "r", "Rotação (°)", -180, 180, 1, L.r)}
       <div class="btns">${ck("k", "flip", "Espelhar", L.flip)}<button class="bt" data-a="centro">Centralizar</button><button class="bt" data-a="trocaimg">Trocar imagem</button></div></div></fieldset>${dica}${trava}`;
   },
   anim: () => {
@@ -804,6 +840,19 @@ const PAINEIS = {
       ${tx("b", "nome", "Plaquinha com nome", B.nome, "Ex.: Tamaki")}${co("b", "nomeCor", "Cor da plaquinha", B.nomeCor)}
       <div class="btns">${ck("b", "digitar", "Letra por letra", B.digitar)}<button class="bt" data-a="testebal">Testar balão</button></div></div>`;
     return c;
+  },
+  rosto: () => {
+    const cab = cfg.layers.find(x => x.id == cfg.rosto), livres = cfg.layers.filter(x => !x.gruda).slice().reverse().map(x => [x.id, x.name + (x.tipo == "personagem" ? " · " + NOMEPOSE[x.pose] : "")]);
+    let c = `<div class="g">${sl("c", "rosto", "Cabeça (onde o rosto gruda)", [["", "Escolha a cabeça…"], ...livres], cab ? cab.id : "")}
+      <div class="btns"><label class="bt pri" for="fFace">+ Peça (PNG)</label><label class="bt" for="fFaceSpr">+ Peça animada (vários PNG)</label></div></div>
+      <div class="chips" style="margin:8px 0">${exprBotoes()}</div>`;
+    if (!cab) return c + '<p class="dica">Escolha a cabeça. Depois adicione olhos, bocas, sobrancelhas, bochechas e expressões: elas grudam na cabeça e acompanham tudo que ela fizer (balançar, pular, amassar e esticar). Arraste no palco para posicionar: ficam onde você deixar.</p>';
+    const doRosto = descendentes(cab); doRosto.delete(cab.id);
+    const pecas = cfg.layers.filter(x => doRosto.has(x.id)).reverse();
+    return c + (pecas.length ? pecas.map(L => `<div class="pc"><div class="ly${L.id == cfg.sel ? " on" : ""}" data-sel="${L.id}"><img class="th" src="${imgs[L.img] ? imgs[L.img].src : ""}" alt=""><div class="nm">${esc(L.name)}<small>${L.spr && L.spr.on ? "🎞 sprite · " : ""}${L.gruda != cab.id ? "em " + esc((maeDe(L) || {}).name) : "na cabeça"}</small></div>${olho(L.id, L.vis)}</div>
+      <label class="f"><b>Papel</b><select data-r="role:${L.id}">${opt(PAPEIS, L.role)}</select></label><label class="f"><b>Expressão</b><select data-r="expr:${L.id}">${opt(EXPRS, String(+L.expr || 0))}</select></label></div>`).join("")
+      : '<p class="vazio">Nenhuma peça no rosto ainda. Toque em + Peça.</p>')
+      + '<p class="dica">Papel: boca aberta/fechada reagem à voz; olho aberto/fechado piscam sozinhos. Expressão: a peça só aparece naquela expressão (teclas 1–9), ou some quando há expressão. Para animar uma peça quadro a quadro, use "+ Peça animada" ou a aba Animação › Sprite.</p>';
   },
   fala: () => `<div class="fala"><div style="display:flex;flex-direction:column;gap:6px;min-height:0"><div class="chips">${exprBotoes()}</div><textarea data-c="text" style="flex:1;height:auto" placeholder="O que a Tamaki vai falar. Uma frase por linha.">${esc(cfg.text)}</textarea></div>
     <div class="lado"><button class="bt pri" data-a="falar">▶ Falar</button><button class="bt" data-a="audio">Tocar áudio…</button><button class="bt" data-a="testebal">Testar balão</button><label class="f"><b>Voltar ao normal depois de (s)<i>${cfg.exprVolta || "nunca"}</i></b><input type="range" data-c="exprVolta" min="0" max="20" step="1" value="${+cfg.exprVolta || 0}"></label><p class="dica" id="msg">Cada linha vira uma fala no balão. Teclas 0–9 trocam a expressão.</p></div></div>`,
@@ -855,13 +904,14 @@ const PAINEIS = {
 function exprBotoes(){
   const usadas = [...new Set(cfg.layers.map(L => +L.expr || 0).filter(n => n > 0))].sort((a, b) => a - b);
   const nome = n => { const L = cfg.layers.find(x => +x.expr == n); return n + (L ? " · " + esc(L.name) : ""); };
-  return [0, ...usadas].map(n => `<button data-expr="${n}" class="${(+cfg.expr || 0) == n ? "on" : ""}">${n ? nome(n) : "😐 Normal"}</button>`).join("") + (usadas.length ? "" : '<span class="dica">Para criar expressões, escolha uma camada e mude "Expressão" na aba Camada.</span>');
+  return [0, ...usadas].map(n => `<button data-expr="${n}" class="${(+cfg.expr || 0) == n ? "on" : ""}">${n ? nome(n) : "😐 Normal"}</button>`).join("") + (usadas.length ? "" : '<span class="dica">Para criar expressões, mude a "Expressão" de uma peça (aqui no Rosto ou na aba Camada).</span>');
 }
 function expressao(n){ cfg.expr = n; exprAte = n && +cfg.exprVolta ? performance.now() + cfg.exprVolta * 1000 : 0; gravarLS(); if (aba == "fala") painel(); toast(n ? "Expressão " + n : "Expressão normal"); }
 function painel(){ const Lp = camada(); verPose = aba == "camada" && Lp && Lp.tipo == "personagem" && Lp.pose != "parada" ? {pers: Lp.pers, pose: Lp.pose} : null; $("#painel").innerHTML = PAINEIS[aba](); document.querySelectorAll("#ferr button").forEach(b => b.classList.toggle("on", b.dataset.t == aba)); }
 function alvoDe(d){
   if (d.ch) return [chaves, d.ch]; if (d.v) return [cfg.voz, d.v]; if (d.ed) return [cfg.ed, d.ed];
   if (d.q) { const L = camada(); return [L && L.tipo == "personagem" ? persDe(L) : null, d.q]; }
+  if (d.r) { const [k, id] = d.r.split(":"); return [cfg.layers.find(x => x.id == id), k]; }
   if (d.s) { const L = camada(); if (!L) return [null]; L.spr = Object.assign(copia(SPRDEF), L.spr || {}); return [L.spr, d.s]; }
   if (d.k) return [camada(), d.k]; if (d.p) return [pastaSel(), d.p]; if (d.bp) return [cfg.bal.pos[cfg.fmt], d.bp];
   if (d.b) return [cfg.bal, d.b]; if (d.x) return [cfg.fx, d.x]; if (d.c) return [cfg, d.c]; return [null];
@@ -872,6 +922,7 @@ function entrada(e){
   const [o, k] = alvoDe(d); if (!o) return;
   let v = t.type == "checkbox" ? (t.checked ? 1 : 0) : t.type == "range" ? parseFloat(t.value) : t.value;
   if (d.k == "parent") v = v || null;
+  if (d.k == "gruda") { if (e.type == "change") { prender(o, v); salvar(); desenharLista(); painel(); } return; }
   if (d.b == "seguir") { // mantém o balão no mesmo lugar ao trocar quem ele acompanha
     for (const fm in cfg.bal.pos) { const P = cfg.bal.pos[fm], ve = cfg.bal.seguir && ancora[cfg.bal.seguir], no = v && ancora[v];
       if (ve) { P.x = +(+P.x + ve.x).toFixed(1); P.y = +(+P.y + ve.y).toFixed(1); } if (no) { P.x = +(P.x - no.x).toFixed(1); P.y = +(P.y - no.y).toFixed(1); } }
@@ -895,7 +946,7 @@ function entrada(e){
   if (d.ch) { guardarChaves(); return; }
   if (d.ed && cadV) cadV.ajustar();
   if (e.type == "change" && (d.c == "motor" || d.v == "azVoz")) painel();
-  if (d.s == "modo" || d.s == "on" || d.k == "mola") { if (e.type == "change") painel(); }
+  if (d.s == "modo" || d.s == "on" || d.k == "mola" || d.r || d.c == "rosto") { if (e.type == "change") setTimeout(painel); }
   if (["name", "role", "op", "parent", "estilo", "seguir", "on", "lock", "tipo", "pose", "pers"].includes(k) && (d.k || d.p || d.b)) { $("#lista").innerHTML = listaHTML(); if (e.type == "change" && (k == "parent" || k == "lock" || k == "seguir" || k == "tipo" || k == "pose" || k == "pers")) painel(); }
   salvar();
 }
@@ -932,17 +983,35 @@ $("#fPose").onchange = async e => {
   } else L.img = k;
   im.onload = () => { desenharLista(); painel(); }; salvar(); desenharLista(); painel();
 };
-$("#fSpr").onchange = async e => { // junta vários quadros numa folha de sprites
-  const L = camada(), fs = [...e.target.files].filter(f => /^image\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true})); e.target.value = "";
-  if (!L || fs.length < 2) return toast("Escolha pelo menos 2 imagens");
+async function folha(files){ // junta vários quadros numa folha de sprites
+  const fs = [...files].filter(f => /^image\//.test(f.type)).sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
+  if (fs.length < 2) { toast("Escolha pelo menos 2 imagens"); return null; }
   const ims = await Promise.all(fs.map(f => new Promise(ok => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = URL.createObjectURL(f); }))), ok = ims.filter(Boolean);
   const qw = Math.max(...ok.map(i => i.naturalWidth)), qh = Math.max(...ok.map(i => i.naturalHeight)), n = ok.length, cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols);
   const k = Math.min(1, 4096 / (qw * cols), 4096 / (qh * rows)), w = Math.floor(qw * k), h = Math.floor(qh * k), c = document.createElement("canvas"); c.width = w * cols; c.height = h * rows;
   const x = c.getContext("2d"); ok.forEach((im, i) => { const s = Math.min(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * s, ih = im.naturalHeight * s; x.drawImage(im, (i % cols) * w + (w - iw) / 2, Math.floor(i / cols) * h + (h - ih), iw, ih); });
-  const blob = await new Promise(ok2 => c.toBlob(ok2, "image/png")), id = uid(); await idbPut(id, blob); const im = carregarImg(id, blob);
+  return {blob: await new Promise(ok2 => c.toBlob(ok2, "image/png")), cols, rows, n, nome: fs[0].name.replace(/\.[^.]+$/, "").replace(/[-_ ]*\d+$/, "")};
+}
+$("#fSpr").onchange = async e => {
+  const L = camada(), F = L && await folha(e.target.files); e.target.value = ""; if (!F) return; const {blob, cols, rows, n} = F;
+  const id = uid(); await idbPut(id, blob); const im = carregarImg(id, blob);
   L.img = id; L.spr = Object.assign(copia(SPRDEF), L.spr || {}, {on: 1, cols, rows, n}); delete sprE[L.id];
   im.onload = () => { desenharLista(); painel(); }; salvar(); toast(n + " quadros juntados numa folha");
 };
+const papelPeloNome = n => /boca.*(abert|fal)|mouth.*open|open.*mouth/i.test(n) ? "open" : /boca|mouth/i.test(n) ? "closed" : /olho.*fech|piscad|blink|eye.*clos|clos.*eye/i.test(n) ? "eyeclosed" : /olho|eye/i.test(n) ? "eyeopen" : "always";
+async function pecaRosto(blob, nome, spr){ // nova peça grudada no meio da cabeça, logo acima dela
+  const cab = cfg.layers.find(x => x.id == cfg.rosto); if (!cab) { toast("Escolha a cabeça primeiro"); return; }
+  const id = uid(), img = uid(), P = TR[chaveTR(cab)]; await idbPut(img, blob); const im = carregarImg(img, blob);
+  const L = {id, img, name: nome, x: 50, y: 50, w: 20, r: 0, px: .5, py: .5, vis: 1, flip: 0, op: 1, lock: 0, parent: cab.parent || null, tipo: "decoracao", role: papelPeloNome(nome), idle: "none", ia: 3, is: 1, talk: "none", ta: 5,
+    gruda: cab.id, gx: +((.5 - cab.px)).toFixed(3), gy: P ? +((.5 - cab.py) * P.h / P.w).toFixed(3) : 0, gw: .3, expr: 0};
+  if (spr) L.spr = spr;
+  const fam = descendentes(cab); if (cab.tipo == "personagem") cfg.layers.forEach(x => { if (x.tipo == "personagem" && x.pers == cab.pers) descendentes(x).forEach(i => fam.add(i)); }); // acima de todas as poses
+  const ult = Math.max(...cfg.layers.map((x, i) => fam.has(x.id) ? i : -1)); cfg.layers.splice(ult + 1, 0, L);
+  cfg.sel = id; im.onload = () => { desenharLista(); painel(); }; salvar(); desenharLista(); painel();
+}
+$("#fFace").onchange = async e => { const fs = [...e.target.files]; e.target.value = ""; for (const f of fs) if (/^image\//.test(f.type)) await pecaRosto(f, f.name.replace(/\.[^.]+$/, "")); };
+$("#fFaceSpr").onchange = async e => { const F = await folha(e.target.files); e.target.value = ""; if (!F) return;
+  await pecaRosto(F.blob, F.nome || "Peça animada", Object.assign(copia(SPRDEF), {on: 1, cols: F.cols, rows: F.rows, n: F.n})); toast(F.n + " quadros juntados numa peça animada"); };
 $("#fIco").onchange = async e => { const fl = e.target.files[0], f = pastaSel(); e.target.value = ""; if (!fl || !f) return; const k = uid(); await idbPut(k, fl); const im = carregarImg(k, fl); f.iconImg = k; im.onload = () => { desenharLista(); painel(); }; salvar(); };
 
 /* ---------- cópia de segurança (mesmo formato do Palco da ficha) ---------- */
