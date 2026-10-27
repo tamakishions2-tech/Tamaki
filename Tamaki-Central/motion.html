@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1b1b">
+<meta name="color-scheme" content="dark">
+<title>Motion · Tamaki Central</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@800&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#121212;--pn:#1b1b1b;--pn2:#242424;--ln:#313131;--tx:#f4f1e8;--mu:#a7a39a;--am:#f2b51d;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--tx);font:14px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--am);outline-offset:2px}
+#app{height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:auto minmax(0,1fr) 210px;grid-template-areas:"topo topo" "tela props" "linha props"}
+#topo{grid-area:topo;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;background:var(--pn);border-bottom:1px solid var(--ln)}
+.bt{background:var(--pn2);border:1px solid var(--ln);border-radius:12px;padding:0 12px;min-height:40px;white-space:nowrap}
+.bt.pri{background:var(--am);border-color:var(--am);color:#151515;font-weight:700}
+.bt.on{border-color:var(--am);color:var(--am)}
+.bt.mini{min-height:34px;padding:0 9px;border-radius:10px}
+#play{width:46px;height:46px;border-radius:50%;border:0;background:var(--am);color:#151515;font-size:1.15rem;font-weight:700}
+#tempo{font-variant-numeric:tabular-nums;color:var(--mu);min-width:96px;text-align:center}
+.sep{width:1px;height:28px;background:var(--ln);margin:0 2px}
+#tela{grid-area:tela;position:relative;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden}
+#cv{flex:none;border-radius:10px;border:1px solid var(--ln);touch-action:none;background:conic-gradient(#2c2c2c 25%,#1f1f1f 0 50%,#2c2c2c 0 75%,#1f1f1f 0) 0 0/24px 24px}
+#cv.verde{background:#00b140}#cv.preto{background:#000}
+#cv.editando{outline:3px dashed var(--am);cursor:crosshair}
+#aviso{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--am);color:#151515;font-weight:700;padding:6px 14px;border-radius:999px;font-size:.85rem}
+/* linha do tempo */
+#linha{grid-area:linha;display:flex;flex-direction:column;background:var(--pn);border-top:1px solid var(--ln);min-height:0}
+#ferr{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--ln)}
+#ferr .zoom{margin-left:auto;display:flex;gap:4px;align-items:center;color:var(--mu);font-size:.8rem}
+#rolo{position:relative;flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;margin:0 10px}
+#conteudo{position:relative;height:100%;display:flex;flex-direction:column;min-width:100%}
+#regua{position:relative;height:24px;flex:none;cursor:pointer;border-bottom:1px solid var(--ln);touch-action:none}
+#regua i{position:absolute;bottom:0;width:1px;height:7px;background:var(--mu)}
+#regua i b{position:absolute;bottom:8px;left:3px;font:10px system-ui;color:var(--mu);font-style:normal;white-space:nowrap}
+#trilhas{flex:1;min-height:0;overflow-y:auto;padding:5px 0}
+.trilha{position:relative;height:32px;margin-bottom:4px;border-radius:9px;background:#191919}
+.barra{position:absolute;top:2px;bottom:2px;border-radius:9px;padding:0 16px 0 8px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font-size:.76rem;font-weight:700;color:#151515;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 2px transparent}
+.barra::after{content:"";position:absolute;right:4px;top:8px;bottom:8px;width:4px;border-radius:2px;background:#0005}
+.barra.on{box-shadow:inset 0 0 0 2px #fff}
+.barra.oculto{opacity:.35}
+.barra.trava{cursor:not-allowed;background-image:repeating-linear-gradient(45deg,#0001 0 6px,#0002 6px 12px)}
+#cabeca{position:absolute;top:0;bottom:0;width:2px;background:#fff;pointer-events:none;box-shadow:0 0 6px #fff8;z-index:2}
+#cabeca::before{content:"";position:absolute;top:0;left:-6px;border:7px solid transparent;border-top-color:#fff}
+.vazio{color:var(--mu);text-align:center;padding:12px;margin:0}
+/* propriedades */
+#props{grid-area:props;overflow:auto;background:var(--pn);border-left:1px solid var(--ln);padding:12px}
+.cab{display:flex;align-items:center;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.cab b{flex:1;font-size:1.05rem;min-width:110px}
+.f{display:grid;gap:4px;font-size:.8rem;color:var(--mu);margin-bottom:10px}
+.f b{display:flex;justify-content:space-between;font-weight:600}
+.f b i{font-style:normal;color:var(--tx)}
+.f input[type=range]{width:100%;accent-color:var(--am)}
+.f select,.f input[type=text],.f input[type=number],.f textarea{background:#0d0d0d;border:1px solid var(--ln);border-radius:10px;padding:8px;width:100%}
+.f textarea{min-height:80px;resize:vertical}
+.f input[type=color]{width:100%;height:36px;border:1px solid var(--ln);border-radius:10px;background:#0d0d0d;padding:2px}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.dica{color:var(--mu);font-size:.78rem;margin:2px 0 10px;line-height:1.45}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chk{display:flex;gap:8px;align-items:center;color:var(--mu);font-size:.85rem;margin-bottom:10px}
+.fotos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.fotos span{position:relative}
+.fotos img{width:52px;height:52px;object-fit:cover;border-radius:50%;border:2px solid var(--am)}
+.fotos span button{position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;border:0;background:#c62828;color:#fff;font-size:.65rem}
+.esc{display:none}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--am);color:#151515;font-weight:700;padding:8px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+#toast.on{opacity:1}
+/* folha de adicionar (estilo "sheet") */
+dialog{background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:20px;width:min(640px,96vw);max-height:88vh;padding:16px}
+dialog::backdrop{background:#000b}
+dialog h2{margin:0 0 10px;font:700 1.15rem Georgia,serif}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.grade button{display:grid;gap:4px;justify-items:start;text-align:left;background:var(--pn2);border:1px solid var(--ln);border-radius:14px;padding:12px;min-height:84px}
+.grade button span{font-size:1.5rem}
+.grade button small{color:var(--mu);font-size:.72rem;line-height:1.25}
+.grade .novo{border-style:dashed;border-color:var(--am)}
+dialog textarea{width:100%;min-height:180px;background:#0d0d0d;border:1px solid var(--ln);border-radius:12px;padding:10px;font:.8rem/1.45 ui-monospace,monospace;color:var(--tx)}
+.plug{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--ln);border-radius:12px;margin-bottom:6px}
+.plug b{flex:1}
+.plug small{color:#ff8a80}
+@media (max-width:760px){
+  #app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) 180px 220px;grid-template-areas:"topo" "tela" "linha" "props"}
+  #props{border-left:0;border-top:1px solid var(--ln);border-radius:18px 18px 0 0}
+  .bt .t{display:none}
+  #ferr .zoom span{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topo">
+    <button class="bt pri" data-a="adicionar">＋<span class="t"> Adicionar</span></button>
+    <span class="sep"></span>
+    <button id="play" aria-label="Tocar">▶</button>
+    <span id="tempo">0:00.0 / 0:12</span>
+    <span class="sep"></span>
+    <button class="bt" data-a="formato" id="bFmt">16:9</button>
+    <button class="bt" data-a="fundo" id="bFundo">Fundo</button>
+    <label class="bt" for="fAud" style="display:grid;place-items:center" title="Escolher áudio">🎵<span class="t"> Áudio</span></label>
+    <button class="bt" data-a="video">⬇<span class="t"> Vídeo</span></button>
+    <button class="bt" data-a="srt">⬇<span class="t"> .srt</span></button>
+  </div>
+  <div id="tela"><canvas id="cv"></canvas><div id="aviso" class="esc"></div></div>
+  <div id="linha">
+    <div id="ferr">
+      <button class="bt mini" data-a="inicio" title="Ir para o começo">⏮</button>
+      <button class="bt mini" data-a="volta" title="Voltar 1 quadro">◀</button>
+      <button class="bt mini" data-a="avanca" title="Avançar 1 quadro">▶</button>
+      <button class="bt mini" data-a="fim" title="Ir para o fim">⏭</button>
+      <button class="bt mini" data-a="ima" id="bIma" title="Ímã: gruda nas bordas e na agulha">🧲<span class="t"> Ímã</span></button>
+      <button class="bt mini" data-a="dividir" title="Dividir o item selecionado na agulha">✂<span class="t"> Dividir</span></button>
+      <button class="bt mini" data-a="aqui" title="Fazer o item começar na agulha">⇤<span class="t"> Começar aqui</span></button>
+      <button class="bt mini" data-a="repetir" id="bRep" title="Tocar em loop">🔁</button>
+      <div class="zoom"><span>Zoom</span><button class="bt mini" data-a="zoommenos" aria-label="Diminuir zoom">−</button><button class="bt mini" data-a="zoommais" aria-label="Aumentar zoom">＋</button></div>
+    </div>
+    <div id="rolo"><div id="conteudo"><div id="regua"></div><div id="trilhas"></div><div id="cabeca"></div></div></div>
+  </div>
+  <aside id="props"></aside>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<dialog id="dAdd"></dialog>
+<input type="file" id="fAud" accept="audio/*" class="esc">
+<input type="file" id="fSrt" accept=".srt,text/plain" class="esc">
+<input type="file" id="fImg" accept="image/*" class="esc">
+<input type="file" id="fImgs" accept="image/*" multiple class="esc">
+<input type="file" id="fJs" accept=".js,text/javascript,text/plain" class="esc">
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const copia = o => JSON.parse(JSON.stringify(o));
+const KEY = "motion-proj", PLUG = "motion-plugins", FPS = 30;
+let P = {fmt: "16:9", dur: 12, bg: "transp", itens: [], sel: null, zoom: 1, ima: 1, loop: 0}, T = 0, tocando = false, t0 = 0, T0 = 0, tm, editTraj = null;
+const cv = $("#cv"), g = cv.getContext("2d");
+const uid = () => Math.random().toString(36).slice(2, 9);
+const item = () => P.itens.find(i => i.id == P.sel);
+function salvar(){ clearTimeout(tm); tm = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) { toast("Sem espaço para salvar"); } }, 300); }
+function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 1900); }
+const relogio = s => Math.floor(s / 60) + ":" + (s % 60).toFixed(1).padStart(4, "0");
+
+/* ---------- curvas de animação ---------- */
+const cl = v => Math.max(0, Math.min(1, v));
+const eOut = p => 1 - Math.pow(1 - p, 3);
+const eIO = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const back = p => 1 + 2.70158 * Math.pow(p - 1, 3) + 1.70158 * Math.pow(p - 1, 2);
+const elast = p => p == 0 || p == 1 ? p : Math.pow(2, -10 * p) * Math.sin((p * 10 - .75) * 2 * Math.PI / 3) + 1;
+const quica = p => { const n = 7.5625, d = 2.75; if (p < 1 / d) return n * p * p; if (p < 2 / d) return n * (p -= 1.5 / d) * p + .75; if (p < 2.5 / d) return n * (p -= 2.25 / d) * p + .9375; return n * (p -= 2.625 / d) * p + .984375; };
+const ENTRADAS = [["fade", "Aparecer"], ["subir", "Subir"], ["descer", "Descer de cima"], ["pop", "Pop"], ["zoom", "Zoom de longe"], ["deslizar", "Deslizar da esquerda"], ["deslizarD", "Deslizar da direita"], ["girar", "Girar"], ["quique", "Quicar"], ["elastico", "Elástico"], ["digitar", "Digitando"], ["letras", "Letra por letra"], ["glitch", "Glitch"], ["desfocar", "Desfocar"], ["nenhuma", "Sem animação"]];
+const SAIDAS = [["fade", "Sumir"], ["subir", "Subir e sumir"], ["descer", "Descer"], ["zoom", "Crescer e sumir"], ["encolher", "Encolher"], ["deslizar", "Deslizar"], ["girar", "Girar"], ["glitch", "Glitch"], ["nenhuma", "Corte seco"]];
+const CONTINUOS = [["nenhum", "Nenhum"], ["pulsar", "Pulsar"], ["flutuar", "Flutuar"], ["balancar", "Balançar"], ["tremer", "Tremer"], ["onda", "Onda nas letras"], ["brilhar", "Brilhar"], ["glitch", "Glitch de vez em quando"]];
+const FONTES = [["bebas", "Bebas (títulos)"], ["redonda", "Arredondada"], ["pixel", "Pixel (jogo)"], ["classica", "Clássica"]];
+const FUNDOS = {transp: "Fundo: xadrez", verde: "Fundo: verde", preto: "Fundo: preto"};
+function env(it, lt, dur){ // como o item está neste instante
+  const W = cv.width, H = cv.height, ent = Math.min(+it.te || .5, dur / 2), sai = Math.min(+it.ts || .35, dur / 2), pe = cl(lt / ent), ps = cl((dur - lt) / sai), t = T;
+  const s = {a: 1, dx: 0, dy: 0, k: 1, rot: 0, chars: 1, letras: null, onda: 0, gl: 0, blur: 0, brilho: 0, pe};
+  switch (it.anim) {
+    case "fade": s.a *= eOut(pe); break;
+    case "subir": s.dy += (1 - eOut(pe)) * H * .07; s.a *= pe; break;
+    case "descer": s.dy -= (1 - eOut(pe)) * H * .12; s.a *= pe; break;
+    case "pop": s.k *= .5 + .5 * back(pe); s.a *= cl(pe * 3); break;
+    case "zoom": s.k *= 1 + 1.4 * (1 - eOut(pe)); s.a *= pe; s.blur = (1 - pe) * 10; break;
+    case "deslizar": s.dx -= (1 - eOut(pe)) * W * .45; s.a *= cl(pe * 2); break;
+    case "deslizarD": s.dx += (1 - eOut(pe)) * W * .45; s.a *= cl(pe * 2); break;
+    case "girar": s.rot -= (1 - eOut(pe)) * Math.PI; s.k *= .4 + .6 * eOut(pe); s.a *= pe; break;
+    case "quique": s.dy -= (1 - quica(pe)) * H * .14; break;
+    case "elastico": s.k *= elast(pe); break;
+    case "digitar": s.chars = cl(lt / Math.max(.3, dur * .45)); break;
+    case "letras": s.letras = cl(lt / Math.max(ent * 2, .6)); break;
+    case "glitch": if (pe < 1) { s.gl = (1 - pe) * 18; s.dx += (Math.random() - .5) * 24 * (1 - pe); s.a *= Math.random() < .25 + .75 * pe ? 1 : .2; } break;
+    case "desfocar": s.blur = (1 - pe) * 16; s.a *= pe; break;
+  }
+  if (ps < 1) switch (it.saida) {
+    case "fade": s.a *= ps; break;
+    case "subir": s.dy -= (1 - ps) * H * .07; s.a *= ps; break;
+    case "descer": s.dy += (1 - ps) * H * .07; s.a *= ps; break;
+    case "zoom": s.k *= 1 + (1 - ps) * .8; s.a *= ps; break;
+    case "encolher": s.k *= ps; break;
+    case "deslizar": s.dx -= (1 - ps) * W * .45; s.a *= ps; break;
+    case "girar": s.rot += (1 - ps) * Math.PI; s.k *= ps; break;
+    case "glitch": s.gl = (1 - ps) * 18; s.dx += (Math.random() - .5) * 24 * (1 - ps); s.a *= ps; break;
+  }
+  switch (it.cont) {
+    case "pulsar": s.k *= 1 + .05 * Math.sin(t * 5); break;
+    case "flutuar": s.dy += Math.sin(t * 2) * H * .012; break;
+    case "balancar": s.rot += Math.sin(t * 2.4) * .06; break;
+    case "tremer": s.dx += (Math.random() - .5) * 5; s.dy += (Math.random() - .5) * 5; break;
+    case "onda": s.onda = 1; break;
+    case "brilhar": s.brilho = .5 + .5 * Math.sin(t * 4); break;
+    case "glitch": if (Math.sin(t * 2.3) > .93) { s.gl = 10; s.dx += (Math.random() - .5) * 14; } break;
+  }
+  return s;
+}
+const fnt = (f, px) => f == "redonda" ? `800 ${px}px Nunito, system-ui, sans-serif` : f == "bebas" ? `${px}px 'Bebas Neue', Impact, sans-serif` : f == "pixel" ? `${px}px 'Press Start 2P', monospace` : `700 ${px}px Georgia, serif`;
+function textoAnim(str, s, o){ // desenha texto com digitação, letra por letra e onda
+  str = String(str ?? ""); const fs = o.fs, al = o.align || "center";
+  g.textBaseline = o.base || "middle"; g.lineJoin = "round";
+  const pinta = (t, x, y) => { if (o.contorno) { g.lineWidth = o.lw || fs * .2; g.strokeStyle = o.contorno; g.strokeText(t, x, y); } g.fillStyle = o.cor; g.fillText(t, x, y); };
+  if (s.letras == null && !s.onda) { g.textAlign = al; pinta(s.chars >= 1 ? str : str.slice(0, Math.ceil(str.length * s.chars)), 0, 0); return; }
+  g.textAlign = "left"; const n = str.length, tot = g.measureText(str).width; let x = al == "center" ? -tot / 2 : al == "right" ? -tot : 0;
+  for (let i = 0; i < n; i++) {
+    const ch = str[i], w = g.measureText(ch).width; if (i / n >= s.chars) break;
+    let y = 0, a = g.globalAlpha;
+    if (s.letras != null) { const pl = cl(s.letras * (n * .45 + 1) - i * .45); y -= (1 - eOut(pl)) * fs * .9; g.globalAlpha = a * pl; }
+    if (s.onda) y += Math.sin(T * 6 - i * .55) * fs * .12;
+    pinta(ch, x, y); g.globalAlpha = a; x += w;
+  }
+}
+
+/* ---------- imagens (mapas, rostos, figurinhas) ---------- */
+const imgs = {};
+const idb = () => new Promise((ok, no) => { const r = indexedDB.open("motion", 1); r.onupgradeneeded = () => r.result.createObjectStore("a"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+async function dbPut(k, v){ const d = await idb(); await new Promise(ok => { const t = d.transaction("a", "readwrite"); v == null ? t.objectStore("a").delete(k) : t.objectStore("a").put(v, k); t.oncomplete = ok; }); }
+async function dbGet(k){ try { const d = await idb(); return await new Promise(ok => { const q = d.transaction("a").objectStore("a").get(k); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); } catch (e) { return null; } }
+function img(k){ if (!k) return null; if (!imgs[k]) { imgs[k] = new Image(); dbGet(k).then(b => { if (b) imgs[k].src = URL.createObjectURL(b); }); } return imgs[k].complete && imgs[k].naturalWidth ? imgs[k] : null; }
+async function guardarImg(f){ const k = "img:" + uid(); await dbPut(k, f); imgs[k] = new Image(); imgs[k].src = URL.createObjectURL(f); return k; }
+function capa(im, x, y, w, h){ const r = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * r, ih = im.naturalHeight * r; g.drawImage(im, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih); }
+
+/* ---------- registro de tipos de motion (os de fábrica e os instalados) ---------- */
+const TIPOS = {};
+const Motion = {versao: 1, registrar(d){ if (!d || !d.tipo || typeof d.desenhar != "function") throw new Error("Motion.registrar precisa de tipo e desenhar()"); TIPOS[d.tipo] = d; },
+  ajudantes: {eOut, eIO, back, elast, quica, cl}};
+const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); };
+Motion.registrar({tipo: "intro", nome: "Intro", icone: "🎬", desc: "Título grande com detalhe", cor: "#f2b51d", usa: ["texto", "sub", "fonte", "cor", "cor2", "tam", "pos"], rot: {cor2: "Cor do detalhe"},
+  padrao: {texto: "TAMAKI SHION", sub: "Episódio 1", dur: 3, fonte: "bebas", tam: 15, cor: "#ffffff", cor2: "#f2b51d", x: 50, y: 45, anim: "pop"},
+  desenhar(g, it, s, c){ g.font = fnt(it.fonte, c.fs); const tw = g.measureText(it.texto).width, pr = eOut(cl(c.lt / .8));
+    textoAnim(it.texto, s, {fs: c.fs, cor: it.cor}); g.fillStyle = it.cor2; g.fillRect(-tw / 2 * pr, c.fs * .6, tw * pr, Math.max(4, c.fs * .07));
+    if (it.sub) { g.font = fnt("redonda", c.fs * .3); g.textAlign = "center"; g.fillText(it.sub, 0, c.fs * 1.02); } }});
+Motion.registrar({tipo: "faixa", nome: "Faixa de nome", icone: "🏷", desc: "Nome e descrição no canto", cor: "#5fd9cf", usa: ["texto", "sub", "fonte", "cor", "cor2", "tam", "pos"], rot: {cor2: "Cor da faixa"},
+  padrao: {texto: "Tamaki Shion", sub: "sua fofoqueira favorita", dur: 4, fonte: "redonda", tam: 5.5, cor: "#151515", cor2: "#f2b51d", x: 6, y: 72, anim: "deslizar", saida: "deslizar"},
+  desenhar(g, it, s, c){ const fs = c.fs, pad = fs * .6, fs2 = fs * .55; g.font = fnt(it.fonte, fs); const tw = g.measureText(it.texto).width; g.font = fnt("redonda", fs2); const sw = it.sub ? g.measureText(it.sub).width : 0;
+    const bw = Math.max(tw, sw) + pad * 2, bh = fs * 1.35 + (it.sub ? fs2 * 1.35 : 0); g.fillStyle = it.cor2; rr(0, 0, bw, bh, fs * .25); g.fill();
+    g.save(); g.translate(pad, fs * .2); g.font = fnt(it.fonte, fs); textoAnim(it.texto, s, {fs, cor: it.cor, align: "left", base: "top"}); g.restore();
+    if (it.sub) { g.font = fnt("redonda", fs2); g.globalAlpha *= .8; g.textAlign = "left"; g.textBaseline = "top"; g.fillStyle = it.cor; g.fillText(it.sub, pad, fs * 1.3); } }});
+Motion.registrar({tipo: "texto", nome: "Texto", icone: "🔤", desc: "Frase solta com contorno", cor: "#b49cff", usa: ["area", "fonte", "cor", "cor2", "tam", "pos"], rot: {cor2: "Cor do contorno"},
+  padrao: {texto: "Nem relógio trabalha de graça!", dur: 3, fonte: "pixel", tam: 4, cor: "#ffffff", cor2: "#151515", x: 50, y: 20, anim: "letras"},
+  desenhar(g, it, s, c){ g.font = fnt(it.fonte, c.fs); const L = String(it.texto).split("\n"), lh = c.fs * (it.fonte == "pixel" ? 1.7 : 1.2);
+    L.forEach((l, i) => { g.save(); g.translate(0, (i - (L.length - 1) / 2) * lh); textoAnim(l, s, {fs: c.fs, cor: it.cor, contorno: it.cor2}); g.restore(); }); }});
+Motion.registrar({tipo: "imagem", nome: "Imagem / figurinha", icone: "🖼", desc: "Qualquer PNG com animação", cor: "#9ccc65", usa: ["tam", "pos"],
+  campos: [["img", "Imagem", "img"], ["borda", "Borda branca", "chk"]],
+  padrao: {dur: 3, tam: 30, x: 50, y: 50, anim: "pop", cont: "flutuar", borda: 0},
+  desenhar(g, it, s, c){ const im = c.img(it.img), w = it.tam / 100 * c.W;
+    if (!im) { g.strokeStyle = "#f2b51d"; g.setLineDash([10, 8]); g.lineWidth = 3; g.strokeRect(-w / 2, -w / 2, w, w); g.setLineDash([]); g.fillStyle = "#f2b51d"; g.font = fnt("redonda", c.m * .03); g.textAlign = "center"; g.fillText("Escolha a imagem", 0, 0); return; }
+    const h = w * im.naturalHeight / im.naturalWidth; if (it.borda) { g.shadowColor = "#fff"; for (const [a, b] of [[4, 0], [-4, 0], [0, 4], [0, -4]]) { g.shadowOffsetX = a; g.shadowOffsetY = b; g.drawImage(im, -w / 2, -h / 2, w, h); } g.shadowColor = "transparent"; }
+    g.drawImage(im, -w / 2, -h / 2, w, h); }});
+Motion.registrar({tipo: "contador", nome: "Contador", icone: "🔢", desc: "Número que sobe sozinho", cor: "#4fc3f7", usa: ["fonte", "cor", "cor2", "tam", "pos"], rot: {cor2: "Cor do contorno"},
+  campos: [["de", "De", "num", 0, 100000, 1], ["ate", "Até", "num", 0, 1000000, 1], ["pre", "Antes do número", "texto"], ["pos2", "Depois do número", "texto"]],
+  padrao: {dur: 3, de: 0, ate: 1000, pre: "", pos2: " seguidores", fonte: "bebas", tam: 12, cor: "#ffffff", cor2: "#151515", x: 50, y: 50, anim: "pop", cont: "pulsar"},
+  desenhar(g, it, s, c){ const v = Math.round(+it.de + (+it.ate - +it.de) * eOut(cl(c.lt / Math.max(.3, c.dur * .7)))); g.font = fnt(it.fonte, c.fs);
+    textoAnim((it.pre || "") + v.toLocaleString("pt-BR") + (it.pos2 || ""), Object.assign({}, s, {chars: 1}), {fs: c.fs, cor: it.cor, contorno: it.cor2}); }});
+Motion.registrar({tipo: "inscreva", nome: "Inscreva-se", icone: "🔔", desc: "Botão que é clicado", cor: "#ef5350", usa: ["texto", "sub", "tam", "pos", "cor2"], rot: {cor2: "Cor do botão"},
+  padrao: {texto: "INSCREVA-SE", sub: "INSCRITO", dur: 3.5, tam: 6, cor2: "#e62117", x: 50, y: 78, anim: "pop"},
+  desenhar(g, it, s, c){ const fs = c.fs * .7, clique = c.lt > c.dur * .45, pc = cl((c.lt - c.dur * .45) / .3), txt = clique ? it.sub : it.texto;
+    g.font = fnt("redonda", fs); const w = g.measureText(txt).width + fs * 3.2, h = fs * 2.1, k = clique ? 1 - .08 * Math.sin(pc * Math.PI) : 1;
+    g.scale(k, k); g.fillStyle = clique ? "#606060" : it.cor2; rr(-w / 2, -h / 2, w, h, h / 2); g.fill();
+    g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("🔔 " + txt, 0, 0);
+    if (c.lt > c.dur * .3 && c.lt < c.dur * .7) { const q = cl((c.lt - c.dur * .3) / (c.dur * .15)); g.save(); g.translate(w * .32 - (1 - eOut(q)) * w * .6, h * .55 - (1 - eOut(q)) * h); g.fillStyle = "#fff"; g.strokeStyle = "#000"; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, fs * 1.6); g.lineTo(fs * .45, fs * 1.2); g.lineTo(fs * .9, fs * 1.4); g.closePath(); g.fill(); g.stroke(); g.restore(); } }});
+Motion.registrar({tipo: "destaque", nome: "Destaque", icone: "⭕", desc: "Círculo ou seta chamando atenção", cor: "#ffb74d", usa: ["tam", "pos", "cor2"], rot: {cor2: "Cor"},
+  campos: [["forma", "Forma", "sel", [["circulo", "Círculo desenhado"], ["seta", "Seta"], ["sublinhado", "Sublinhado"]]], ["esp", "Espessura", "num", 2, 30, 1]],
+  padrao: {dur: 2.5, tam: 12, cor2: "#f2b51d", x: 50, y: 50, forma: "circulo", esp: 8, anim: "nenhuma", cont: "pulsar"},
+  desenhar(g, it, s, c){ const r = it.tam / 100 * c.m, p = eOut(cl(c.lt / .7)); g.strokeStyle = it.cor2; g.lineWidth = +it.esp; g.lineCap = "round";
+    if (it.forma == "seta") { const L = r * 1.6 * p; g.beginPath(); g.moveTo(-r * 1.6, -r * 1.2); g.lineTo(-r * 1.6 + L * .8, -r * 1.2 + L * .6); g.stroke(); if (p > .9) { g.beginPath(); g.moveTo(-r * .3, -r * .3); g.lineTo(-r * .3, -r * .75); g.moveTo(-r * .3, -r * .3); g.lineTo(-r * .75, -r * .3); g.stroke(); } }
+    else if (it.forma == "sublinhado") { g.beginPath(); g.moveTo(-r * 2, 0); g.quadraticCurveTo(0, r * .25, -r * 2 + r * 4 * p, 0); g.stroke(); }
+    else { g.beginPath(); g.ellipse(0, 0, r * 1.3, r, -.15, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2.1 * p); g.stroke(); } }});
+Motion.registrar({tipo: "legenda", nome: "Legenda", icone: "💬", desc: "Legendas com karaokê e .srt", cor: "#ff9f45", usa: ["fonte", "cor", "cor2", "tam", "pos"], legenda: true, rot: {cor2: "Cor de destaque / fundo"},
+  campos: [["estilo", "Estilo da legenda", "sel", [["karaoke", "Karaokê (palavra acesa)"], ["contorno", "Contorno"], ["caixa", "Caixa"], ["pilula", "Pílula"]]]],
+  padrao: {texto: "Oi, gente!\nHoje eu vou contar tudo.\nTintim por tintim!", dur: 8, fonte: "redonda", tam: 5.5, cor: "#ffffff", cor2: "#f2b51d", x: 50, y: 84, anim: "pop", estilo: "karaoke", srt: null},
+  desenhar(){}});
+Motion.registrar({tipo: "mapa", nome: "Mapa com trajeto", icone: "🗺", desc: "Rostos viajando pelo caminho que você desenhar", cor: "#81c784", usa: ["cor2"], fixo: true, rot: {cor2: "Cor do caminho"},
+  campos: [["mapa", "Imagem do mapa", "img"], ["rostos", "Rostos que viajam", "imgs"], ["tamR", "Tamanho dos rostos", "num", 2, 20, .5], ["atraso", "Distância entre rostos (s)", "num", 0, 2, .05],
+    ["linha", "Linha do caminho", "sel", [["tracejada", "Tracejada"], ["continua", "Contínua"], ["pontos", "Pontinhos"]]], ["esp", "Espessura do caminho", "num", 2, 24, 1],
+    ["camera", "Câmera", "sel", [["nao", "Mapa inteiro"], ["leve", "Segue de leve"], ["perto", "Segue de perto"]]], ["pinos", "Marcar começo e fim", "chk"]],
+  padrao: {dur: 6, cor2: "#e53935", tamR: 7, atraso: .35, linha: "tracejada", esp: 8, camera: "leve", pinos: 1, pontos: [], rostos: [], anim: "fade"},
+  desenhar(g, it, s, c){ mapa(g, it, s, c); }});
+function curva(pts, W, H){ // caminho suave (Catmull-Rom) com distâncias acumuladas
+  const P2 = pts.map(([x, y]) => [x / 100 * W, y / 100 * H]), out = [];
+  if (P2.length < 2) return {p: P2, d: P2.map(() => 0), L: 0};
+  for (let i = 0; i < P2.length - 1; i++) { const p0 = P2[i - 1] || P2[i], p1 = P2[i], p2 = P2[i + 1], p3 = P2[i + 2] || p2;
+    for (let k = 0; k < 16; k++) { const t = k / 16, t2 = t * t, t3 = t2 * t; out.push([0, 1].map(j => .5 * (2 * p1[j] + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t3))); } }
+  out.push(P2[P2.length - 1]); const d = [0]; for (let i = 1; i < out.length; i++) d.push(d[i - 1] + Math.hypot(out[i][0] - out[i - 1][0], out[i][1] - out[i - 1][1]));
+  return {p: out, d, L: d[d.length - 1]};
+}
+function noCaminho(C, f){ const alvo = f * C.L; let i = 1; while (i < C.d.length && C.d[i] < alvo) i++; if (i >= C.p.length) return C.p[C.p.length - 1]; const a = C.p[i - 1], b = C.p[i], q = (alvo - C.d[i - 1]) / ((C.d[i] - C.d[i - 1]) || 1); return [a[0] + (b[0] - a[0]) * q, a[1] + (b[1] - a[1]) * q, i]; }
+function mapa(g, it, s, c){
+  const W = c.W, H = c.H, C = curva(it.pontos || [], W, H), rost = it.rostos || [], n = Math.max(1, rost.length), editando = editTraj == it.id;
+  const viagem = Math.max(.5, c.dur - 1 - (n - 1) * it.atraso), fr = j => editando ? 1 : eIO(cl((c.lt - .4 - j * it.atraso) / viagem)), lider = fr(0), pl = C.L ? noCaminho(C, lider) : [W / 2, H / 2];
+  const z = editando ? 1 : {nao: 1, leve: 1.5, perto: 2.3}[it.camera] || 1;
+  g.save();
+  if (z > 1) { const tx = Math.min(0, Math.max(W - W * z, W / 2 - pl[0] * z)), ty = Math.min(0, Math.max(H - H * z, H / 2 - pl[1] * z)); g.translate(tx, ty); g.scale(z, z); }
+  const m = c.img(it.mapa); if (m) capa(m, 0, 0, W, H); else if (editando || !(it.pontos || []).length) { g.fillStyle = "#1e2a1e"; g.fillRect(0, 0, W, H); g.fillStyle = "#81c784"; g.font = fnt("redonda", c.m * .035); g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(m === null && it.mapa ? "Carregando o mapa…" : "Escolha a imagem do mapa no painel", W / 2, H * .45); }
+  if (C.L) {
+    const ate = noCaminho(C, lider); g.strokeStyle = it.cor2; g.lineWidth = +it.esp / z * 1.4; g.lineCap = "round"; g.lineJoin = "round";
+    g.setLineDash(it.linha == "tracejada" ? [it.esp * 2.2, it.esp * 1.6] : it.linha == "pontos" ? [.1, it.esp * 2.2] : []);
+    g.beginPath(); g.moveTo(...C.p[0]); for (let i = 1; i < (ate[2] || C.p.length); i++) g.lineTo(...C.p[i]); g.lineTo(ate[0], ate[1]); g.stroke(); g.setLineDash([]);
+    if (it.pinos) { g.fillStyle = it.cor2; g.beginPath(); g.arc(C.p[0][0], C.p[0][1], it.esp * 1.2, 0, 7); g.fill();
+      if (lider > .98) { const f = C.p[C.p.length - 1], k = eOut(cl((c.lt - .4 - viagem) / .4)), r = c.m * .03 * k; g.beginPath(); g.arc(f[0], f[1] - r * 1.6, r, Math.PI * .8, Math.PI * 2.2); g.lineTo(f[0], f[1]); g.closePath(); g.fill(); g.fillStyle = "#fff"; g.beginPath(); g.arc(f[0], f[1] - r * 1.6, r * .4, 0, 7); g.fill(); } }
+  }
+  if (editando) { (it.pontos || []).forEach(([x, y], i) => { g.fillStyle = i == 0 ? "#fff" : "#f2b51d"; g.beginPath(); g.arc(x / 100 * W, y / 100 * H, 10, 0, 7); g.fill(); g.fillStyle = "#151515"; g.font = "bold 12px system-ui"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(i + 1, x / 100 * W, y / 100 * H); }); }
+  for (let j = rost.length - 1; j >= 0; j--) {
+    if (!C.L) break; const f = fr(j), [x, y] = noCaminho(C, f), r = it.tamR / 100 * c.m / (z > 1 ? z * .8 : 1), andando = f > 0 && f < 1, pulo = andando ? Math.abs(Math.sin(c.T * 9 + j)) * r * .25 : 0, im = c.img(rost[j]);
+    g.save(); g.beginPath(); g.arc(x, y - r - pulo, r, 0, 7); g.closePath(); g.fillStyle = "#fff"; g.fill(); g.clip(); if (im) capa(im, x - r, y - 2 * r - pulo, 2 * r, 2 * r); g.restore();
+    g.strokeStyle = it.cor2; g.lineWidth = r * .14; g.beginPath(); g.arc(x, y - r - pulo, r, 0, 7); g.stroke();
+  }
+  g.restore();
+}
+
+/* ---------- legendas: tempos automáticos ou do .srt ---------- */
+function legendas(it){
+  if (it.srt && it.srt.length) return it.srt;
+  const L = String(it.texto || "").split("\n").map(s => s.trim()).filter(Boolean); if (!L.length) return [];
+  const pes = L.map(s => s.length + 8), tot = pes.reduce((a, b) => a + b, 0); let a = +it.ini;
+  return L.map((txt, i) => { const d = it.dur * pes[i] / tot, c = {a, b: a + d, txt}; a += d; return c; });
+}
+function quebrar(pal, max){ const lin = []; let l = []; for (const w of pal) { const t = [...l, w].join(" "); if (l.length && g.measureText(t).width > max) { lin.push(l); l = [w]; } else l.push(w); } if (l.length) lin.push(l); return lin; }
+function legenda(it, fs){
+  const W = cv.width, H = cv.height, c = legendas(it).find(c => T >= c.a && T < c.b); if (!c) return;
+  const s = env(it, T - c.a, c.b - c.a), pal = c.txt.split(/\s+/).filter(Boolean), acesa = it.estilo == "karaoke" ? Math.floor(pal.length * cl((T - c.a) / ((c.b - c.a) * .9))) : -1;
+  g.font = fnt(it.fonte, fs); g.textBaseline = "middle"; g.lineJoin = "round"; g.globalAlpha = s.a;
+  const lin = quebrar(pal, W * .86), lh = fs * (it.fonte == "pixel" ? 1.8 : 1.3), sp = g.measureText(" ").width;
+  g.translate(it.x / 100 * W + s.dx, it.y / 100 * H + s.dy); g.scale(s.k, s.k); g.rotate(s.rot);
+  const alt = lin.length * lh; let n = 0;
+  if (it.estilo == "caixa") { const mw = Math.max(...lin.map(l => g.measureText(l.join(" ")).width)); g.fillStyle = it.cor2; g.globalAlpha = s.a * .92; rr(-mw / 2 - fs * .6, -alt / 2 - fs * .35, mw + fs * 1.2, alt + fs * .7, fs * .35); g.fill(); g.globalAlpha = s.a; }
+  lin.forEach((l, i) => {
+    const y = -alt / 2 + lh * (i + .5), larg = g.measureText(l.join(" ")).width; let x = -larg / 2;
+    if (it.estilo == "pilula") { g.fillStyle = it.cor2; rr(x - fs * .55, y - lh * .45, larg + fs * 1.1, lh * .9, lh * .45); g.fill(); }
+    for (const w of l) { const ww = g.measureText(w).width; g.textAlign = "left";
+      if (it.estilo == "karaoke" || it.estilo == "contorno") { g.lineWidth = fs * .22; g.strokeStyle = it.estilo == "karaoke" ? "#000" : it.cor2; g.strokeText(w, x, y); }
+      g.fillStyle = it.estilo == "karaoke" && n < acesa ? it.cor2 : it.cor; g.fillText(w, x, y); x += ww + sp; n++; }
+  });
+}
+
+/* ---------- desenho do quadro ---------- */
+function desenhar(){
+  const W = cv.width, H = cv.height, m = Math.min(W, H);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.filter = "none"; g.clearRect(0, 0, W, H);
+  const bg = gravando && P.bg == "transp" ? "verde" : P.bg;
+  if (gravando || bg != "transp") { g.fillStyle = bg == "preto" ? "#000" : "#00b140"; g.fillRect(0, 0, W, H); }
+  for (const it of P.itens) {
+    const def = TIPOS[it.tipo], ed = editTraj == it.id; if (!def || (it.oculto && !ed)) continue;
+    if (!ed && (T < it.ini || T > it.ini + it.dur)) continue;
+    const lt = ed ? it.dur : T - it.ini, fs = (it.tam || 5) / 100 * m, c = {W, H, m, T, lt, dur: it.dur, fs, fnt, img, texto: (t, s, o) => textoAnim(t, s, o), env};
+    if (def.legenda) { g.save(); legenda(it, fs); g.restore(); continue; }
+    const s = ed ? {a: 1, dx: 0, dy: 0, k: 1, rot: 0, chars: 1, letras: null, onda: 0, gl: 0, blur: 0, brilho: 0} : env(it, lt, it.dur);
+    const um = (ox, filtro, alfa) => { g.save(); g.globalAlpha = s.a * alfa; g.filter = filtro || (s.blur > .3 ? `blur(${s.blur.toFixed(1)}px)` : "none");
+      if (s.brilho) { g.shadowColor = it.cor2 || "#fff"; g.shadowBlur = 8 + 22 * s.brilho; }
+      if (!def.fixo) { g.translate(it.x / 100 * W + s.dx + ox, it.y / 100 * H + s.dy); g.rotate(s.rot); g.scale(s.k, s.k); }
+      try { def.desenhar(g, it, s, c); } catch (e) { if (!def.erro) { def.erro = 1; toast("Erro no motion " + def.nome + ": " + e.message); } } g.restore(); };
+    if (s.gl > 0) { um(-s.gl, "hue-rotate(150deg)", .55); um(s.gl, "hue-rotate(-100deg)", .55); }
+    um(0, "", 1);
+  }
+}
+
+/* ---------- linha do tempo ---------- */
+const largura = () => $("#conteudo").clientWidth;
+function regua(){
+  const pps = largura() / P.dur, passo = [.5, 1, 2, 5, 10, 30].find(p => p * pps >= 46) || 60; let h = "";
+  for (let s = 0; s <= P.dur + 1e-6; s += passo) h += `<i style="left:${s / P.dur * 100}%"><b>${+s.toFixed(1)}s</b></i>`;
+  $("#regua").innerHTML = h;
+}
+function linha(){
+  $("#conteudo").style.width = (P.zoom * 100) + "%"; regua();
+  $("#trilhas").innerHTML = P.itens.length ? P.itens.slice().reverse().map(it => { const d = TIPOS[it.tipo];
+    return `<div class="trilha"><div class="barra${it.id == P.sel ? " on" : ""}${it.oculto ? " oculto" : ""}${it.trava ? " trava" : ""}" data-id="${it.id}" style="background-color:${d ? d.cor : "#888"};left:${it.ini / P.dur * 100}%;width:${Math.max(.4, it.dur / P.dur * 100)}%">${it.trava ? "🔒 " : ""}${d ? d.icone : "❓"} ${esc(String(it.texto || (d ? d.nome : it.tipo + " (não instalado)")).split("\n")[0])}</div></div>`; }).join("")
+    : '<p class="vazio">Toque em ＋ Adicionar lá em cima para criar o primeiro motion.</p>';
+  cabeca(); topo();
+}
+function cabeca(){ $("#cabeca").style.left = (T / P.dur * 100) + "%"; $("#tempo").textContent = relogio(T) + " / " + relogio(P.dur).replace(/\.0$/, ""); }
+function imas(it){ const t = [0, P.dur, T]; for (const o of P.itens) if (o != it) t.push(o.ini, o.ini + o.dur); return t; }
+const encaixa = (v, alvos) => { if (!P.ima) return Math.round(v * 20) / 20; const lim = .15 / P.zoom, a = alvos.find(x => Math.abs(x - v) < lim); return a != null ? a : Math.round(v * 10) / 10; };
+let arr = null;
+$("#trilhas").addEventListener("pointerdown", e => {
+  const b = e.target.closest(".barra"); if (!b) return;
+  const it = P.itens.find(i => i.id == b.dataset.id); P.sel = it.id; document.querySelectorAll(".barra").forEach(x => x.classList.toggle("on", x == b)); props();
+  if (it.trava) return toast("Item travado 🔒");
+  const r = b.getBoundingClientRect(); arr = {it, x: e.clientX, ini: it.ini, dur: it.dur, modo: e.clientX > r.right - 18 ? "fim" : "mover", el: b, srt0: it.srt ? copia(it.srt) : null, alvos: imas(it)};
+  try { b.setPointerCapture(e.pointerId); } catch (x) {}
+});
+$("#trilhas").addEventListener("pointermove", e => {
+  if (!arr) return; const dt = (e.clientX - arr.x) / largura() * P.dur, it = arr.it;
+  if (arr.modo == "fim") it.dur = Math.max(.3, Math.min(P.dur - it.ini, encaixa(arr.ini + arr.dur + dt, arr.alvos) - it.ini));
+  else { let ini = encaixa(arr.ini + dt, arr.alvos); const fimE = encaixa(arr.ini + arr.dur + dt, arr.alvos); if (Math.abs(fimE - (arr.ini + arr.dur + dt)) < Math.abs(ini - (arr.ini + dt))) ini = fimE - arr.dur; it.ini = Math.max(0, Math.min(P.dur - it.dur, ini)); }
+  if (arr.srt0 && arr.modo == "mover") { const d = it.ini - arr.ini; it.srt = arr.srt0.map(c => ({a: c.a + d, b: c.b + d, txt: c.txt})); }
+  arr.el.style.left = it.ini / P.dur * 100 + "%"; arr.el.style.width = it.dur / P.dur * 100 + "%"; sincronizar();
+});
+const solta = () => { if (arr) { arr = null; salvar(); props(); } };
+$("#trilhas").addEventListener("pointerup", solta); $("#trilhas").addEventListener("pointercancel", solta);
+$("#trilhas").addEventListener("click", e => { if (!e.target.closest(".barra")) { P.sel = null; editTraj = null; linha(); props(); } });
+function irPara(t){ T = cl(t / P.dur) * P.dur; if (tocando) { parar(); tocar(); } cabeca(); }
+function buscar(e){ const r = $("#regua").getBoundingClientRect(); irPara((e.clientX - r.left) / r.width * P.dur); }
+$("#regua").addEventListener("pointerdown", e => { $("#regua").setPointerCapture(e.pointerId); buscar(e); $("#regua").onpointermove = buscar; });
+$("#regua").addEventListener("pointerup", () => { $("#regua").onpointermove = null; });
+function dividir(){
+  const it = item(); if (!it) return toast("Escolha um item na linha do tempo");
+  if (T <= it.ini + .1 || T >= it.ini + it.dur - .1) return toast("Ponha a agulha no meio do item");
+  const b = Object.assign(copia(it), {id: uid(), ini: T, dur: it.ini + it.dur - T});
+  if (TIPOS[it.tipo] && TIPOS[it.tipo].legenda) { const caps = legendas(it); it.srt = caps.filter(c => c.a < T).map(c => ({a: c.a, b: Math.min(c.b, T), txt: c.txt})); b.srt = caps.filter(c => c.b > T).map(c => ({a: Math.max(c.a, T), b: c.b, txt: c.txt})); it.texto = it.srt.map(c => c.txt).join("\n"); b.texto = b.srt.map(c => c.txt).join("\n"); }
+  it.dur = T - it.ini; P.itens.splice(P.itens.indexOf(it) + 1, 0, b); P.sel = b.id; salvar(); linha(); props(); toast("Dividido em dois ✂");
+}
+
+/* ---------- áudio, tocar e gravar ---------- */
+let ac, audioBuf = null, fonte = null, destino, gravando = false, rec = null, partes = [];
+const ctx = () => { if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); destino = ac.createMediaStreamDestination(); } if (ac.state == "suspended") ac.resume(); return ac; };
+function tocar(){
+  if (T >= P.dur - .05) T = 0;
+  tocando = true; t0 = performance.now(); T0 = T; $("#play").textContent = "❚❚"; $("#play").setAttribute("aria-label", "Pausar");
+  if (audioBuf && T < audioBuf.duration) { const c = ctx(); fonte = c.createBufferSource(); fonte.buffer = audioBuf; fonte.connect(c.destination); fonte.connect(destino); fonte.start(0, T); }
+}
+function parar(){ tocando = false; $("#play").textContent = "▶"; $("#play").setAttribute("aria-label", "Tocar"); if (fonte) { try { fonte.stop(); } catch (e) {} fonte = null; } }
+$("#play").onclick = () => tocando ? parar() : tocar();
+function loop(now){
+  requestAnimationFrame(loop);
+  if (tocando) { T = T0 + (now - t0) / 1000; if (T >= P.dur) { if (gravando && rec) { T = P.dur; parar(); rec.stop(); } else if (P.loop) { parar(); T = 0; tocar(); } else { T = P.dur; parar(); } } cabeca(); }
+  desenhar();
+}
+function gravar(){
+  if (gravando) return;
+  if (!window.MediaRecorder || !cv.captureStream) return toast("Este navegador não grava vídeo. Use o Chrome.");
+  ctx(); parar(); editTraj = null; T = 0; gravando = true;
+  const s = cv.captureStream(30); if (audioBuf) destino.stream.getAudioTracks().forEach(t => s.addTrack(t));
+  const tipo = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(m => MediaRecorder.isTypeSupported(m));
+  rec = new MediaRecorder(s, tipo ? {mimeType: tipo} : {}); partes = [];
+  rec.ondataavailable = e => { if (e.data.size) partes.push(e.data); };
+  rec.onstop = () => { baixar(new Blob(partes, {type: "video/webm"}), "motion-tamaki.webm"); gravando = false; rec = null; toast("Vídeo pronto"); };
+  rec.start(); tocar(); toast(P.bg == "transp" ? "Gravando com fundo verde para recortar no CapCut…" : "Gravando…");
+}
+function baixar(blob, nome){ const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); }
+async function usarAudio(blob, avisar){
+  try { audioBuf = await ctx().decodeAudioData(await blob.arrayBuffer());
+    if (avisar) { if (audioBuf.duration > P.dur) P.dur = Math.ceil(audioBuf.duration); salvar(); toast("Áudio carregado (" + audioBuf.duration.toFixed(1) + " s)"); }
+    linha(); props();
+  } catch (e) { toast("Não consegui abrir esse áudio"); }
+}
+$("#fAud").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; P.audioNome = f.name; await dbPut("audio", f); usarAudio(f, true); };
+
+/* ---------- .srt ---------- */
+const seg = t => { const m = t.trim().match(/(\d+):(\d+):(\d+)[,.](\d+)/); return m ? +m[1] * 3600 + +m[2] * 60 + +m[3] + +m[4] / 1000 : 0; };
+const hms = s => { const ms = Math.round(s * 1000), h = Math.floor(ms / 3600000), mi = Math.floor(ms / 60000) % 60, se = Math.floor(ms / 1000) % 60; return [h, mi, se].map(v => String(v).padStart(2, "0")).join(":") + "," + String(ms % 1000).padStart(3, "0"); };
+$("#fSrt").onchange = async e => {
+  const f = e.target.files[0], it = item(); e.target.value = ""; if (!f || !it) return;
+  const blocos = (await f.text()).replace(/\r/g, "").split(/\n\s*\n/), srt = [];
+  for (const b of blocos) { const l = b.split("\n").filter(Boolean), i = l.findIndex(x => x.includes("-->")); if (i < 0) continue; const [a, z] = l[i].split("-->"); srt.push({a: seg(a), b: seg(z), txt: l.slice(i + 1).join(" ")}); }
+  if (!srt.length) return toast("Não achei legendas nesse arquivo");
+  it.srt = srt; it.texto = srt.map(c => c.txt).join("\n"); it.ini = srt[0].a; it.dur = srt[srt.length - 1].b - srt[0].a; P.dur = Math.max(P.dur, Math.ceil(srt[srt.length - 1].b));
+  salvar(); linha(); props(); toast(srt.length + " legendas importadas");
+};
+function exportarSrt(){
+  const caps = P.itens.filter(i => TIPOS[i.tipo] && TIPOS[i.tipo].legenda && !i.oculto).flatMap(legendas).sort((a, b) => a.a - b.a);
+  if (!caps.length) return toast("Crie uma 💬 Legenda primeiro");
+  baixar(new Blob([caps.map((c, i) => `${i + 1}\n${hms(c.a)} --> ${hms(c.b)}\n${c.txt}\n`).join("\n")], {type: "text/plain"}), "legendas-tamaki.srt");
+}
+
+/* ---------- desenhar o trajeto do mapa tocando no palco ---------- */
+cv.addEventListener("pointerdown", e => {
+  if (!editTraj) return; const it = P.itens.find(i => i.id == editTraj); if (!it) return;
+  const r = cv.getBoundingClientRect(); it.pontos = [...(it.pontos || []), [+((e.clientX - r.left) / r.width * 100).toFixed(1), +((e.clientY - r.top) / r.height * 100).toFixed(1)]]; salvar(); props();
+});
+function modoTrajeto(id){ editTraj = id; $("#cv").classList.toggle("editando", !!id); const a = $("#aviso"); a.classList.toggle("esc", !id); a.textContent = "Toque no palco para marcar o caminho, ponto por ponto"; }
+
+/* ---------- painel de propriedades ---------- */
+const opt = (a, v) => a.map(([k, n]) => `<option value="${k}"${k == v ? " selected" : ""}>${n}</option>`).join("");
+const rg = (k, rot, min, max, st, v, at = "k") => `<label class="f"><b>${rot}<i>${v}</i></b><input type="range" data-${at}="${k}" min="${min}" max="${max}" step="${st}" value="${v}"></label>`;
+const sl = (k, rot, a, v) => `<label class="f"><b>${rot}</b><select data-k="${k}">${opt(a, v)}</select></label>`;
+const co = (k, rot, v) => `<label class="f"><b>${rot}</b><input type="color" data-k="${k}" value="${esc(v)}"></label>`;
+function campo(it, [k, rot, tipo, a, b, c]){
+  if (tipo == "num") return rg(k, rot, a, b, c, it[k] ?? a);
+  if (tipo == "sel") return sl(k, rot, a, it[k]);
+  if (tipo == "cor") return co(k, rot, it[k] || "#ffffff");
+  if (tipo == "chk") return `<label class="chk"><input type="checkbox" data-k="${k}" ${it[k] ? "checked" : ""}> ${rot}</label>`;
+  if (tipo == "img") { const im = img(it[k]); return `<div class="f"><b>${rot}</b><div class="btns">${im ? `<img src="${im.src}" alt="" style="height:52px;border-radius:8px">` : ""}<button class="bt" data-img="${k}">${it[k] ? "Trocar" : "Escolher"} imagem</button>${it[k] ? `<button class="bt" data-semimg="${k}">Tirar</button>` : ""}</div></div>`; }
+  if (tipo == "imgs") return `<div class="f"><b>${rot}</b><div class="fotos">${(it[k] || []).map((x, i) => { const im = img(x); return `<span><img src="${im ? im.src : ""}" alt="Rosto ${i + 1}"><button data-tirar="${k}:${i}" aria-label="Tirar">✕</button></span>`; }).join("")}<button class="bt" data-imgs="${k}">＋ Adicionar</button></div></div>`;
+  if (tipo == "area") return `<label class="f"><b>${rot}</b><textarea data-k="${k}">${esc(it[k] || "")}</textarea></label>`;
+  return `<label class="f"><b>${rot}</b><input type="text" data-k="${k}" value="${esc(it[k] ?? "")}"></label>`;
+}
+function props(){
+  const it = item(), el = $("#props");
+  if (!it) {
+    el.innerHTML = `<div class="cab"><b>🎬 Projeto</b></div>${rg("dur", "Duração do vídeo (s)", 2, 300, 1, P.dur, "p")}
+      <p class="dica">🎵 Áudio: ${P.audioNome ? esc(P.audioNome) + (audioBuf ? " · " + audioBuf.duration.toFixed(1) + " s" : "") : "nenhum"}</p>
+      ${P.audioNome ? '<div class="btns"><button class="bt" data-a="semaudio">Tirar o áudio</button></div>' : ""}
+      <p class="dica"><b>Linha do tempo:</b> arraste a barra para mover; puxe a ponta direita para mudar a duração. 🧲 gruda nas bordas e na agulha. ✂ divide o item onde está a agulha. ◀ ▶ andam um quadro. Zoom ＋/− para ajustes finos.<br><b>Exportar:</b> ⬇ Vídeo grava tudo com o áudio (fundo xadrez sai verde). ⬇ .srt baixa as legendas.</p>`;
+    return;
+  }
+  const d = TIPOS[it.tipo];
+  if (!d) { el.innerHTML = `<div class="cab"><b>❓ ${esc(it.tipo)}</b><button class="bt" data-a="apaga">🗑</button><button class="bt" data-a="fechar">✕</button></div><p class="dica">Este tipo de motion não está instalado neste aparelho. Instale de novo em ＋ Adicionar › Novo tipo.</p>`; return; }
+  const u = d.usa || [], R = d.rot || {};
+  el.innerHTML = `<div class="cab"><b>${d.icone} ${esc(d.nome)}</b><button class="bt mini" data-a="ocultar" title="Mostrar ou esconder">${it.oculto ? "🙈" : "👁"}</button><button class="bt mini" data-a="travar" title="Travar na linha do tempo">${it.trava ? "🔒" : "🔓"}</button><button class="bt mini" data-a="frente" title="Trazer para frente">▲</button><button class="bt mini" data-a="tras" title="Mandar para trás">▼</button><button class="bt mini" data-a="dup" title="Duplicar">⧉</button><button class="bt mini" data-a="apaga" title="Apagar">🗑</button><button class="bt mini" data-a="fechar" title="Fechar">✕</button></div>
+    ${d.legenda ? `<label class="f"><b>Legendas (uma por linha)</b><textarea data-k="texto">${esc(it.texto)}</textarea></label>${it.srt ? '<p class="dica">Usando tempos fixos (.srt ou divisão). <button class="bt" data-a="auto">Voltar ao automático</button></p>' : ""}` : ""}
+    ${u.includes("texto") ? campo(it, ["texto", "Texto", "texto"]) : ""}${u.includes("area") ? campo(it, ["texto", "Texto", "area"]) : ""}${u.includes("sub") ? campo(it, ["sub", it.tipo == "inscreva" ? "Texto depois do clique" : "Subtítulo", "texto"]) : ""}
+    <div class="duas">${rg("ini", "Começa em (s)", 0, P.dur, .05, it.ini)}${rg("dur", "Dura (s)", .3, P.dur, .05, it.dur)}</div>
+    <div class="duas">${sl("anim", "Entrada", ENTRADAS, it.anim)}${sl("saida", "Saída", SAIDAS, it.saida)}</div>
+    <div class="duas">${rg("te", "Tempo da entrada (s)", .1, 2, .05, it.te ?? .5)}${rg("ts", "Tempo da saída (s)", .1, 2, .05, it.ts ?? .35)}</div>
+    ${d.legenda ? "" : sl("cont", "Enquanto aparece", CONTINUOS, it.cont || "nenhum")}
+    ${(d.campos || []).map(cp => campo(it, cp)).join("")}
+    ${it.tipo == "mapa" ? `<div class="f"><b>Caminho (${(it.pontos || []).length} pontos)</b><div class="btns"><button class="bt ${editTraj == it.id ? "pri" : ""}" data-a="traj">${editTraj == it.id ? "✓ Terminar caminho" : "✏ Desenhar caminho"}</button><button class="bt" data-a="trajvolta">↶ Ponto</button><button class="bt" data-a="trajlimpa">Limpar</button></div></div>` : ""}
+    ${u.includes("fonte") || u.includes("tam") ? `<div class="duas">${u.includes("fonte") ? sl("fonte", "Fonte", FONTES, it.fonte) : ""}${u.includes("tam") ? rg("tam", "Tamanho", 1, it.tipo == "imagem" ? 100 : 30, .1, it.tam) : ""}</div>` : ""}
+    ${u.includes("cor") || u.includes("cor2") ? `<div class="duas">${u.includes("cor") ? co("cor", R.cor || "Cor do texto", it.cor) : ""}${u.includes("cor2") ? co("cor2", R.cor2 || "Cor de destaque", it.cor2) : ""}</div>` : ""}
+    ${u.includes("pos") ? `<div class="duas">${rg("x", "Horizontal (%)", 0, 100, .5, it.x)}${rg("y", "Vertical (%)", 0, 100, .5, it.y)}</div>` : ""}
+    ${d.legenda ? `<div class="btns"><button class="bt" data-a="impsrt">Importar .srt</button>${audioBuf ? '<button class="bt" data-a="noaudio">Esticar no áudio</button>' : ""}</div>` : ""}`;
+}
+function sincronizar(){ const it = item(); document.querySelectorAll("#props input[type=range][data-k]").forEach(i => { if (it && it[i.dataset.k] != null) { i.value = it[i.dataset.k]; i.closest(".f").querySelector("i").textContent = it[i.dataset.k]; } }); }
+function entrada(e){
+  const t = e.target, d = t.dataset; if (!t.closest("#props")) return;
+  const v = t.type == "checkbox" ? (t.checked ? 1 : 0) : t.type == "range" ? parseFloat(t.value) : t.value, l = t.closest(".f") && t.closest(".f").querySelector("b i"); if (l) l.textContent = v;
+  if (d.p) { P[d.p] = v; T = Math.min(T, P.dur); P.itens.forEach(i => { i.ini = Math.min(i.ini, Math.max(0, P.dur - .3)); i.dur = Math.min(i.dur, P.dur - i.ini); }); linha(); salvar(); return; }
+  const it = item(); if (!it || !d.k) return;
+  if (d.k == "texto" && it.srt && e.type == "input") it.srt = null;
+  it[d.k] = v;
+  if (d.k == "ini" || d.k == "dur") { it.dur = Math.min(it.dur, P.dur - it.ini); if (T < it.ini || T > it.ini + it.dur) T = it.ini + Math.min(.6, it.dur / 2); }
+  if (["ini", "dur", "texto"].includes(d.k)) linha();
+  salvar();
+}
+document.addEventListener("input", entrada); document.addEventListener("change", entrada);
+
+/* ---------- adicionar motions (grade) e instalar novos tipos por código ---------- */
+let plugins = []; try { plugins = JSON.parse(localStorage.getItem(PLUG)) || []; } catch (e) {}
+const embutidos = new Set(Object.keys(TIPOS));
+function instalar(p){ try { new Function("Motion", p.codigo)(Motion); p.erro = ""; return true; } catch (e) { p.erro = e.message; return false; } }
+plugins.forEach(instalar);
+function folha(modo){
+  const d = $("#dAdd");
+  if (modo == "codigo") {
+    d.innerHTML = `<h2>Instalar um tipo novo de motion</h2><p class="dica">Cole aqui o código que o Claude mandar (ele começa com <code>Motion.registrar</code>). Ele fica guardado neste aparelho.</p>
+      <textarea id="codigo" placeholder="Motion.registrar({ tipo: ..., nome: ..., desenhar(g, it, s, c){ ... } })"></textarea>
+      <div class="btns" style="margin-top:10px"><button class="bt pri" data-a="instalar">Instalar</button><label class="bt" for="fJs" style="display:grid;place-items:center">Abrir arquivo .js</label><button class="bt" data-a="volta-grade">Voltar</button></div>
+      <b>Instalados</b><div style="margin-top:6px">${plugins.length ? plugins.map((p, i) => `<div class="plug"><b>${esc(p.nome)}</b>${p.erro ? `<small>erro: ${esc(p.erro)}</small>` : ""}<button class="bt mini" data-desinstalar="${i}">Remover</button></div>`).join("") : '<p class="dica">Nenhum ainda.</p>'}</div>`;
+  } else {
+    d.innerHTML = `<h2>Adicionar motion</h2><div class="grade">${Object.values(TIPOS).map(t => `<button data-novo="${esc(t.tipo)}"><span>${t.icone}</span><b>${esc(t.nome)}</b><small>${esc(t.desc || "")}</small></button>`).join("")}
+      <button class="novo" data-a="codigo"><span>🧩</span><b>Novo tipo</b><small>Instalar motion criado pelo Claude</small></button></div>
+      <div class="btns" style="margin-top:12px"><button class="bt" data-a="fechar-folha">Fechar</button></div>`;
+  }
+  if (!d.open) d.showModal();
+}
+async function instalarCodigo(codigo){
+  const antes = new Set(Object.keys(TIPOS)), p = {nome: "Motion", codigo};
+  if (!instalar(p)) return toast("O código deu erro: " + p.erro);
+  const novos = Object.keys(TIPOS).filter(k => !antes.has(k)); p.nome = novos.map(k => TIPOS[k].icone + " " + TIPOS[k].nome).join(", ") || "Motion atualizado";
+  plugins.push(p); localStorage.setItem(PLUG, JSON.stringify(plugins)); toast("Instalado: " + p.nome); folha("grade");
+}
+$("#fJs").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (f) instalarCodigo(await f.text()); };
+
+function novo(tipo){
+  const d = TIPOS[tipo], it = Object.assign({x: 50, y: 50, anim: "fade", saida: "fade", cont: "nenhum", te: .5, ts: .35, tam: 6}, copia(d.padrao || {}), {id: uid(), tipo});
+  if (it.dur > P.dur) it.dur = P.dur; it.ini = Math.min(T, Math.max(0, P.dur - it.dur));
+  P.itens.push(it); P.sel = it.id; T = it.ini + Math.min(.8, it.dur / 2); salvar(); linha(); props(); $("#dAdd").close();
+  if (tipo == "mapa") { modoTrajeto(it.id); toast("Escolha o mapa no painel e toque no palco para desenhar o caminho"); }
+}
+let escolheImg = null;
+$("#fImg").onchange = async e => { const f = e.target.files[0], it = item(); e.target.value = ""; if (!f || !it || !escolheImg) return; it[escolheImg] = await guardarImg(f); salvar(); setTimeout(props, 150); };
+$("#fImgs").onchange = async e => { const it = item(); if (!it || !escolheImg) return; for (const f of e.target.files) it[escolheImg] = [...(it[escolheImg] || []), await guardarImg(f)]; e.target.value = ""; salvar(); setTimeout(props, 150); };
+
+document.addEventListener("click", e => {
+  const q = s => e.target.closest(s); let b;
+  if ((b = q("[data-novo]"))) return novo(b.dataset.novo);
+  if ((b = q("[data-desinstalar]"))) { plugins.splice(+b.dataset.desinstalar, 1); localStorage.setItem(PLUG, JSON.stringify(plugins)); toast("Removido. Recarregue a aba para sumir da lista."); return folha("codigo"); }
+  if ((b = q("[data-img]"))) { escolheImg = b.dataset.img; return $("#fImg").click(); }
+  if ((b = q("[data-imgs]"))) { escolheImg = b.dataset.imgs; return $("#fImgs").click(); }
+  if ((b = q("[data-semimg]"))) { const it = item(); it[b.dataset.semimg] = null; salvar(); return props(); }
+  if ((b = q("[data-tirar]"))) { const it = item(), [k, i] = b.dataset.tirar.split(":"); it[k].splice(+i, 1); salvar(); return props(); }
+  if (!(b = q("[data-a]"))) return;
+  const a = b.dataset.a, it = item(), q1 = 1 / FPS;
+  const acoes = {
+    adicionar: () => folha("grade"), codigo: () => folha("codigo"), "volta-grade": () => folha("grade"), "fechar-folha": () => $("#dAdd").close(),
+    instalar: () => { const c = $("#codigo").value.trim(); if (c) instalarCodigo(c); },
+    formato: () => { P.fmt = P.fmt == "16:9" ? "9:16" : "16:9"; tamanho(); topo(); salvar(); },
+    fundo: () => { const o = Object.keys(FUNDOS); P.bg = o[(o.indexOf(P.bg) + 1) % o.length]; topo(); salvar(); },
+    video: gravar, srt: exportarSrt,
+    semaudio: () => { audioBuf = null; P.audioNome = ""; dbPut("audio", null); salvar(); props(); },
+    inicio: () => irPara(0), fim: () => irPara(P.dur), volta: () => irPara(Math.round(T * FPS) / FPS - q1), avanca: () => irPara(Math.round(T * FPS) / FPS + q1),
+    ima: () => { P.ima = P.ima ? 0 : 1; topo(); salvar(); toast(P.ima ? "Ímã ligado 🧲" : "Ímã desligado"); },
+    repetir: () => { P.loop = P.loop ? 0 : 1; topo(); salvar(); },
+    zoommais: () => { P.zoom = Math.min(12, P.zoom * 1.6); linha(); salvar(); }, zoommenos: () => { P.zoom = Math.max(1, P.zoom / 1.6); linha(); salvar(); },
+    dividir, fechar: () => { P.sel = null; modoTrajeto(null); linha(); props(); }
+  };
+  if (acoes[a]) return acoes[a]();
+  if (!it) return toast("Escolha um item na linha do tempo");
+  const daItem = {
+    aqui: () => { it.ini = Math.min(T, P.dur - .3); it.dur = Math.min(it.dur, P.dur - it.ini); salvar(); linha(); props(); },
+    ocultar: () => { it.oculto = it.oculto ? 0 : 1; salvar(); linha(); props(); },
+    travar: () => { it.trava = it.trava ? 0 : 1; salvar(); linha(); props(); },
+    frente: () => { const i = P.itens.indexOf(it); if (i < P.itens.length - 1) { [P.itens[i], P.itens[i + 1]] = [P.itens[i + 1], P.itens[i]]; salvar(); linha(); } },
+    tras: () => { const i = P.itens.indexOf(it); if (i > 0) { [P.itens[i], P.itens[i - 1]] = [P.itens[i - 1], P.itens[i]]; salvar(); linha(); } },
+    dup: () => { const c = Object.assign(copia(it), {id: uid(), trava: 0}); c.ini = Math.min(P.dur - c.dur, c.ini + c.dur); P.itens.push(c); P.sel = c.id; salvar(); linha(); props(); },
+    apaga: () => { if (!b.dataset.s) { b.dataset.s = 1; b.textContent = "Confirmar"; return; } P.itens = P.itens.filter(i => i != it); P.sel = null; modoTrajeto(null); salvar(); linha(); props(); },
+    auto: () => { it.srt = null; salvar(); props(); }, impsrt: () => $("#fSrt").click(),
+    noaudio: () => { if (!audioBuf) return; it.ini = 0; it.dur = Math.min(P.dur, +audioBuf.duration.toFixed(2)); it.srt = null; salvar(); linha(); props(); toast("Legenda esticada no áudio"); },
+    traj: () => { modoTrajeto(editTraj == it.id ? null : it.id); props(); },
+    trajvolta: () => { (it.pontos || []).pop(); salvar(); props(); }, trajlimpa: () => { it.pontos = []; salvar(); props(); }
+  };
+  if (daItem[a]) daItem[a]();
+});
+document.addEventListener("keydown", e => {
+  if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if (e.key == " ") { e.preventDefault(); tocando ? parar() : tocar(); }
+  else if (e.key == "ArrowLeft") irPara(T - 1 / FPS); else if (e.key == "ArrowRight") irPara(T + 1 / FPS);
+});
+
+/* ---------- tela ---------- */
+function tamanho(){ const v = P.fmt == "9:16"; cv.width = v ? 720 : 1280; cv.height = v ? 1280 : 720; caber(); }
+function caber(){ const t = $("#tela"), w = t.clientWidth - 20, h = t.clientHeight - 20; if (w <= 0 || h <= 0) return; const k = Math.min(w / cv.width, h / cv.height); cv.style.width = Math.floor(cv.width * k) + "px"; cv.style.height = Math.floor(cv.height * k) + "px"; }
+new ResizeObserver(caber).observe($("#tela"));
+new ResizeObserver(() => regua()).observe($("#rolo"));
+function topo(){ $("#bFmt").textContent = P.fmt; $("#bFundo").textContent = FUNDOS[P.bg]; cv.classList.toggle("verde", P.bg == "verde"); cv.classList.toggle("preto", P.bg == "preto"); $("#bIma").classList.toggle("on", !!P.ima); $("#bRep").classList.toggle("on", !!P.loop); }
+(async () => {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.itens)) P = Object.assign(P, s); } catch (e) {}
+  P.zoom = P.zoom || 1; if (P.ima == null) P.ima = 1;
+  tamanho(); topo(); linha(); props(); requestAnimationFrame(loop);
+  const a = await dbGet("audio"); if (a) usarAudio(a, false);
+  if (document.fonts) document.fonts.ready.then(desenhar);
+})();
+window.Motion = Motion;
+})();
+</script>
+</body>
+</html>

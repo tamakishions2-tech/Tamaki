@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#120f24">
+<meta name="color-scheme" content="dark">
+<title>Palco · Estúdio da Tamaki</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#120f24;--pn:#1b1736;--pn2:#231e45;--ln:#2e2a55;--tx:#efe9f7;--mu:#a49cc9;--or:#ff9f45;--gold:#f2b632;--te:#5fd9cf;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--tx);font:14px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+fieldset:disabled{opacity:.45}
+#app{height:100dvh;display:grid;grid-template-columns:280px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"cam palco" "cam doca"}
+/* camadas */
+#cam{grid-area:cam;display:flex;flex-direction:column;background:var(--pn);border-right:1px solid var(--ln);min-height:0}
+.tit{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-weight:700;border-bottom:1px solid var(--ln)}
+.lista{flex:1;min-height:0;overflow:auto;padding:6px}
+.ly{display:flex;align-items:center;gap:6px;padding:5px;border:1px solid transparent;border-radius:10px;margin-bottom:4px;background:var(--pn2);cursor:pointer}
+.ly.on{border-color:var(--or);background:#2f2552}
+.ly.filho{margin-left:18px}
+.ly.pasta{background:#2a2350}
+.th{width:46px;height:46px;flex:none;object-fit:contain;border-radius:6px;background:conic-gradient(#3a3560 25%,#2a2650 0 50%,#3a3560 0 75%,#2a2650 0) 0 0/12px 12px}
+.fi{width:46px;height:46px;flex:none;display:grid;place-items:center;font-size:1.6rem;border-radius:8px;background:#3a3166;object-fit:cover}
+.ly .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.ly small{display:block;color:var(--mu);font-weight:400;overflow:hidden;text-overflow:ellipsis}
+.ic{flex:none;background:none;border:0;width:34px;height:40px;font-size:1.05rem;color:var(--mu);border-radius:8px}
+.ic.off{opacity:.3}
+.ic.lk{opacity:1}
+.barra{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;border-top:1px solid var(--ln)}
+.barra button,.barra label{display:grid;place-items:center;background:var(--pn2);border:1px solid var(--ln);border-radius:8px;min-height:40px;font-size:.76rem;text-align:center;cursor:pointer;padding:0 2px}
+.barra .add{background:var(--or);color:#24130a;font-weight:700;border-color:var(--or)}
+.vazio{color:var(--mu);padding:12px;text-align:center;margin:0}
+/* palco */
+#palco{grid-area:palco;display:flex;flex-direction:column;min-height:0;min-width:0}
+#topo{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--ln);background:var(--pn)}
+.bt{background:var(--pn2);border:1px solid var(--ln);border-radius:8px;padding:0 12px;min-height:40px}
+.bt.pri{background:var(--or);border-color:var(--or);color:#24130a;font-weight:700}
+.bt.rec{color:#ff6b6b}
+.bt.rec.on{background:#c62828;border-color:#c62828;color:#fff}
+.bt.mini{padding:0 10px;font-size:1.1rem}
+#st{margin-left:auto;color:var(--mu);font-size:.78rem}
+#tela{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px;overflow:hidden}
+#cv{flex:none;border-radius:8px;border:1px solid var(--ln);touch-action:none;background:conic-gradient(#3a3560 25%,#2a2650 0 50%,#3a3560 0 75%,#2a2650 0) 0 0/24px 24px}
+/* doca */
+#doca{grid-area:doca;background:var(--pn);border-top:1px solid var(--ln);min-width:0}
+#painel{height:214px;overflow:auto;padding:8px 12px}
+#ferr{display:flex;border-top:1px solid var(--ln)}
+#ferr button{flex:1;background:none;border:0;border-top:3px solid transparent;min-height:48px;color:var(--mu);font-size:.84rem;padding:0 2px}
+#ferr button.on{color:var(--or);border-top-color:var(--gold);font-weight:700}
+#ferr .so-retrato{display:none}
+.sub{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.f .sub{margin:0}
+.sub button{background:var(--pn2);border:1px solid var(--ln);border-radius:999px;padding:4px 12px;color:var(--mu);font-size:.8rem}
+.sub button.on{border-color:var(--or);color:var(--or);font-weight:700}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px 14px;align-items:end}
+.f{display:grid;gap:3px;font-size:.78rem;color:var(--mu)}
+.f b{display:flex;justify-content:space-between;font-weight:600}
+.f b i{font-style:normal;color:var(--tx)}
+.f input[type=range]{width:100%;accent-color:var(--or)}
+.f select,.f input[type=text],textarea{background:#0b0918;border:1px solid var(--ln);border-radius:8px;padding:7px;width:100%}
+.f input[type=color]{width:100%;height:36px;border:1px solid var(--ln);border-radius:8px;background:#0b0918;padding:2px}
+.chk{display:flex;gap:8px;align-items:center;color:var(--mu);font-size:.84rem;min-height:38px}
+.btns{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.btns .bt{min-height:38px}
+.fala{display:grid;grid-template-columns:1fr auto;gap:10px;height:100%}
+.fala textarea{height:100%;min-height:0;resize:none}
+.fala .lado{display:flex;flex-direction:column;gap:6px;min-width:150px}
+.dica{color:var(--mu);font-size:.78rem;margin:4px 0 0}
+.icones{display:flex;flex-wrap:wrap;gap:4px}
+.icones button,.icones label{width:38px;height:38px;display:grid;place-items:center;background:var(--pn2);border:1px solid var(--ln);border-radius:8px;font-size:1.15rem;cursor:pointer}
+.icones .on{border-color:var(--or)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chips button{background:var(--pn2);border:1px solid var(--ln);border-radius:999px;padding:5px 10px;font-size:.8rem;color:var(--mu)}
+.chips button.on{border-color:var(--or);color:var(--tx)}
+.esc{display:none}
+#toast{position:fixed;left:50%;bottom:290px;transform:translateX(-50%);background:var(--or);color:#24130a;font-weight:700;padding:8px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+#toast.on{opacity:1}
+@media (max-width:760px){
+  #app{grid-template-columns:minmax(0,1fr);grid-template-areas:"palco" "doca"}
+  #cam{display:none}
+  #ferr .so-retrato{display:block}
+  #ferr button{font-size:.72rem}
+  #painel{height:236px}
+  #painel .lista{padding:0;overflow:visible}
+  #painel .barra{padding:6px 0 0}
+  #st{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="cam">
+    <div class="tit">Camadas <small class="dica">a de cima fica na frente</small></div>
+    <div class="lista" id="lista"></div>
+    <div class="barra" id="barra"></div>
+  </aside>
+  <section id="palco">
+    <div id="topo">
+      <button class="bt pri" data-a="falar">▶ Falar</button>
+      <button class="bt" data-a="parar">■ Parar</button>
+      <button class="bt rec" data-a="gravar" id="bRec">● Gravar</button>
+      <button class="bt mini" data-a="desfazer" aria-label="Desfazer" title="Desfazer">↶</button>
+      <button class="bt mini" data-a="refazer" aria-label="Refazer" title="Refazer">↷</button>
+      <button class="bt" data-a="formato" id="bFmt">16:9</button>
+      <button class="bt" data-a="fundo" id="bFundo">Fundo</button>
+      <label class="chk"><input type="checkbox" id="guias"> Guias</label>
+      <span id="st">Termux: desconectado</span>
+    </div>
+    <div id="tela"><canvas id="cv"></canvas></div>
+  </section>
+  <section id="doca">
+    <div id="painel"></div>
+    <nav id="ferr">
+      <button class="so-retrato" data-t="camadas">Camadas</button>
+      <button data-t="camada">Camada</button>
+      <button data-t="anim">Animação</button>
+      <button data-t="balao">Balão</button>
+      <button data-t="fala">Fala</button>
+      <button data-t="efeitos">Efeitos</button>
+      <button data-t="voz">Voz</button>
+    </nav>
+  </section>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="fPng" accept="image/*" multiple class="esc">
+<input type="file" id="fAud" accept="audio/*" class="esc">
+<input type="file" id="fImp" accept=".json,application/json" class="esc">
+<input type="file" id="fIco" accept="image/*" class="esc">
+<input type="file" id="fPose" accept="image/*" class="esc">
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KEY = "palco-cfg"; // mesmos dados do Palco da Ficha da Tamaki
+const DEF = {url:"http://127.0.0.1:8765", motor:"termux", voice:"pf_dora", speed:1.05, pause:0.4, bg:"check", gain:4, thr:0.15, guides:1, text:"", layers:[], folders:[], sel:null, fmt:"16:9",
+  bal:{on:1, lock:0, estilo:"rpg", fundo:"#06050f", opF:1, borda:"#ffffff", texto:"#ffffff", fonte:"pixel", tam:3.2, alinh:"left", digitar:1, nome:"", nomeCor:"#ff9f45", rabo:"baixo", raboX:.25, seguir:"", cam:0,
+    pos:{"16:9":{x:50, y:82, w:94, h:28}, "9:16":{x:50, y:84, w:94, h:24}}},
+  fx:{zoom:1, px:0, py:0, rot:0, reage:0, dur:1, intro:"titulo", titulo:"TAMAKI SHION", sub:"", cor:"#ff9f45", gIntro:0, gEntrada:1, gSaida:1}};
+const PRESETS = [["natural", "Natural"], ["doce", "Mais doce"], ["call", "Call (microfone)"], ["radio", "Rádio"], ["original", "Sem efeito"]];
+const PRESET = {natural: {tom: 0, vel: 1, variar: .4, pausa: 1, calor: 2, clareza: 2, brilho: 1, sala: .05, vol: 1, comp: 1},
+  doce: {tom: 1.5, vel: 1.02, variar: .5, pausa: 1, calor: 1, clareza: 3, brilho: 3, sala: .06, vol: 1, comp: 1},
+  call: {tom: 0, vel: 1, variar: .3, pausa: 1, calor: 3, clareza: 4, brilho: -2, sala: 0, vol: 1.1, comp: 1},
+  radio: {tom: 0, vel: 1, variar: .2, pausa: 1, calor: -5, clareza: 6, brilho: -6, sala: 0, vol: 1.1, comp: 1},
+  original: {tom: 0, vel: 1, variar: 0, pausa: 1, calor: 0, clareza: 0, brilho: 0, sala: 0, vol: 1, comp: 0}};
+const VOZDEF = {azVoz: "pt-BR-FranciscaNeural", azEstilo: "", elVoz: "", elModelo: "eleven_multilingual_v2", elEst: .45, elSim: .8, elStyle: .15, navVoz: ""};
+const PAPEIS = [["always","Sempre visível"],["open","Boca aberta (falando)"],["closed","Boca fechada (parada)"],["eyeopen","Olho aberto"],["eyeclosed","Olho fechado (piscar)"]];
+const PARADA = [["none","Nenhuma"],["bob","Flutuar"],["sway","Balançar"],["breathe","Respirar"],["flicker","Cintilar"]];
+const FALANDO = [["none","Nenhuma"],["hop","Pular"],["shake","Tremer"],["grow","Esticar"],["tilt","Inclinar"]];
+const TIPOS = [["personagem","Personagem"],["decoracao","Decoração"],["cenario","Cenário"]];
+const NOMEPOSE = {parada: "Parada", falando: "Falando", falando2: "Falando 2"};
+const ICONES = ["📁","⭐","🎀","👀","👄","💇","👕","🖐","🌙","🔥","🐔","🐱","🎮","📚","💬","✨"];
+const FUNDOS = {check: "Fundo: xadrez", chroma: "Fundo: verde", app: "Fundo: roxo"};
+const copia = o => JSON.parse(JSON.stringify(o));
+const PDEF = {trans: "pulo", dur: 180, segurar: 250, troca: "tempo", vel: 150, amp: 3, juntas: 1};
+function normalizar(c){
+  c.folders = c.folders || []; c.layers = c.layers || []; const novas = [];
+  c.layers.forEach(L => { if (!L.tipo) L.tipo = "decoracao"; if (L.tipo == "personagem") { if (!L.pose) L.pose = "parada"; if (!L.pers) L.pers = "Tamaki"; if (L.poses) { for (const k of ["falando", "falando2"]) { const P = L.poses[k]; if (P && P.img) novas.push([L, Object.assign(copia(L), {id: Math.random().toString(36).slice(2, 9), img: P.img, name: L.name + (k == "falando" ? " · Falando" : " · Falando 2"), pose: k, x: L.x + (+P.dx || 0), y: L.y + (+P.dy || 0), w: L.w * (+P.k || 1), poses: undefined})]); } delete L.poses; } } if (L.op == null) L.op = 1; L.lock = L.lock ? 1 : 0; if (L.parent && !c.folders.some(f => f.id == L.parent)) L.parent = null; });
+  novas.forEach(([L, n]) => c.layers.splice(c.layers.indexOf(L) + 1, 0, n));
+  c.pers = c.pers || {}; c.layers.filter(L => L.tipo == "personagem").forEach(L => { c.pers[L.pers] = Object.assign(copia(PDEF), c.pers[L.pers] || {}); });
+  const ob = c.bal ? copia(c.bal) : {}; if (!c.bal) { if (c.cap != null) ob.on = c.cap; if (c.capsz) ob.tam = c.capsz; }
+  c.bal = Object.assign(copia(DEF.bal), ob); c.bal.pos = Object.assign(copia(DEF.bal.pos), ob.pos || {});
+  c.fx = Object.assign(copia(DEF.fx), c.fx || {});
+  c.voz = Object.assign(copia(VOZDEF), c.voz || {}); c.ed = Object.assign(copia(PRESET.natural), c.ed || {});
+  return c;
+}
+let subV = "motor", subP = "parada", subA = "mov", verPose = null, mostrada = {}, ultimoAlto = -1e9;
+const estados = {};
+let cfg = normalizar(copia(DEF)), imgs = {}, aba = "camada", subB = "pos", subE = "cam", tm, hist = [], fut = [];
+const cv = $("#cv"), g = cv.getContext("2d");
+const chavesImgs = () => [...cfg.layers.flatMap(L => [L.img, ...(L.poses ? Object.values(L.poses).filter(Boolean).map(p => p.img) : [])]), ...cfg.folders.map(f => f.iconImg).filter(Boolean)];
+const persDe = L => cfg.pers[L.pers] || (cfg.pers[L.pers] = copia(PDEF));
+const irmas = L => cfg.layers.filter(x => x != L && x.tipo == "personagem" && x.pers == L.pers);
+const paradaDe = nome => cfg.layers.find(x => x.tipo == "personagem" && x.pers == nome && x.pose == "parada");
+const GEO = ["x", "y", "w", "r", "px", "py", "flip", "parent", "idle", "ia", "is", "talk", "ta", "op"];
+function copiarParada(o){ const p = paradaDe(o.pers); if (p && p != o) GEO.forEach(k => o[k] = p[k]); }
+function proximaPose(nome, excl){ const tem = new Set(cfg.layers.filter(x => x != excl && x.tipo == "personagem" && x.pers == nome).map(x => x.pose)); return ["parada", "falando", "falando2"].find(p => !tem.has(p)) || "falando2"; }
+
+/* ---------- guardar e desfazer ---------- */
+const idb = () => new Promise((ok, no) => { const r = indexedDB.open("palco", 1); r.onupgradeneeded = () => r.result.createObjectStore("img"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+const idbPut = async (k, v) => { const d = await idb(); return new Promise(ok => { const t = d.transaction("img", "readwrite"); t.objectStore("img").put(v, k); t.oncomplete = ok; }); };
+const idbGet = async k => { const d = await idb(); return new Promise(ok => { const r = d.transaction("img").objectStore("img").get(k); r.onsuccess = () => ok(r.result); r.onerror = () => ok(null); }); };
+const foto = () => JSON.stringify(Object.assign({}, cfg, {sel: null}));
+function gravarLS(){ try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) {} }
+function salvar(){ clearTimeout(tm); tm = setTimeout(() => { gravarLS(); const s = foto(); if (hist[hist.length - 1] !== s) { hist.push(s); if (hist.length > 60) hist.shift(); fut = []; } }, 300); }
+function restaurar(s){ const sel = cfg.sel; cfg = JSON.parse(s); cfg.sel = sel; gravarLS(); tamanho(); topo(); desenharLista(); painel(); }
+function desfazer(){ if (hist.length < 2) return toast("Nada para desfazer"); fut.push(hist.pop()); restaurar(hist[hist.length - 1]); toast("Desfeito"); }
+function refazer(){ if (!fut.length) return toast("Nada para refazer"); const s = fut.pop(); hist.push(s); restaurar(s); toast("Refeito"); }
+const uid = () => Math.random().toString(36).slice(2, 9);
+function carregarImg(k, blob){ const im = new Image(); im.src = URL.createObjectURL(blob); imgs[k] = im; return im; }
+function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 1600); }
+function aviso(t){ const el = $("#msg"); if (el) el.textContent = t; else toast(t); }
+
+/* ---------- camadas, pastas e seleção ---------- */
+const pasta = id => cfg.folders.find(f => f.id == id);
+const fDe = L => L.parent ? pasta(L.parent) : null;
+const travada = L => !!(L.lock || (fDe(L) && fDe(L).lock));
+const visivel = L => !!(L.vis && !(fDe(L) && !fDe(L).vis));
+const tipoSel = () => cfg.sel == "balao" ? "bal" : String(cfg.sel || "").startsWith("f:") ? "pasta" : "camada";
+const camada = () => tipoSel() == "camada" ? cfg.layers.find(l => l.id == cfg.sel) : null;
+const pastaSel = () => tipoSel() == "pasta" ? pasta(cfg.sel.slice(2)) : null;
+function geo(L){ const f = fDe(L), s = f ? +f.s || 1 : 1; return {X: 50 + (L.x - 50) * s + (f ? +f.dx || 0 : 0), Y: 50 + (L.y - 50) * s + (f ? +f.dy || 0 : 0), w: L.w * s, s}; }
+
+/* ---------- áudio e voz ---------- */
+let ac, an, buf, saida, cadV = null, cur = null, sp = false, fake = 0, lvl = 0, piscaAte = 0, proxPisca = 0, cap = "", capIni = 0, capDur = 1;
+const FRASE = "Oi, gente! Aqui é a Tamaki. Vocês não vão acreditar no que aconteceu hoje...";
+let chaves = {}; try { chaves = JSON.parse(localStorage.getItem("palco-chaves")) || {}; } catch (e) {}
+const guardarChaves = () => { try { localStorage.setItem("palco-chaves", JSON.stringify(chaves)); } catch (e) {} };
+const lerLS = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) || f; } catch (e) { return f; } };
+let vozesAz = lerLS("palco-vozes-az", [{id: "pt-BR-FranciscaNeural", n: "Francisca (feminina)", est: []}, {id: "pt-BR-ThalitaNeural", n: "Thalita (feminina)", est: []}, {id: "pt-BR-AntonioNeural", n: "Antonio (masculina)", est: []}]);
+let vozesEl = lerLS("palco-vozes-el", []);
+function impulso(ctx){ const n = Math.floor(ctx.sampleRate * 1.4), b = ctx.createBuffer(2, n, ctx.sampleRate); for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3); } return b; }
+function cadeia(ctx){ // editor de voz: graves, clareza, brilho, compressor, sala e volume
+  const ent = ctx.createGain(), f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter(), f3 = ctx.createBiquadFilter(), cp = ctx.createDynamicsCompressor(), seco = ctx.createGain(), mol = ctx.createGain(), rv = ctx.createConvolver(), out = ctx.createGain();
+  f1.type = "lowshelf"; f1.frequency.value = 250; f2.type = "peaking"; f2.frequency.value = 3000; f2.Q.value = .9; f3.type = "highshelf"; f3.frequency.value = 7500; rv.buffer = impulso(ctx);
+  ent.connect(f1); f1.connect(f2); f2.connect(f3); f3.connect(cp); cp.connect(seco); seco.connect(out); cp.connect(rv); rv.connect(mol); mol.connect(out);
+  const ajustar = () => { const E = cfg.ed; f1.gain.value = +E.calor; f2.gain.value = +E.clareza; f3.gain.value = +E.brilho;
+    cp.threshold.value = E.comp ? -24 : 0; cp.ratio.value = E.comp ? 3.5 : 1; cp.knee.value = 12; cp.attack.value = .005; cp.release.value = .2;
+    seco.gain.value = 1 - E.sala * .5; mol.gain.value = +E.sala; out.gain.value = +E.vol; };
+  ajustar(); return {ent, out, ajustar};
+}
+function audio(){
+  if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); an = ac.createAnalyser(); an.fftSize = 512; buf = new Uint8Array(an.fftSize); an.connect(ac.destination); saida = ac.createMediaStreamDestination(); an.connect(saida); cadV = cadeia(ac); cadV.out.connect(an); }
+  if (ac.state == "suspended") ac.resume(); return ac;
+}
+document.addEventListener("pointerdown", () => { try { audio(); } catch (e) {} }, {passive: true});
+function legenda(t, ms){ cap = t || ""; capIni = performance.now(); capDur = Math.max(ms, 500); }
+function pararAtual(){ if (cur) { const s = cur; cur = null; try { s.stop(); } catch (e) {} } if (window.speechSynthesis) speechSynthesis.cancel(); sp = false; }
+function parar(){ fila.length = 0; cap = ""; pararAtual(); }
+// muda o tom e a velocidade sem deixar a voz de "esquilo" (WSOLA + reamostragem)
+function esticar(x, a, sr){
+  const N = sr > 32000 ? 2048 : 1024, Hs = N / 4, Ha = Hs / a, S = N / 8, w = new Float32Array(N);
+  for (let i = 0; i < N; i++) w[i] = .5 - .5 * Math.cos(2 * Math.PI * i / N);
+  const L = Math.ceil(x.length * a) + N, y = new Float32Array(L), nm = new Float32Array(L);
+  let pin = 0, pout = 0, prev = -1;
+  while (Math.round(pin) + N + S < x.length && pout + N < L) {
+    let st = Math.round(pin);
+    if (prev >= 0) { const ref = prev + Hs; let bv = -Infinity, bd = 0;
+      for (let d = -S; d <= S; d += 4) { const s0 = st + d; if (s0 < 0 || s0 + N > x.length || ref + N / 2 > x.length) continue; let c = 0; for (let i = 0; i < N / 2; i += 8) c += x[ref + i] * x[s0 + i]; if (c > bv) { bv = c; bd = d; } }
+      st = Math.max(0, st + bd); }
+    for (let i = 0; i < N; i++) { y[pout + i] += x[st + i] * w[i]; nm[pout + i] += w[i]; }
+    prev = st; pin += Ha; pout += Hs;
+  }
+  for (let i = 0; i < L; i++) if (nm[i] > 1e-3) y[i] /= nm[i];
+  return y.subarray(0, Math.min(L, Math.round(x.length * a)));
+}
+function processar(ab, st, vel){
+  if (Math.abs(st) < .01 && Math.abs(vel - 1) < .005) return ab;
+  const n = ab.length, x = new Float32Array(n), nc = ab.numberOfChannels;
+  for (let c = 0; c < nc; c++) { const d = ab.getChannelData(c); for (let i = 0; i < n; i++) x[i] += d[i] / nc; }
+  const f = Math.pow(2, st / 12), z = esticar(x, f / vel, ab.sampleRate), m = Math.max(1, Math.floor(z.length / f)), y = new Float32Array(m);
+  for (let i = 0; i < m; i++) { const p = i * f, j = Math.floor(p), r = p - j; y[i] = (z[j] || 0) * (1 - r) + (z[j + 1] || 0) * r; }
+  const out = audio().createBuffer(1, m, ab.sampleRate); out.copyToChannel(y, 0); return out;
+}
+const escXml = s => String(s).replace(/[<>&'"]/g, c => ({"<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;"}[c]));
+const variar = () => { const k = +cfg.ed.variar || 0; return {st: (Math.random() - .5) * 1.2 * k, v: 1 + (Math.random() - .5) * .08 * k}; };
+async function azure(t, va){
+  if (!chaves.az) throw new Error("Falta a chave do Azure");
+  const V = cfg.voz, st = +cfg.ed.tom + va.st, pct = Math.round((cfg.ed.vel * va.v - 1) * 100), est = V.azEstilo;
+  const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="pt-BR"><voice name="${escXml(V.azVoz)}">${est ? `<mstts:express-as style="${escXml(est)}">` : ""}<prosody pitch="${st >= 0 ? "+" : ""}${st.toFixed(1)}st" rate="${pct >= 0 ? "+" : ""}${pct}%">${escXml(t)}</prosody>${est ? "</mstts:express-as>" : ""}</voice></speak>`;
+  const r = await fetch(`https://${chaves.azReg || "brazilsouth"}.tts.speech.microsoft.com/cognitiveservices/v1`, {method: "POST", headers: {"Ocp-Apim-Subscription-Key": chaves.az, "Content-Type": "application/ssml+xml", "X-Microsoft-OutputFormat": "audio-24khz-96kbitrate-mono-mp3"}, body: ssml});
+  if (!r.ok) throw new Error("O Azure respondeu " + r.status + (r.status == 401 ? " (chave ou região errada)" : ""));
+  return r.blob();
+}
+async function eleven(t){
+  if (!chaves.el) throw new Error("Falta a chave do ElevenLabs"); const V = cfg.voz; if (!V.elVoz) throw new Error("Escolha uma voz do ElevenLabs");
+  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(V.elVoz)}?output_format=mp3_44100_128`, {method: "POST", headers: {"xi-api-key": chaves.el, "Content-Type": "application/json"},
+    body: JSON.stringify({text: t, model_id: V.elModelo, voice_settings: {stability: +V.elEst, similarity_boost: +V.elSim, style: +V.elStyle, use_speaker_boost: true}})});
+  if (!r.ok) throw new Error("O ElevenLabs respondeu " + r.status + (r.status == 401 ? " (chave errada)" : ""));
+  return r.blob();
+}
+async function obterAudio(t){ // devolve o áudio já com tom e velocidade; null para a voz do aparelho
+  const m = cfg.motor, E = cfg.ed, va = variar(); let blob, st = +E.tom + va.st, vel = E.vel * va.v;
+  if (m == "termux") { const r = await fetch(cfg.url + "/tts", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text: t, voice: cfg.voice, speed: cfg.speed * vel, pause: cfg.pause})}); if (!r.ok) throw new Error("O Termux respondeu " + r.status); blob = await r.blob(); vel = 1; }
+  else if (m == "azure") { blob = await azure(t, va); st = 0; vel = 1; }
+  else if (m == "eleven") blob = await eleven(t);
+  else return null;
+  return processar(await audio().decodeAudioData(await blob.arrayBuffer()), st, vel);
+}
+function tocarBuffer(ab, txt){ return new Promise(ok => { const c = audio(); pararAtual(); legenda(txt, ab.duration * 1000); const s = c.createBufferSource(); s.buffer = ab; s.connect(cadV.ent); cur = s; s.onended = () => { if (cur === s) cur = null; ok(); }; s.start(); }); }
+async function tocar(blob, txt){ const ab = await audio().decodeAudioData(await blob.arrayBuffer()); return tocarBuffer(processar(ab, +cfg.ed.tom, +cfg.ed.vel), txt); }
+const vozesNav = () => window.speechSynthesis ? speechSynthesis.getVoices().filter(v => /^pt/i.test(v.lang)).sort((a, b) => (/BR/i.test(b.lang) ? 1 : 0) - (/BR/i.test(a.lang) ? 1 : 0)) : [];
+function vozNavegador(t){ return new Promise(ok => {
+  if (!window.speechSynthesis) return ok();
+  const u = new SpeechSynthesisUtterance(t); u.lang = "pt-BR";
+  const vs = speechSynthesis.getVoices(), v = vs.find(v => v.voiceURI == cfg.voz.navVoz) || vs.find(v => /pt[-_]BR/i.test(v.lang)); if (v) u.voice = v;
+  u.rate = (cfg.speed || 1) * (+cfg.ed.vel || 1); u.pitch = Math.max(.1, Math.min(2, Math.pow(2, (+cfg.ed.tom || 0) / 12)));
+  u.onstart = () => { sp = true; legenda(t, t.length * 70 / u.rate); }; u.onend = u.onerror = () => { sp = false; ok(); };
+  speechSynthesis.speak(u);
+}); }
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => { if (aba == "voz" && subV == "motor" && cfg.motor == "browser") painel(); };
+const fila = []; let ocupado = false;
+const espera = ms => new Promise(r => setTimeout(r, ms));
+function falar(texto){ (texto || "").split(/\n+/).map(s => s.trim()).filter(Boolean).forEach(t => fila.push(t)); bomba(); }
+async function bomba(){ if (ocupado) return; ocupado = true;
+  while (fila.length) { const t = fila.shift(); try { await dizer(t); } catch (e) { aviso("Erro: " + (e.message || e)); } if (fila.length) await espera(cfg.pause * 1000 * (+cfg.ed.pausa || 1)); }
+  ocupado = false; }
+function msgErro(e){ const m = e && e.message || String(e); return /fetch|network|load failed/i.test(m) ? "Não consegui conectar (" + ({termux: "o comando palco está ligado no Termux?", azure: "confira a internet e a região"}[cfg.motor] || "confira a internet") + ")" : m; }
+async function dizer(t){
+  if (cfg.motor != "browser") { try { const ab = await obterAudio(t); if (ab) return await tocarBuffer(ab, t); } catch (e) { aviso(msgErro(e) + ". Usei a voz do aparelho."); } }
+  await vozNavegador(t);
+}
+function ouvir(){ audio(); parar(); falar(FRASE); }
+function wav(ab){
+  const n = ab.length, ch = ab.numberOfChannels, sr = ab.sampleRate, dv = new DataView(new ArrayBuffer(44 + n * ch * 2)), w = (o, s) => [...s].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); dv.setUint32(4, 36 + n * ch * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, ch, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr * ch * 2, true); dv.setUint16(32, ch * 2, true); dv.setUint16(34, 16, true); w(36, "data"); dv.setUint32(40, n * ch * 2, true);
+  let o = 44; const d = [...Array(ch)].map((_, c) => ab.getChannelData(c));
+  for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) { const v = Math.max(-1, Math.min(1, d[c][i])); dv.setInt16(o, v < 0 ? v * 32768 : v * 32767, true); o += 2; }
+  return new Blob([dv], {type: "audio/wav"});
+}
+function baixar(blob, nome){ const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); }
+async function baixarFala(){
+  if (cfg.motor == "browser") return aviso("A voz do aparelho não pode ser baixada. Escolha o Azure, o ElevenLabs ou o Kokoro.");
+  const linhas = (cfg.text || FRASE).split(/\n+/).map(s => s.trim()).filter(Boolean); aviso("Gerando o áudio…");
+  try {
+    const ps = []; for (const l of linhas) ps.push(await obterAudio(l));
+    const sr = ps[0].sampleRate, gap = Math.round(sr * cfg.pause * (+cfg.ed.pausa || 1)), tot = ps.reduce((s, b) => s + b.length + gap, Math.round(sr * .3)) + sr;
+    const off = new OfflineAudioContext(1, tot, sr), cd = cadeia(off); cd.out.connect(off.destination);
+    let t0 = .15; for (const b of ps) { const s = off.createBufferSource(); s.buffer = b; s.connect(cd.ent); s.start(t0); t0 += (b.length + gap) / sr; }
+    baixar(wav(await off.startRendering()), "fala-tamaki.wav"); aviso("Áudio baixado: fala-tamaki.wav");
+  } catch (e) { aviso("Não consegui gerar: " + msgErro(e)); }
+}
+async function carregarVozes(){
+  const m = cfg.motor;
+  try {
+    let msg = "";
+    if (m == "azure") { if (!chaves.az) return aviso("Coloque a chave do Azure primeiro.");
+      const r = await fetch(`https://${chaves.azReg || "brazilsouth"}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {headers: {"Ocp-Apim-Subscription-Key": chaves.az}}); if (!r.ok) throw new Error("o Azure respondeu " + r.status);
+      vozesAz = (await r.json()).filter(v => /^pt-BR/i.test(v.Locale)).map(v => ({id: v.ShortName, n: (v.LocalName || v.DisplayName) + (v.Gender == "Female" ? " (feminina)" : v.Gender == "Male" ? " (masculina)" : ""), est: v.StyleList || []}));
+      localStorage.setItem("palco-vozes-az", JSON.stringify(vozesAz)); msg = vozesAz.length + " vozes em português carregadas.";
+    } else if (m == "eleven") { if (!chaves.el) return aviso("Coloque a chave do ElevenLabs primeiro.");
+      const r = await fetch("https://api.elevenlabs.io/v1/voices", {headers: {"xi-api-key": chaves.el}}); if (!r.ok) throw new Error("o ElevenLabs respondeu " + r.status);
+      vozesEl = (await r.json()).voices.map(v => ({id: v.voice_id, n: v.name + (v.labels && v.labels.gender ? " (" + v.labels.gender + ")" : "")}));
+      localStorage.setItem("palco-vozes-el", JSON.stringify(vozesEl)); if (!cfg.voz.elVoz && vozesEl[0]) cfg.voz.elVoz = vozesEl[0].id; msg = vozesEl.length + " vozes carregadas.";
+    }
+    salvar(); painel(); aviso(msg);
+  } catch (e) { aviso("Não consegui carregar as vozes: " + msgErro(e)); }
+}
+let es = null, esUrl = "", online = false;
+function selo(){ $("#st").textContent = online ? "Termux: conectado" : "Termux: desconectado"; $("#st").style.color = online ? "var(--te)" : "var(--mu)"; }
+function conectar(){
+  if (es && esUrl == cfg.url) return; if (es) es.close(); esUrl = cfg.url; online = false; selo();
+  try { es = new EventSource(cfg.url + "/events"); } catch (e) { return; }
+  es.onopen = () => { online = true; selo(); }; es.onerror = () => { online = false; selo(); };
+  es.onmessage = e => { try { const d = JSON.parse(e.data); if (d.cmd == "stop") parar(); else if (d.text) falar(d.text); } catch (_) {} };
+}
+async function testar(){ aviso("Testando…");
+  try { const d = await (await fetch(cfg.url + "/ping")).json(); aviso(d.kokoro ? "Servidor ok, voz Kokoro pronta." : "Servidor ok, mas sem Kokoro: vai usar a voz do navegador."); }
+  catch (e) { aviso("Não achei o servidor. Ele está rodando no Termux?"); } }
+const CMD = () => { const b = location.origin + "/Tamaki_Personagem/"; return "cd ~ && curl -fsSL " + b + "instalar-voz.sh -o instalar-voz.sh && bash instalar-voz.sh " + b; };
+
+/* ---------- efeitos: câmera, transições e intros ---------- */
+let A = [], hold = false, camAtual = {z: 1, px: 0, py: 0, rot: 0};
+const TEMPO = {impacto: 600, tremor: 700, balanco: 2000, zoomlento: 4000, pan: 4000, entrada: 1000, saida: 1000, flash: 600, cortina: 1000, iris: 1000, intro: 2500};
+function disparar(k){
+  if (k == "entrada") hold = false;
+  A.push({k, t0: performance.now(), dur: TEMPO[k] * (+cfg.fx.dur || 1), z0: +cfg.fx.zoom || 1, px0: +cfg.fx.px || 0, estilo: cfg.fx.intro});
+}
+function fim(a){
+  if (a.k == "zoomlento") { cfg.fx.zoom = +Math.min(3, a.z0 * 1.25).toFixed(2); salvar(); if (aba == "efeitos") painel(); }
+  else if (a.k == "pan") { cfg.fx.px = +Math.min(50, a.px0 + 15).toFixed(1); salvar(); if (aba == "efeitos") painel(); }
+  else if (a.k == "saida") hold = true;
+}
+function camera(now){
+  const f = cfg.fx; let z = +f.zoom || 1, px = +f.px || 0, py = +f.py || 0, rot = +f.rot || 0;
+  for (const a of A) {
+    const p = Math.min(1, (now - a.t0) / a.dur), e = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+    if (a.k == "impacto") { const q = p < .25 ? p / .25 : 1 - (p - .25) / .75; z *= 1 + .25 * q; }
+    else if (a.k == "tremor") { const q = (1 - p) * 3; px += (Math.random() - .5) * q; py += (Math.random() - .5) * q; rot += (Math.random() - .5) * q * .8; }
+    else if (a.k == "balanco") rot += Math.sin(p * Math.PI * 4) * 3 * (1 - p * .5);
+    else if (a.k == "zoomlento") z = a.z0 * (1 + .25 * e);
+    else if (a.k == "pan") px = a.px0 + 15 * e;
+  }
+  if (f.reage) z *= 1 + lvl * .06;
+  return {z, px, py, rot};
+}
+function cena(x, y, comCam){ // ponto da tela -> ponto da cena (sem a câmera)
+  if (!comCam) return [x, y];
+  const W = cv.width, H = cv.height, c = camAtual, a = -c.rot * Math.PI / 180;
+  let dx = x - W / 2, dy = y - H / 2; [dx, dy] = [dx * Math.cos(a) - dy * Math.sin(a), dx * Math.sin(a) + dy * Math.cos(a)];
+  return [dx / c.z + W / 2 + c.px / 100 * W, dy / c.z + H / 2 + c.py / 100 * H];
+}
+function sobreposicoes(now, W, H){
+  for (const a of A) {
+    const p = Math.min(1, (now - a.t0) / a.dur); g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+    if (a.k == "entrada") { g.fillStyle = `rgba(0,0,0,${1 - p})`; g.fillRect(0, 0, W, H); }
+    else if (a.k == "saida") { g.fillStyle = `rgba(0,0,0,${p})`; g.fillRect(0, 0, W, H); }
+    else if (a.k == "flash") { g.fillStyle = `rgba(255,255,255,${(1 - p) * .9})`; g.fillRect(0, 0, W, H); }
+    else if (a.k == "cortina") { g.fillStyle = "#000"; if (p < .5) g.fillRect(0, 0, W * p * 2, H); else g.fillRect(W * (p - .5) * 2, 0, W, H); }
+    else if (a.k == "iris") { const R = Math.hypot(W, H) / 2, r = p < .5 ? R * (1 - p * 2) : R * ((p - .5) * 2); g.beginPath(); g.rect(0, 0, W, H); g.arc(W / 2, H / 2, Math.max(0, r), 0, Math.PI * 2); g.fillStyle = "#000"; g.fill("evenodd"); }
+    else if (a.k == "intro") intro(a, p, W, H);
+    g.restore();
+  }
+  if (hold && !A.some(a => a.k == "entrada")) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = "#000"; g.fillRect(0, 0, W, H); }
+}
+function intro(a, p, W, H){
+  const f = cfg.fx, env = Math.max(0, Math.min(1, p / .15, (1 - p) / .15)), m = Math.min(W, H), cor = f.cor || "#ff9f45", T = f.titulo || "";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  if (a.estilo == "impacto") {
+    g.globalAlpha = env; g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+    g.translate(W / 2, H / 2); g.rotate(p * .6); g.fillStyle = cor; const R = Math.hypot(W, H);
+    for (let i = 0; i < 24; i++) { g.rotate(Math.PI * 2 / 24); g.beginPath(); g.moveTo(0, 0); g.lineTo(-m * .06, -R); g.lineTo(m * .06, -R); g.closePath(); g.fill(); }
+    g.setTransform(1, 0, 0, 1, 0, 0); const sh = (1 - p) * 10, tx = W / 2 + (Math.random() - .5) * sh, ty = H / 2 + (Math.random() - .5) * sh;
+    g.font = `${m * .08}px 'Press Start 2P', monospace`; g.lineWidth = m * .022; g.lineJoin = "round"; g.strokeStyle = "#120f24"; g.strokeText(T, tx, ty); g.fillStyle = "#fff"; g.fillText(T, tx, ty);
+  } else if (a.estilo == "faixa") {
+    const off = p < .15 ? -W * Math.pow(1 - p / .15, 3) : p > .85 ? -W * Math.pow((p - .85) / .15, 3) : 0, h = m * .15, y = H * .68;
+    g.fillStyle = cor; g.fillRect(off, y, W * .72, h); g.fillStyle = "#120f24"; g.fillRect(off, y + h, W * .72, m * .012);
+    g.textAlign = "left"; g.fillStyle = "#1a0f05"; g.font = `700 ${h * .4}px Georgia, serif`; g.fillText(T, off + m * .05, y + h * (f.sub ? .38 : .5));
+    if (f.sub) { g.font = `800 ${h * .22}px Nunito, system-ui, sans-serif`; g.fillText(f.sub, off + m * .05, y + h * .76); }
+  } else {
+    g.fillStyle = `rgba(0,0,0,${.65 * env})`; g.fillRect(0, 0, W, H); g.globalAlpha = env;
+    g.fillStyle = cor; g.font = `700 ${m * .1 * (.9 + .1 * env)}px Georgia, serif`; g.fillText(T, W / 2, H * .46);
+    if (f.sub) { g.fillStyle = "#fff"; g.font = `800 ${m * .045}px Nunito, system-ui, sans-serif`; g.fillText(f.sub, W / 2, H * .46 + m * .11); }
+  }
+}
+
+/* ---------- balão de fala ---------- */
+let balR = null, ancora = {};
+const hexA = (h, a) => { const n = parseInt(String(h || "#000000").slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+function fonte(B, fs, peso){ return B.fonte == "pixel" ? `${fs}px 'Press Start 2P', monospace` : B.fonte == "redonda" ? `800 ${fs}px Nunito, system-ui, sans-serif` : `${peso || ""} ${fs}px Georgia, serif`; }
+function rabo(B, bx, by, w, h){
+  const L = Math.min(w, h) * .4, b = Math.min(w, h) * .12, rx = bx + w * B.raboX, ry = by + h * B.raboX;
+  return {baixo: [[rx - b, by + h - 2], [rx + b, by + h - 2], [rx - b * .3, by + h + L]], cima: [[rx - b, by + 2], [rx + b, by + 2], [rx - b * .3, by - L]],
+    esquerda: [[bx + 2, ry - b], [bx + 2, ry + b], [bx - L, ry + b * .3]], direita: [[bx + w - 2, ry - b], [bx + w - 2, ry + b], [bx + w + L, ry + b * .3]]}[B.rabo] || null;
+}
+function balao(now, W, H, base){
+  const B = cfg.bal; balR = null; if (!B.on) return;
+  let txt = "", ph = false;
+  if (cap) { const el = now - capIni; if (el > capDur + 2500) cap = ""; else txt = B.digitar ? cap.slice(0, Math.floor(cap.length * Math.min(1, el / capDur))) : cap; }
+  if (!cap && cfg.guides && !rec) { txt = "A fala da Tamaki aparece aqui."; ph = true; }
+  const P = B.pos[cfg.fmt]; let cx = +P.x, cy = +P.y; const an2 = B.seguir && ancora[B.seguir]; if (an2) { cx += an2.x; cy += an2.y; }
+  const w = P.w / 100 * W, h = P.h / 100 * H, bx = cx / 100 * W - w / 2, by = cy / 100 * H - h / 2;
+  balR = {x: bx, y: by, w, h, cam: !!B.cam};
+  const marcado = cfg.sel == "balao" && cfg.guides && !rec;
+  if (!txt && !marcado) return;
+  g.save(); if (B.cam) base(); else g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalAlpha = ph ? .55 : 1;
+  const m = Math.min(W, H), pix = B.fonte == "pixel", fs = B.tam / 100 * m * (pix ? 1 : 1.35), lh = fs * (pix ? 1.8 : 1.3), fundo = hexA(B.fundo, B.opF);
+  if (B.estilo == "rpg") { g.fillStyle = fundo; g.fillRect(bx, by, w, h); g.strokeStyle = B.borda; g.lineWidth = 3; g.strokeRect(bx + 3, by + 3, w - 6, h - 6); g.strokeRect(bx + 10, by + 10, w - 20, h - 20); }
+  else if (B.estilo == "balao") {
+    const r = Math.min(h / 2, m * .045), t = rabo(B, bx, by, w, h), tri = () => { g.beginPath(); g.moveTo(...t[0]); g.lineTo(...t[2]); g.lineTo(...t[1]); g.closePath(); };
+    g.fillStyle = fundo; g.strokeStyle = B.borda; g.lineWidth = 4;
+    if (t) { tri(); g.fill(); }
+    g.beginPath(); g.roundRect ? g.roundRect(bx, by, w, h, r) : g.rect(bx, by, w, h); g.fill(); g.stroke();
+    if (t) { g.beginPath(); g.moveTo(...t[0]); g.lineTo(...t[2]); g.lineTo(...t[1]); g.stroke(); tri(); g.fill(); }
+  }
+  else if (B.estilo == "faixa") { g.fillStyle = fundo; g.fillRect(bx, by, w, h); g.fillStyle = B.nomeCor; g.fillRect(bx, by, w, m * .008); }
+  if (B.nome) {
+    g.font = fonte(B, fs * .85, 700); const tw = g.measureText(B.nome).width, pad = fs * .5, ph2 = fs * 1.7, nx = bx + fs * .6, ny = by - ph2 * .7;
+    g.fillStyle = B.nomeCor; g.fillRect(nx, ny, tw + pad * 2, ph2); g.fillStyle = "#1a0f05"; g.textBaseline = "middle"; g.textAlign = "left"; g.fillText(B.nome, nx + pad, ny + ph2 / 2);
+  }
+  if (txt) {
+    const pad = B.estilo == "rpg" ? fs * 1.3 : fs * .9, max = w - pad * 2;
+    g.font = fonte(B, fs); g.textBaseline = "top"; g.textAlign = B.alinh == "center" ? "center" : "left";
+    const lin = []; let l = "";
+    for (const p of txt.split(" ")) { const n = l ? l + " " + p : p; if (g.measureText(n).width > max && l) { lin.push(l); l = p; } else l = n; }
+    if (l) lin.push(l);
+    const x = B.alinh == "center" ? bx + w / 2 : bx + pad, nmax = Math.max(1, Math.floor((h - pad * 2 + lh - fs) / lh));
+    lin.slice(0, nmax).forEach((s, i) => {
+      const y = by + pad + i * lh;
+      if (B.estilo == "texto") { g.lineJoin = "round"; g.lineWidth = fs * .22; g.strokeStyle = B.borda; g.strokeText(s, x, y); }
+      g.fillStyle = B.texto; g.fillText(s, x, y);
+    });
+  }
+  if (marcado) { g.globalAlpha = 1; g.setLineDash([10, 8]); g.strokeStyle = "#5fd9cf"; g.lineWidth = 3; g.strokeRect(bx - 5, by - 5, w + 10, h + 10); g.setLineDash([]); }
+  g.restore();
+}
+
+/* ---------- gravar vídeo ---------- */
+let rec = null, partes = [], parando = false;
+function gravar(){
+  if (rec) {
+    if (parando) return;
+    if (cfg.fx.gSaida) { parando = true; disparar("saida"); setTimeout(() => rec && rec.stop(), TEMPO.saida * (+cfg.fx.dur || 1) + 150); }
+    else rec.stop();
+    return;
+  }
+  if (!window.MediaRecorder || !cv.captureStream) { alert("Este navegador não grava vídeo. Use o Chrome."); return; }
+  audio(); hold = false;
+  const s = cv.captureStream(30); saida.stream.getAudioTracks().forEach(t => s.addTrack(t));
+  const tipo = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(m => MediaRecorder.isTypeSupported(m));
+  rec = new MediaRecorder(s, tipo ? {mimeType: tipo} : {}); partes = [];
+  rec.ondataavailable = e => { if (e.data.size) partes.push(e.data); };
+  rec.onstop = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(partes, {type: "video/webm"})); a.download = "palco-tamaki.webm"; a.click(); rec = null; parando = false; hold = false; $("#bRec").classList.remove("on"); $("#bRec").textContent = "● Gravar"; };
+  rec.start(); $("#bRec").classList.add("on"); $("#bRec").textContent = "■ Parar gravação";
+  if (cfg.fx.gEntrada) disparar("entrada");
+  if (cfg.fx.gIntro) disparar("intro");
+  if (cfg.motor == "browser") toast("A voz do navegador não entra na gravação");
+}
+
+/* ---------- desenho ---------- */
+function tamanho(){ const v = cfg.fmt == "9:16"; cv.width = v ? 720 : 1280; cv.height = v ? 1280 : 720; caber(); }
+function caber(){ const t = $("#tela"), w = t.clientWidth - 16, h = t.clientHeight - 16; if (w <= 0 || h <= 0) return;
+  const k = Math.min(w / cv.width, h / cv.height); cv.style.width = Math.floor(cv.width * k) + "px"; cv.style.height = Math.floor(cv.height * k) + "px"; }
+new ResizeObserver(caber).observe(document.querySelector("#tela"));
+function tick(now){
+  requestAnimationFrame(tick);
+  const t = now / 1000, W = cv.width, H = cv.height;
+  let alvo = 0;
+  if (cur && an) { an.getByteTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) { const d = (buf[i] - 128) / 128; s += d * d; } alvo = Math.min(1, Math.sqrt(s / buf.length) * cfg.gain); }
+  else if (sp) alvo = .45 + .4 * Math.abs(Math.sin(t * 13));
+  else if (now < fake) alvo = .5 + .5 * Math.sin(t * 9);
+  lvl += (alvo - lvl) * .45;
+  if (lvl > cfg.thr) ultimoAlto = now;
+  const falando = now - ultimoAlto < 150;
+  mostrada = {};
+  const quais = {};
+  for (const L of cfg.layers) if (L.tipo == "personagem") (quais[L.pers] || (quais[L.pers] = {}))[L.pose] = 1;
+  for (const nome in quais) {
+    const P = persDe({pers: nome}), e = estados[nome] || (estados[nome] = {fala: false, t: -1e9, de: "parada", visto: "parada"});
+    const fala = now - ultimoAlto < (+P.segurar || 0) + 30;
+    if (fala != e.fala) { e.fala = fala; e.t = now; e.de = e.visto; }
+    let al = "parada";
+    if (fala) { const q = quais[nome], dois = P.troca == "volume" ? lvl > cfg.thr * 2.2 : Math.floor((now - e.t) / (+P.vel || 150)) % 2 == 1;
+      al = q.falando && q.falando2 ? (dois ? "falando2" : "falando") : q.falando ? "falando" : q.falando2 ? "falando2" : "parada"; }
+    const vendo = verPose && verPose.pers == nome; if (vendo) al = verPose.pose;
+    e.alvo = al; e.P = P; e.p = vendo ? 1 : Math.min(1, (now - e.t) / Math.max(1, +P.dur || 1)); e.visto = al;
+  }
+  if (now > proxPisca) { piscaAte = now + 140; proxPisca = now + 2500 + Math.random() * 3000; }
+  const pisca = now < piscaAte;
+  for (const a of A.slice()) if (now > a.t0 + a.dur) { A.splice(A.indexOf(a), 1); fim(a); }
+  const c = camera(now); camAtual = c;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.clearRect(0, 0, W, H);
+  const bg = rec && cfg.bg == "check" ? "chroma" : cfg.bg;
+  if (bg == "chroma") { g.fillStyle = "#00b140"; g.fillRect(0, 0, W, H); } else if (bg == "app") { g.fillStyle = "#120f24"; g.fillRect(0, 0, W, H); }
+  const base = () => { g.setTransform(1, 0, 0, 1, 0, 0); g.translate(W / 2, H / 2); g.rotate(c.rot * Math.PI / 180); g.scale(c.z, c.z); g.translate(-W / 2 - c.px / 100 * W, -H / 2 - c.py / 100 * H); };
+  ancora = {}; const soma = {};
+  for (const L of cfg.layers) {
+    let dx = 0, dy = 0, dr = 0, ds = 1, op = L.op ?? 1; const k = L.is * 2, G = geo(L);
+    if (L.idle == "bob") dy += Math.sin(t * k) * L.ia * .5;
+    else if (L.idle == "sway") dr += Math.sin(t * k) * L.ia;
+    else if (L.idle == "breathe") ds += Math.sin(t * k) * L.ia / 100;
+    else if (L.idle == "flicker") op *= 1 - (L.ia / 10) * (.5 + .5 * Math.sin(t * k * 3 + Math.sin(t * k * 7)));
+    if (L.talk == "hop") dy -= lvl * L.ta;
+    else if (L.talk == "shake") dx += (Math.random() - .5) * lvl * L.ta;
+    else if (L.talk == "grow") ds += lvl * L.ta / 100;
+    else if (L.talk == "tilt") dr += Math.sin(t * 12) * lvl * L.ta;
+    ancora[L.id] = {x: G.X + dx, y: G.Y + dy};
+    if (L.parent) { const s = soma[L.parent] || (soma[L.parent] = {x: 0, y: 0, n: 0}); s.x += G.X + dx; s.y += G.Y + dy; s.n++; }
+    let im = imgs[L.img], ox = 0, oy = 0, kk = 1;
+    if (L.tipo == "personagem") {
+      const e = estados[L.pers]; if (!e) continue;
+      const P = e.P, tr = P.trans, p = e.p, troca = p < 1, amp = +P.amp || 0; let mostra = L.pose == e.alvo;
+      if (tr == "fade" && troca) { if (mostra) op *= p; else if (L.pose == e.de) { mostra = true; op *= 1 - p; } }
+      if (!mostra) continue;
+      if (troca && tr == "pulo") { dy -= amp * Math.sin(p * Math.PI); ds *= 1 + .012 * amp * Math.sin(p * Math.PI); }
+      else if (troca && tr == "pulsar") ds *= 1 + .02 * amp * Math.sin(p * Math.PI);
+      else if (troca && tr == "deslize") { dy += amp * (1 - p); op *= p; }
+    }
+    if (!visivel(L) || !im || !im.complete || !im.naturalWidth) continue;
+    if ((!L.tipo || L.tipo == "decoracao") && ((L.role == "open" && !falando) || (L.role == "closed" && falando) || (L.role == "eyeopen" && pisca) || (L.role == "eyeclosed" && !pisca))) continue;
+    mostrada[L.id] = {im, ox, oy, kk};
+    const w = G.w * kk / 100 * W, h = w * im.naturalHeight / im.naturalWidth;
+    base(); g.globalAlpha = Math.max(0, Math.min(1, op));
+    g.translate((G.X + ox + dx) / 100 * W, (G.Y + oy + dy) / 100 * H); g.rotate((L.r + dr) * Math.PI / 180); g.scale((L.flip ? -1 : 1) * ds, ds);
+    g.drawImage(im, -L.px * w, -L.py * h, w, h);
+    const sel = L.id == cfg.sel, daPasta = L.parent && cfg.sel == "f:" + L.parent;
+    if (cfg.guides && !rec && (sel || daPasta)) { g.globalAlpha = 1; g.setLineDash([10, 8]); g.strokeStyle = sel ? "#5fd9cf" : "#f2b632"; g.lineWidth = 3 / c.z; g.strokeRect(-L.px * w, -L.py * h, w, h); g.setLineDash([]); if (sel) { g.fillStyle = "#ff9f45"; g.beginPath(); g.arc(0, 0, 9, 0, 7); g.fill(); } }
+  }
+  for (const k in soma) ancora["f:" + k] = {x: soma[k].x / soma[k].n, y: soma[k].y / soma[k].n};
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  balao(now, W, H, base);
+  sobreposicoes(now, W, H);
+}
+
+/* ---------- tocar no palco: escolher, arrastar e pinçar ---------- */
+const pontos = new Map(); let arr = null;
+function ponto(e){ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * cv.width, (e.clientY - r.top) / r.height * cv.height]; }
+function acertou(L, x, y){
+  const M = mostrada[L.id]; if (!M) return false; const im = M.im; if (!im || !im.naturalWidth) return false;
+  const W = cv.width, H = cv.height, G = geo(L), w = G.w * M.kk / 100 * W, h = w * im.naturalHeight / im.naturalWidth, a = -L.r * Math.PI / 180;
+  let px = x - (G.X + M.ox) / 100 * W, py = y - (G.Y + M.oy) / 100 * H; [px, py] = [px * Math.cos(a) - py * Math.sin(a), px * Math.sin(a) + py * Math.cos(a)];
+  if (L.flip) px = -px; px += L.px * w; py += L.py * h; return px >= 0 && py >= 0 && px <= w && py <= h;
+}
+function inicioArraste(){
+  const tp = tipoSel();
+  if (tp == "bal") { if (cfg.bal.lock) return toast("Balão travado 🔒"), null; const P = cfg.bal.pos[cfg.fmt]; return {o: P, x0: +P.x, y0: +P.y, w0: +P.w, h0: +P.h, cam: !!cfg.bal.cam}; }
+  if (tp == "pasta") { const f = pastaSel(); if (!f) return null; if (f.lock) return toast("Pasta travada 🔒"), null; return {o: f, x0: +f.dx || 0, y0: +f.dy || 0, s0: +f.s || 1, cam: true}; }
+  const L = camada(); if (!L) return null; if (travada(L)) return toast("Camada travada 🔒"), null;
+  return {o: L, x0: L.x, y0: L.y, w0: L.w, cam: true, s: geo(L).s, irm: L.tipo == "personagem" && persDe(L).juntas ? irmas(L).map(x => [x, x.x, x.y, x.w]) : []};
+}
+cv.addEventListener("pointerdown", e => {
+  cv.setPointerCapture(e.pointerId); pontos.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pontos.size == 1) {
+    const [x, y] = ponto(e); let alvo = null;
+    if (cfg.bal.on && !cfg.bal.lock && balR) { const [bx, by] = cena(x, y, balR.cam); if (bx >= balR.x && by >= balR.y && bx <= balR.x + balR.w && by <= balR.y + balR.h) alvo = "balao"; }
+    if (!alvo) { const [sx, sy] = cena(x, y, true), L = [...cfg.layers].reverse().find(L => visivel(L) && !travada(L) && acertou(L, sx, sy)); if (L) alvo = L.parent && cfg.sel == "f:" + L.parent ? cfg.sel : L.id; }
+    if (alvo && alvo != cfg.sel) selecionar(alvo, true);
+  }
+  const it = inicioArraste(); if (!it) { arr = null; return; }
+  arr = Object.assign(it, {cx: e.clientX, cy: e.clientY, d: 0});
+  if (pontos.size == 2) { const [a, b] = [...pontos.values()]; arr.d = Math.hypot(a[0] - b[0], a[1] - b[1]); }
+});
+cv.addEventListener("pointermove", e => {
+  if (!arr || !pontos.has(e.pointerId)) return; pontos.set(e.pointerId, [e.clientX, e.clientY]);
+  const r = cv.getBoundingClientRect(), z = arr.cam ? camAtual.z : 1, tp = tipoSel(), o = arr.o;
+  if (pontos.size == 2 && arr.d) {
+    const [a, b] = [...pontos.values()], k = Math.hypot(a[0] - b[0], a[1] - b[1]) / arr.d;
+    if (tp == "bal") { o.w = +Math.max(10, Math.min(100, arr.w0 * k)).toFixed(1); o.h = +Math.max(5, Math.min(70, arr.h0 * k)).toFixed(1); }
+    else if (tp == "pasta") o.s = +Math.max(.2, Math.min(3, arr.s0 * k)).toFixed(2);
+    else { o.w = +Math.max(2, Math.min(300, arr.w0 * k)).toFixed(1); (arr.irm || []).forEach(([x, , , w0]) => x.w = +(w0 * o.w / arr.w0).toFixed(1)); }
+  } else if (pontos.size == 1) {
+    const dx = (e.clientX - arr.cx) / r.width * 100 / z, dy = (e.clientY - arr.cy) / r.height * 100 / z;
+    if (tp == "pasta") { o.dx = +(arr.x0 + dx).toFixed(1); o.dy = +(arr.y0 + dy).toFixed(1); }
+    else if (tp == "bal") { o.x = +(arr.x0 + dx).toFixed(1); o.y = +(arr.y0 + dy).toFixed(1); }
+    else { o.x = +(arr.x0 + dx / arr.s).toFixed(1); o.y = +(arr.y0 + dy / arr.s).toFixed(1); (arr.irm || []).forEach(([x, x0, y0]) => { x.x = +(x0 + o.x - arr.x0).toFixed(1); x.y = +(y0 + o.y - arr.y0).toFixed(1); }); }
+  }
+  sincronizar();
+});
+const solta = e => { pontos.delete(e.pointerId); if (!pontos.size && arr) { arr = null; salvar(); } };
+cv.addEventListener("pointerup", solta); cv.addEventListener("pointercancel", solta);
+
+/* ---------- lista de camadas ---------- */
+const icone = f => f.iconImg && imgs[f.iconImg] ? `<img class="fi" src="${imgs[f.iconImg].src}" alt="">` : `<span class="fi">${esc(f.icon || "📁")}</span>`;
+const cad = (id, on) => `<button class="ic${on ? " lk" : " off"}" data-lock="${id}" aria-label="${on ? "Destravar" : "Travar"}">${on ? "🔒" : "🔓"}</button>`;
+const olho = (id, on) => `<button class="ic${on ? "" : " off"}" data-vis="${id}" aria-label="Mostrar ou esconder">👁</button>`;
+function linhaCamada(L, filho){
+  return `<div class="ly${filho ? " filho" : ""}${L.id == cfg.sel ? " on" : ""}" data-sel="${L.id}"><img class="th" src="${imgs[L.img] ? imgs[L.img].src : ""}" alt="">
+    <div class="nm">${esc(L.name)}<small>${L.tipo == "personagem" ? "🧍 " + esc(L.pers) + " · " + NOMEPOSE[L.pose] : L.tipo == "cenario" ? "🏞 Cenário" : (PAPEIS.find(p => p[0] == L.role) || PAPEIS[0])[1]} · ${Math.round((L.op ?? 1) * 100)}%</small></div>${cad(L.id, L.lock)}${olho(L.id, L.vis)}</div>`;
+}
+function linhaPasta(f){
+  const n = cfg.layers.filter(l => l.parent == f.id).length;
+  return `<div class="ly pasta${cfg.sel == "f:" + f.id ? " on" : ""}" data-sel="f:${f.id}">${icone(f)}<div class="nm">${esc(f.name)}<small>${n} ${n == 1 ? "camada" : "camadas"}</small></div>
+    <button class="ic" data-abre="${f.id}" aria-label="Abrir ou fechar a pasta">${f.open === 0 ? "▸" : "▾"}</button>${cad("f:" + f.id, f.lock)}${olho("f:" + f.id, f.vis)}</div>`;
+}
+function listaHTML(){
+  const B = cfg.bal, out = [`<div class="ly${cfg.sel == "balao" ? " on" : ""}" data-sel="balao"><span class="fi">💬</span><div class="nm">Balão de fala<small>${{rpg: "Caixa RPG", balao: "Balão com rabinho", faixa: "Faixa", texto: "Só texto"}[B.estilo]}${B.seguir ? " · seguindo" : ""}</small></div>${cad("balao", B.lock)}${olho("balao", B.on)}</div>`];
+  const feitas = new Set();
+  for (const L of [...cfg.layers].reverse()) {
+    const f = fDe(L);
+    if (f) { if (feitas.has(f.id)) continue; feitas.add(f.id); out.push(linhaPasta(f)); if (f.open !== 0) [...cfg.layers].reverse().filter(x => x.parent == f.id).forEach(x => out.push(linhaCamada(x, true))); }
+    else out.push(linhaCamada(L, false));
+  }
+  cfg.folders.filter(f => !feitas.has(f.id)).forEach(f => out.push(linhaPasta(f)));
+  if (!cfg.layers.length) out.push('<p class="vazio">Toque em + PNG e escolha as partes da Tamaki: corpo, cabeça, olhos, bocas, fundo…</p>');
+  return out.join("");
+}
+const BARRA = '<label class="add" for="fPng">+ PNG</label><button data-a="novapasta">+ Pasta</button><button data-a="renomear">Renomear</button><button data-a="dup">Duplicar</button><button data-a="sobe">▲ Frente</button><button data-a="desce">▼ Atrás</button><button data-a="apaga">Apagar</button>';
+function desenharLista(){ $("#lista").innerHTML = listaHTML(); $("#barra").innerHTML = BARRA; if (aba == "camadas") painel(); }
+function selecionar(id, doPalco){
+  if (id != cfg.sel) subP = "parada";
+  cfg.sel = id; desenharLista(); gravarLS();
+  const tp = tipoSel();
+  if (tp == "bal" && (aba == "camada" || aba == "anim")) aba = "balao";
+  else if (tp != "bal" && aba == "balao" && doPalco) aba = "camada";
+  if (aba != "camadas" && aba != "fala" && aba != "voz" && aba != "efeitos") painel();
+}
+async function adicionar(files){
+  const f = pastaSel();
+  for (const fl of files) { if (!/^image\//.test(fl.type)) continue; const id = uid(), img = uid(); await idbPut(img, fl); carregarImg(img, fl);
+    cfg.layers.push({id, img, name: fl.name.replace(/\.[^.]+$/, ""), x: 50, y: 50, w: 50, r: 0, px: .5, py: .5, vis: 1, flip: 0, op: 1, lock: 0, parent: f ? f.id : null, tipo: "decoracao", role: "always", idle: "none", ia: 3, is: 1, talk: "none", ta: 5}); cfg.sel = id; }
+  salvar(); desenharLista(); painel();
+}
+
+/* ---------- ações ---------- */
+async function acao(a, el){
+  const L = camada(), f = pastaSel(), tp = tipoSel();
+  const sempre = {
+    falar: () => { audio(); falar(cfg.text); }, parar: () => parar(), gravar, desfazer, refazer,
+    formato: () => { cfg.fmt = cfg.fmt == "16:9" ? "9:16" : "16:9"; tamanho(); topo(); salvar(); if (aba == "balao") painel(); },
+    fundo: () => { const o = Object.keys(FUNDOS); cfg.bg = o[(o.indexOf(cfg.bg) + 1) % o.length]; topo(); salvar(); },
+    teste: () => { fake = performance.now() + 4000; }, ping: testar, audio: () => $("#fAud").click(), exp: exportar, imp: () => $("#fImp").click(),
+    cmd: async () => { try { await navigator.clipboard.writeText(CMD()); aviso("Comando copiado. Cole no Termux."); } catch (e) { prompt("Copie o comando:", CMD()); } },
+    ouvir, vozes: carregarVozes, baixarfala: baixarFala,
+    testebal: () => legenda("Gente, nem te conto! Este é um teste do balão de fala.", 3000),
+    balpadrao: () => { cfg.bal.pos[cfg.fmt] = copia(DEF.bal.pos[cfg.fmt]); cfg.bal.seguir = ""; salvar(); painel(); desenharLista(); },
+    camcentro: () => { Object.assign(cfg.fx, {zoom: 1, px: 0, py: 0, rot: 0}); salvar(); painel(); },
+    limpar: () => { A = []; hold = false; },
+    novapasta: () => { const n = (prompt("Nome da pasta:", "Pasta " + (cfg.folders.length + 1)) || "").trim(); if (!n) return;
+      const nf = {id: uid(), name: n, icon: "📁", iconImg: null, vis: 1, lock: 0, open: 1, dx: 0, dy: 0, s: 1}; cfg.folders.push(nf);
+      if (L && !L.parent) L.parent = nf.id; cfg.sel = "f:" + nf.id; aba = "camada"; salvar(); desenharLista(); painel(); toast(L ? "Pasta criada com a camada selecionada" : "Pasta criada"); },
+    renomear: () => { const o = L || f; if (!o) return toast("Escolha uma camada ou pasta"); const n = (prompt("Novo nome:", o.name) || "").trim(); if (!n) return; o.name = n; salvar(); desenharLista(); painel(); }
+  };
+  if (sempre[a]) return sempre[a]();
+  if (tp == "pasta" && f) {
+    if (a == "apaga") { if (!el.dataset.s) { el.dataset.s = 1; el.textContent = "Confirmar"; return; }
+      cfg.layers.forEach(x => { if (x.parent == f.id) x.parent = null; }); cfg.folders = cfg.folders.filter(x => x != f); cfg.sel = null; salvar(); desenharLista(); painel(); toast("Pasta apagada; as camadas ficaram na lista"); }
+    else if (a == "dup" || a == "sobe" || a == "desce") toast("Faça isso nas camadas da pasta");
+    return;
+  }
+  if (tp == "bal") { if (a == "apaga" || a == "dup" || a == "sobe" || a == "desce") toast("O balão fica sempre na frente; use o olho para esconder"); return; }
+  if (!L) return toast("Escolha uma camada");
+  if (a == "novapose" || a == "trocaimg") { $("#fPose").dataset.modo = a; return $("#fPose").click(); }
+  if (a == "dup") { const n = Object.assign({}, L, {id: uid(), name: L.name + " 2", x: L.x + 3, y: L.y + 3, lock: 0, poses: L.poses ? copia(L.poses) : undefined}); cfg.layers.splice(cfg.layers.indexOf(L) + 1, 0, n); cfg.sel = n.id; salvar(); desenharLista(); painel(); }
+  else if (a == "sobe" || a == "desce") { const i = cfg.layers.indexOf(L), j = i + (a == "sobe" ? 1 : -1); if (j < 0 || j >= cfg.layers.length) return; [cfg.layers[i], cfg.layers[j]] = [cfg.layers[j], cfg.layers[i]]; salvar(); desenharLista(); }
+  else if (a == "apaga") { if (!el.dataset.s) { el.dataset.s = 1; el.textContent = "Confirmar"; return; }
+    cfg.layers = cfg.layers.filter(x => x != L); if (cfg.bal.seguir == L.id) cfg.bal.seguir = ""; cfg.sel = null; salvar(); desenharLista(); painel(); }
+  else if (a == "centro") { L.x = 50; L.y = 50; sincronizar(); salvar(); }
+}
+
+/* ---------- painéis de baixo ---------- */
+const opt = (a, v) => a.map(([k, n]) => `<option value="${k}"${k == v ? " selected" : ""}>${n}</option>`).join("");
+const rg = (at, k, rot, min, max, st, v) => `<label class="f"><b>${rot}<i>${v}</i></b><input type="range" data-${at}="${k}" min="${min}" max="${max}" step="${st}" value="${v}"></label>`;
+const sl = (at, k, rot, a, v) => `<label class="f"><b>${rot}</b><select data-${at}="${k}">${opt(a, v)}</select></label>`;
+const tx = (at, k, rot, v, ph) => `<label class="f"><b>${rot}</b><input type="text" data-${at}="${k}" value="${esc(v)}" placeholder="${esc(ph || "")}"></label>`;
+const co = (at, k, rot, v) => `<label class="f"><b>${rot}</b><input type="color" data-${at}="${k}" value="${esc(v)}"></label>`;
+const ck = (at, k, rot, v) => `<label class="chk"><input type="checkbox" data-${at}="${k}" ${v ? "checked" : ""}> ${rot}</label>`;
+const subs = (nome, atual, op) => `<div class="sub">${op.map(([k, n]) => `<button data-sub="${nome}:${k}" class="${k == atual ? "on" : ""}">${n}</button>`).join("")}</div>`;
+const semNada = '<p class="vazio">Escolha uma camada ou pasta na lista, ou toque nela no palco.</p>';
+function painelPasta(f){
+  const tem = cfg.layers.filter(l => l.parent == f.id || !l.parent);
+  return `<fieldset class="g"${f.lock ? " disabled" : ""}>${tx("p", "name", "Nome da pasta", f.name)}
+    ${rg("p", "dx", "Mover horizontal (%)", -60, 60, .1, +f.dx || 0)}${rg("p", "dy", "Mover vertical (%)", -60, 60, .1, +f.dy || 0)}${rg("p", "s", "Escala", .2, 3, .01, +f.s || 1)}</fieldset>
+    ${f.lock ? `<p class="dica">🔒 Pasta travada. <button class="bt" data-lock="f:${f.id}">Destravar</button></p>` : ""}
+    <div class="g" style="margin-top:8px"><div class="f"><b>Ícone da pasta</b><div class="icones">${ICONES.map(i => `<button data-icone="${i}" class="${!f.iconImg && f.icon == i ? "on" : ""}">${i}</button>`).join("")}<label for="fIco" title="Usar uma imagem">🖼</label></div></div>
+    <div class="f"><b>Camadas nesta pasta (toque para pôr ou tirar)</b><div class="chips">${tem.length ? tem.slice().reverse().map(l => `<button data-membro="${l.id}" class="${l.parent == f.id ? "on" : ""}">${esc(l.name)}</button>`).join("") : '<span class="dica">Nenhuma camada livre.</span>'}</div></div></div>`;
+}
+const PAINEIS = {
+  camadas: () => `<div class="lista">${listaHTML()}</div><div class="barra">${BARRA}</div>`,
+  camada: () => {
+    const tp = tipoSel(); if (tp == "bal") return PAINEIS.balao(); if (tp == "pasta") return pastaSel() ? painelPasta(pastaSel()) : semNada;
+    const L = camada(); if (!L) return semNada; const tr = travada(L), per = L.tipo == "personagem", tipo = sl("k", "tipo", "O que é na cena", TIPOS, L.tipo || "decoracao");
+    const trava = tr ? `<p class="dica">🔒 Travada${L.lock ? "" : " pela pasta"}. <button class="bt" data-lock="${L.lock ? L.id : "f:" + L.parent}">Destravar</button></p>` : "";
+    let extra = "", dica = "";
+    if (per) {
+      const nomes = [...new Set(cfg.layers.filter(x => x.tipo == "personagem").map(x => x.pers))], P = persDe(L);
+      const tem = new Set(cfg.layers.filter(x => x.tipo == "personagem" && x.pers == L.pers).map(x => x.pose));
+      extra = sl("k", "pers", "Personagem", [...nomes.map(n => [n, n]), ["__novo", "+ Novo personagem…"]], L.pers) + sl("k", "pose", "Esta camada é a pose", Object.entries(NOMEPOSE), L.pose);
+      dica = `<p class="dica">${esc(L.pers)}: ${Object.entries(NOMEPOSE).map(([k, n]) => n + (tem.has(k) ? " ✓" : " —")).join(" · ")}. Só a pose da vez aparece: Parada calada, Falando quando ela fala. Pose nova começa na posição e tamanho da Parada.</p>`;
+      extra += `<div class="btns">${ck("q", "juntas", "Mover as poses juntas", P.juntas)}<button class="bt pri" data-a="novapose">+ Pose (PNG)</button></div>`;
+    }
+    return `<fieldset${tr ? " disabled" : ""}><div class="g">${tipo}${extra}${tx("k", "name", "Nome", L.name)}
+      ${sl("k", "parent", "Pasta", [["", "(sem pasta)"], ...cfg.folders.map(f => [f.id, (f.icon || "📁") + " " + f.name])], L.parent || "")}
+      ${per || L.tipo == "cenario" ? "" : sl("k", "role", "Papel da peça", PAPEIS, L.role)}</div><div class="g">
+      ${rg("k", "op", "Opacidade", 0, 1, .01, L.op ?? 1)}${rg("k", "w", "Tamanho (%)", 2, 300, .5, L.w)}
+      ${rg("k", "x", "Horizontal (%)", -20, 120, .1, L.x)}${rg("k", "y", "Vertical (%)", -20, 120, .1, L.y)}${rg("k", "r", "Rotação (°)", -180, 180, 1, L.r)}
+      <div class="btns">${ck("k", "flip", "Espelhar", L.flip)}<button class="bt" data-a="centro">Centralizar</button><button class="bt" data-a="trocaimg">Trocar imagem</button></div></div></fieldset>${dica}${trava}`;
+  },
+  anim: () => {
+    const L = camada(); if (!L) return tipoSel() == "camada" ? semNada : '<p class="vazio">A animação é por camada. Escolha uma camada.</p>';
+    const per = L.tipo == "personagem", c = per ? subs("a", subA, [["mov", "Movimento"], ["trans", "Transição da fala"]]) : "";
+    if (per && subA == "trans") { const P = persDe(L); return c + `<div class="g">
+      ${sl("q", "trans", "Ao começar e ao parar de falar", [["corte", "Corte seco"], ["fade", "Esmaecer"], ["pulo", "Pulinho"], ["pulsar", "Pulsar"], ["deslize", "Deslizar"]], P.trans)}
+      ${rg("q", "dur", "Duração da transição (ms)", 40, 600, 10, P.dur)}${rg("q", "amp", "Intensidade", 0, 10, .1, P.amp)}
+      ${rg("q", "segurar", "Segurar a fala (ms)", 0, 700, 10, P.segurar)}
+      ${sl("q", "troca", "Falando ↔ Falando 2", [["tempo", "Alternar no ritmo"], ["volume", "Pelo volume (alto = Falando 2)"]], P.troca)}
+      ${rg("q", "vel", "Ritmo da troca (ms)", 60, 400, 5, P.vel)}
+      <div class="btns"><button class="bt pri" data-a="teste">▶ Testar fala</button></div></div>
+      <p class="dica">Vale para todas as poses de ${esc(L.pers)}. "Segurar a fala" evita a boca piscar entre uma palavra e outra.</p>`; }
+    return c + `<fieldset class="g"${travada(L) ? " disabled" : ""}>
+      ${sl("k", "idle", "Parada", PARADA, L.idle)}${rg("k", "ia", "Intensidade parada", 0, 10, .1, L.ia)}${rg("k", "is", "Velocidade parada", .2, 4, .1, L.is)}
+      ${sl("k", "talk", "Falando", FALANDO, L.talk)}${rg("k", "ta", "Intensidade falando", 0, 20, .5, L.ta)}
+      ${rg("k", "px", "Pivô horizontal", 0, 1, .01, L.px)}${rg("k", "py", "Pivô vertical", 0, 1, .01, L.py)}
+      <div class="btns"><button class="bt" data-a="teste">Testar movimento</button></div></fieldset>
+      <p class="dica">O pivô é a bolinha laranja, o ponto onde a peça gira. Para a cabeça, coloque no pescoço.</p>`;
+  },
+  balao: () => {
+    const B = cfg.bal, P = B.pos[cfg.fmt];
+    const alvos = [["", "Não seguir (fica parado)"], ...cfg.folders.map(f => ["f:" + f.id, "Pasta: " + f.name]), ...cfg.layers.slice().reverse().map(l => [l.id, "Camada: " + l.name])];
+    let c = subs("b", subB, [["pos", "Posição"], ["estilo", "Estilo"], ["texto", "Texto"]]);
+    if (subB == "pos") c += `<fieldset class="g"${B.lock ? " disabled" : ""}>
+      ${rg("bp", "x", "Horizontal (%)", -60, 160, .1, P.x)}${rg("bp", "y", "Vertical (%)", -60, 160, .1, P.y)}
+      ${rg("bp", "w", "Largura (%)", 10, 100, .5, P.w)}${rg("bp", "h", "Altura (%)", 5, 70, .5, P.h)}
+      ${sl("b", "seguir", "Acompanhar", alvos, B.seguir)}
+      <div class="btns">${ck("b", "cam", "Acompanha a câmera", B.cam)}<button class="bt" data-a="balpadrao">Voltar ao padrão</button></div></fieldset>
+      <div class="btns">${ck("b", "on", "Mostrar balão", B.on)}${ck("b", "lock", "Travar 🔒", B.lock)}<span class="dica">Posição guardada para o formato ${cfg.fmt}. Arraste no palco ou use dois dedos para o tamanho.</span></div>`;
+    else if (subB == "estilo") c += `<div class="g">${sl("b", "estilo", "Estilo", [["rpg", "Caixa RPG"], ["balao", "Balão com rabinho"], ["faixa", "Faixa"], ["texto", "Só texto"]], B.estilo)}
+      ${co("b", "fundo", "Cor do fundo", B.fundo)}${rg("b", "opF", "Opacidade do fundo", 0, 1, .01, B.opF)}${co("b", "borda", "Cor da borda / contorno", B.borda)}
+      ${sl("b", "rabo", "Rabinho", [["baixo", "Embaixo"], ["cima", "Em cima"], ["esquerda", "À esquerda"], ["direita", "À direita"], ["nenhum", "Sem rabinho"]], B.rabo)}
+      ${rg("b", "raboX", "Posição do rabinho", 0, 1, .01, B.raboX)}</div><p class="dica">O rabinho aparece no estilo "Balão com rabinho".</p>`;
+    else c += `<div class="g">${sl("b", "fonte", "Fonte", [["pixel", "Pixel (jogo)"], ["redonda", "Arredondada"], ["classica", "Clássica"]], B.fonte)}
+      ${rg("b", "tam", "Tamanho da letra", 1.5, 7, .1, B.tam)}${co("b", "texto", "Cor do texto", B.texto)}
+      ${sl("b", "alinh", "Alinhamento", [["left", "À esquerda"], ["center", "Centralizado"]], B.alinh)}
+      ${tx("b", "nome", "Plaquinha com nome", B.nome, "Ex.: Tamaki")}${co("b", "nomeCor", "Cor da plaquinha", B.nomeCor)}
+      <div class="btns">${ck("b", "digitar", "Letra por letra", B.digitar)}<button class="bt" data-a="testebal">Testar balão</button></div></div>`;
+    return c;
+  },
+  fala: () => `<div class="fala"><textarea data-c="text" placeholder="O que a Tamaki vai falar. Uma frase por linha.">${esc(cfg.text)}</textarea>
+    <div class="lado"><button class="bt pri" data-a="falar">▶ Falar</button><button class="bt" data-a="audio">Tocar áudio…</button><button class="bt" data-a="testebal">Testar balão</button><p class="dica" id="msg">Cada linha vira uma fala no balão.</p></div></div>`,
+  efeitos: () => {
+    const F = cfg.fx, bot = (k, n) => `<button class="bt" data-fx="${k}">${n}</button>`;
+    let c = subs("e", subE, [["cam", "Câmera"], ["trans", "Transições"], ["intro", "Intros"], ["grav", "Ao gravar"]]);
+    if (subE == "cam") c += `<div class="g">${rg("x", "zoom", "Zoom", .5, 3, .01, F.zoom)}${rg("x", "px", "Mover horizontal", -50, 50, .1, F.px)}${rg("x", "py", "Mover vertical", -50, 50, .1, F.py)}${rg("x", "rot", "Girar (°)", -45, 45, .5, F.rot)}</div>
+      <div class="btns" style="margin-top:6px">${bot("zoomlento", "Zoom lento")}${bot("impacto", "Impacto")}${bot("tremor", "Tremor")}${bot("pan", "Panorâmica")}${bot("balanco", "Balanço")}<button class="bt" data-a="camcentro">Centralizar</button>${ck("x", "reage", "Zoom reage à voz", F.reage)}</div>
+      <div class="g">${rg("x", "dur", "Duração dos efeitos", .3, 4, .1, F.dur)}</div>`;
+    else if (subE == "trans") c += `<div class="btns">${bot("entrada", "Entrada (do preto)")}${bot("saida", "Saída (para o preto)")}${bot("flash", "Flash")}${bot("cortina", "Cortina")}${bot("iris", "Círculo")}<button class="bt" data-a="limpar">Limpar tela</button></div>
+      <div class="g" style="margin-top:6px">${rg("x", "dur", "Duração", .3, 4, .1, F.dur)}</div><p class="dica">Toque durante a gravação para entrar no vídeo.</p>`;
+    else if (subE == "intro") c += `<div class="g">${sl("x", "intro", "Estilo da intro", [["titulo", "Cartão de título"], ["impacto", "Impacto (linhas)"], ["faixa", "Faixa com nome"]], F.intro)}
+      ${tx("x", "titulo", "Título", F.titulo)}${tx("x", "sub", "Subtítulo", F.sub, "Ex.: Episódio 1")}${co("x", "cor", "Cor", F.cor)}
+      ${rg("x", "dur", "Duração", .3, 4, .1, F.dur)}<div class="btns"><button class="bt pri" data-fx="intro">▶ Tocar intro</button></div></div>`;
+    else c += `<div class="btns">${ck("x", "gIntro", "Começar com a intro", F.gIntro)}${ck("x", "gEntrada", "Começar com a entrada (do preto)", F.gEntrada)}${ck("x", "gSaida", "Terminar com a saída (para o preto)", F.gSaida)}</div>
+      <p class="dica">Ao tocar em ● Gravar, a central faz isso sozinha. Com fundo xadrez, o vídeo sai em verde chroma para recortar no CapCut.</p>`;
+    return c;
+  },
+  voz: () => {
+    const V = cfg.voz, E = cfg.ed, m = cfg.motor, senha = (k, rot) => `<label class="f"><b>${rot}</b><input type="password" data-ch="${k}" value="${esc(chaves[k] || "")}" autocomplete="off" placeholder="cole aqui"></label>`;
+    let c = subs("v", subV, [["motor", "Voz"], ["editor", "Editor de voz"], ["termux", "Boca e Termux"]]);
+    if (subV == "motor") {
+      c += `<div class="g">${sl("c", "motor", "Motor de voz", [["azure", "Azure · vozes neurais"], ["eleven", "ElevenLabs · a mais natural"], ["termux", "Kokoro no Termux"], ["browser", "Voz do aparelho"]], m)}`;
+      if (m == "azure") { const at = vozesAz.find(v => v.id == V.azVoz);
+        c += senha("az", "Chave do Azure") + tx("ch", "azReg", "Região do Azure", chaves.azReg || "brazilsouth") + sl("v", "azVoz", "Voz", vozesAz.map(v => [v.id, v.n]), V.azVoz)
+          + (at && at.est && at.est.length ? sl("v", "azEstilo", "Jeito de falar", [["", "Normal"], ...at.est.map(x => [x, x])], V.azEstilo) : ""); }
+      else if (m == "eleven") c += senha("el", "Chave do ElevenLabs") + (vozesEl.length ? sl("v", "elVoz", "Voz", vozesEl.map(v => [v.id, v.n]), V.elVoz) : "")
+          + sl("v", "elModelo", "Modelo", [["eleven_multilingual_v2", "Multilíngue v2 (melhor)"], ["eleven_flash_v2_5", "Flash v2.5 (mais rápido)"]], V.elModelo)
+          + rg("v", "elEst", "Estabilidade", 0, 1, .01, V.elEst) + rg("v", "elSim", "Semelhança", 0, 1, .01, V.elSim) + rg("v", "elStyle", "Exagero / emoção", 0, 1, .01, V.elStyle);
+      else if (m == "termux") c += sl("c", "voice", "Voz do Kokoro", [["pf_dora", "Dora (feminina)"], ["pm_alex", "Alex (masculina)"], ["pm_santa", "Santa (masculina)"]], cfg.voice) + rg("c", "speed", "Velocidade do Kokoro", .6, 1.5, .05, cfg.speed);
+      else c += sl("v", "navVoz", "Voz do aparelho", [["", "Automática (português)"], ...vozesNav().map(v => [v.voiceURI, v.name + " · " + v.lang])], V.navVoz);
+      c += rg("c", "pause", "Pausa entre frases (s)", 0, 1.5, .05, cfg.pause) + `<div class="btns"><button class="bt pri" data-a="ouvir">▶ Ouvir a voz</button>${m == "azure" || m == "eleven" ? '<button class="bt" data-a="vozes">Carregar vozes</button>' : ""}</div></div>
+        <p class="dica" id="msg">${{azure: "Vozes neurais da Microsoft, bem mais naturais. O plano grátis dá 500 mil caracteres por mês. A chave fica só neste aparelho.", eleven: "A voz mais natural, mas é paga: no plano grátis não pode usar comercialmente. A chave fica só neste aparelho.", termux: "O Kokoro em português é limitado e soa mais robótico. O Editor de voz ajuda a suavizar.", browser: "Depende das vozes instaladas no aparelho. Não passa pelo editor, não entra na gravação e não pode ser baixada."}[m]}</p>`;
+    } else if (subV == "editor") {
+      c += `<div class="btns" style="margin-bottom:6px">${PRESETS.map(([k, n]) => `<button class="bt" data-preset="${k}">${n}</button>`).join("")}<button class="bt pri" data-a="ouvir">▶ Ouvir</button><button class="bt" data-a="baixarfala">Baixar fala (.wav)</button>${ck("ed", "comp", "Voz mais cheia", E.comp)}</div><div class="g">
+        ${rg("ed", "tom", "Tom (semitons)", -6, 6, .1, E.tom)}${rg("ed", "vel", "Velocidade", .7, 1.4, .01, E.vel)}${rg("ed", "variar", "Variação natural", 0, 1, .01, E.variar)}${rg("ed", "pausa", "Pausas entre frases (×)", .3, 3, .05, E.pausa)}
+        ${rg("ed", "calor", "Graves / calor (dB)", -9, 9, .5, E.calor)}${rg("ed", "clareza", "Clareza (dB)", -9, 9, .5, E.clareza)}${rg("ed", "brilho", "Brilho (dB)", -9, 9, .5, E.brilho)}${rg("ed", "sala", "Ambiente (sala)", 0, .6, .01, E.sala)}${rg("ed", "vol", "Volume", .2, 2, .01, E.vol)}
+</div>
+        <p class="dica" id="msg">Vale para Azure, ElevenLabs, Kokoro e para os áudios que você tocar. "Variação natural" muda um pouquinho o tom e o ritmo de cada frase, para não soar repetido. "Baixar fala" gera o roteiro da aba Fala em áudio para o CapCut.</p>`;
+    } else c += `<div class="g">
+      ${rg("c", "thr", "Limiar da boca", .02, .6, .01, cfg.thr)}${rg("c", "gain", "Ganho do volume", 1, 12, .5, cfg.gain)}
+      ${tx("c", "url", "Endereço do Termux", cfg.url)}
+      <div class="btns"><button class="bt" data-a="ping">Testar conexão</button><button class="bt" data-a="cmd">Copiar instalação</button></div>
+      <div class="btns"><button class="bt" data-a="exp">Exportar palco</button><button class="bt" data-a="imp">Importar palco</button></div></div>
+      <p class="dica" id="msg">No Termux: <code>palco</code> liga a voz aqui; <code>falar "oi gente"</code> faz a Tamaki falar. O limiar e o ganho controlam quando a boca abre.</p>`;
+    return c;
+  }
+};
+function painel(){ const Lp = camada(); verPose = aba == "camada" && Lp && Lp.tipo == "personagem" && Lp.pose != "parada" ? {pers: Lp.pers, pose: Lp.pose} : null; $("#painel").innerHTML = PAINEIS[aba](); document.querySelectorAll("#ferr button").forEach(b => b.classList.toggle("on", b.dataset.t == aba)); }
+function alvoDe(d){
+  if (d.ch) return [chaves, d.ch]; if (d.v) return [cfg.voz, d.v]; if (d.ed) return [cfg.ed, d.ed];
+  if (d.q) { const L = camada(); return [L && L.tipo == "personagem" ? persDe(L) : null, d.q]; }
+  if (d.k) return [camada(), d.k]; if (d.p) return [pastaSel(), d.p]; if (d.bp) return [cfg.bal.pos[cfg.fmt], d.bp];
+  if (d.b) return [cfg.bal, d.b]; if (d.x) return [cfg.fx, d.x]; if (d.c) return [cfg, d.c]; return [null];
+}
+function sincronizar(){ document.querySelectorAll("#painel input[type=range]").forEach(i => { const [o, k] = alvoDe(i.dataset); if (o && o[k] != null) { i.value = o[k]; const l = i.closest(".f").querySelector("i"); if (l) l.textContent = o[k]; } }); }
+function entrada(e){
+  const t = e.target, d = t.dataset; if (t.type == "file" || !t.closest("#painel")) return;
+  const [o, k] = alvoDe(d); if (!o) return;
+  let v = t.type == "checkbox" ? (t.checked ? 1 : 0) : t.type == "range" ? parseFloat(t.value) : t.value;
+  if (d.k == "parent") v = v || null;
+  if (d.b == "seguir") { // mantém o balão no mesmo lugar ao trocar quem ele acompanha
+    for (const fm in cfg.bal.pos) { const P = cfg.bal.pos[fm], ve = cfg.bal.seguir && ancora[cfg.bal.seguir], no = v && ancora[v];
+      if (ve) { P.x = +(+P.x + ve.x).toFixed(1); P.y = +(+P.y + ve.y).toFixed(1); } if (no) { P.x = +(P.x - no.x).toFixed(1); P.y = +(P.y - no.y).toFixed(1); } }
+  }
+  if (d.k == "pers" && v == "__novo") { if (e.type != "change") return; const n = (prompt("Nome do personagem:") || "").trim(); if (!n) { painel(); return; } v = n; }
+  if (d.k == "tipo" && o.tipo != v) {
+    if (v == "personagem") { o.pers = o.pers || (cfg.layers.find(x => x != o && x.tipo == "personagem") || {}).pers || "Tamaki"; o.pose = proximaPose(o.pers, o); if (o.pose != "parada") { copiarParada(o); toast("Virou a pose " + NOMEPOSE[o.pose] + ", na posição da Parada"); } persDe(o); }
+    if (v == "cenario") { cfg.layers.splice(cfg.layers.indexOf(o), 1); cfg.layers.unshift(o); toast("O cenário foi para o fundo da cena"); }
+  }
+  if (d.k == "pose" && o.pose != v && v != "parada") { o.pose = v; copiarParada(o); toast("A pose " + NOMEPOSE[v] + " começou na posição e tamanho da Parada"); }
+  if (d.k == "pers" && o.pers != v) { o.pers = v; persDe(o); }
+  if (d.k && o.tipo == "personagem" && persDe(o).juntas && GEO.includes(k) && o[k] != v) { // as outras poses acompanham
+    const ir = irmas(o);
+    if (k == "x" || k == "y") { const dd = v - o[k]; ir.forEach(x => x[k] = +(x[k] + dd).toFixed(1)); }
+    else if (k == "w") { const rr = v / (o.w || 1); ir.forEach(x => x.w = +(x.w * rr).toFixed(1)); }
+    else ir.forEach(x => x[k] = v);
+  }
+  o[k] = v;
+  const l = t.closest(".f") && t.closest(".f").querySelector("b i"); if (l) l.textContent = v;
+  if (d.c == "url") { clearTimeout(entrada.u); entrada.u = setTimeout(conectar, 600); }
+  if (d.ch) { guardarChaves(); return; }
+  if (d.ed && cadV) cadV.ajustar();
+  if (e.type == "change" && (d.c == "motor" || d.v == "azVoz")) painel();
+  if (["name", "role", "op", "parent", "estilo", "seguir", "on", "lock", "tipo", "pose", "pers"].includes(k) && (d.k || d.p || d.b)) { $("#lista").innerHTML = listaHTML(); if (e.type == "change" && (k == "parent" || k == "lock" || k == "seguir" || k == "tipo" || k == "pose" || k == "pers")) painel(); }
+  salvar();
+}
+document.addEventListener("input", entrada); document.addEventListener("change", entrada);
+document.addEventListener("click", e => {
+  const q = s => e.target.closest(s);
+  let b;
+  if ((b = q("button[data-a]"))) return acao(b.dataset.a, b);
+  if ((b = q("[data-fx]"))) return disparar(b.dataset.fx);
+  if ((b = q("[data-preset]"))) { Object.assign(cfg.ed, PRESET[b.dataset.preset]); if (cadV) cadV.ajustar(); salvar(); painel(); toast("Predefinição: " + b.textContent); return; }
+  if ((b = q("[data-icone]"))) { const f = pastaSel(); if (f) { f.icon = b.dataset.icone; f.iconImg = null; salvar(); desenharLista(); painel(); } return; }
+  if ((b = q("[data-membro]"))) { const f = pastaSel(), L = cfg.layers.find(l => l.id == b.dataset.membro); if (f && L) { L.parent = L.parent == f.id ? null : f.id; salvar(); desenharLista(); painel(); } return; }
+  if ((b = q("[data-lock]"))) { const id = b.dataset.lock, o = id == "balao" ? cfg.bal : id.startsWith("f:") ? pasta(id.slice(2)) : cfg.layers.find(l => l.id == id); if (o) { o.lock = o.lock ? 0 : 1; toast(o.lock ? "Travado 🔒" : "Destravado 🔓"); salvar(); desenharLista(); painel(); } return; }
+  if ((b = q("[data-vis]"))) { const id = b.dataset.vis; if (id == "balao") cfg.bal.on = cfg.bal.on ? 0 : 1; else { const o = id.startsWith("f:") ? pasta(id.slice(2)) : cfg.layers.find(l => l.id == id); if (o) o.vis = o.vis ? 0 : 1; } salvar(); desenharLista(); if (aba == "balao") painel(); return; }
+  if ((b = q("[data-abre]"))) { const f = pasta(b.dataset.abre); f.open = f.open === 0 ? 1 : 0; salvar(); desenharLista(); return; }
+  if ((b = q("[data-sel]"))) return selecionar(b.dataset.sel);
+  if ((b = q("[data-t]"))) { aba = b.dataset.t; painel(); return; }
+  if ((b = q("[data-sub]"))) { const [n, v] = b.dataset.sub.split(":"); if (n == "b") subB = v; else if (n == "a") subA = v; else if (n == "v") subV = v; else subE = v; painel(); }
+});
+function topo(){ $("#bFmt").textContent = cfg.fmt; $("#bFundo").textContent = FUNDOS[cfg.bg] || FUNDOS.check; $("#guias").checked = !!cfg.guides; }
+$("#guias").onchange = e => { cfg.guides = e.target.checked ? 1 : 0; salvar(); };
+$("#fPng").onchange = async e => { await adicionar(e.target.files); e.target.value = ""; };
+$("#fAud").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; audio(); try { await tocar(f, ""); } catch (x) { aviso("Não consegui tocar esse arquivo."); } };
+$("#fImp").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (f) importar(f); };
+$("#fPose").onchange = async e => {
+  const fl = e.target.files[0], L = camada(), modo = e.target.dataset.modo; e.target.value = ""; if (!fl || !L) return;
+  const k = uid(); await idbPut(k, fl); const im = carregarImg(k, fl);
+  if (modo == "novapose" && L.tipo == "personagem") {
+    const pose = proximaPose(L.pers), base = paradaDe(L.pers) || L;
+    const n = Object.assign(copia(base), {id: uid(), img: k, name: fl.name.replace(/\.[^.]+$/, ""), pose, lock: 0});
+    cfg.layers.splice(cfg.layers.indexOf(base) + 1, 0, n); cfg.sel = n.id; toast("Pose " + NOMEPOSE[pose] + " adicionada na posição da Parada");
+  } else L.img = k;
+  im.onload = () => { desenharLista(); painel(); }; salvar(); desenharLista(); painel();
+};
+$("#fIco").onchange = async e => { const fl = e.target.files[0], f = pastaSel(); e.target.value = ""; if (!fl || !f) return; const k = uid(); await idbPut(k, fl); const im = carregarImg(k, fl); f.iconImg = k; im.onload = () => { desenharLista(); painel(); }; salvar(); };
+
+/* ---------- cópia de segurança (mesmo formato do Palco da ficha) ---------- */
+const paraTexto = b => new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(b); });
+async function exportar(){
+  const im = {}, chaves = chavesImgs();
+  for (const k of chaves) if (!im[k]) { const b = await idbGet(k); if (b) im[k] = await paraTexto(b); }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify({palco: 1, cfg: Object.assign({}, cfg, {url: undefined, motor: undefined}), imgs: im})], {type: "application/json"}));
+  a.download = "palco-tamaki.json"; a.click(); aviso("Palco exportado.");
+}
+async function importar(f){
+  try { const o = JSON.parse(await f.text()); if (!o.palco || !Array.isArray(o.cfg.layers)) throw 0;
+    for (const k in o.imgs) { const b = await (await fetch(o.imgs[k])).blob(); await idbPut(k, b); carregarImg(k, b); }
+    cfg = normalizar(Object.assign({}, copia(DEF), o.cfg, {url: cfg.url, motor: cfg.motor})); salvar(); tamanho(); topo(); desenharLista(); painel(); aviso("Palco importado.");
+  } catch (e) { aviso("Arquivo inválido."); }
+}
+
+/* ---------- início ---------- */
+(async () => {
+  try { const s = localStorage.getItem(KEY); if (s) cfg = normalizar(Object.assign(copia(DEF), JSON.parse(s))); } catch (e) {}
+  const chaves = chavesImgs();
+  for (const k of chaves) { try { const b = await idbGet(k); if (b && !imgs[k]) carregarImg(k, b); } catch (e) {} }
+  const prontas = Object.values(imgs).map(im => new Promise(ok => { im.onload = im.onerror = ok; }));
+  tamanho(); topo(); desenharLista(); painel(); selo(); hist = [foto()]; requestAnimationFrame(tick);
+  await Promise.all(prontas); desenharLista();
+  try { conectar(); } catch (e) {}
+})();
+})();
+</script>
+</body>
+</html>
