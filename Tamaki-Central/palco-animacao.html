@@ -41,7 +41,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .top .btn{padding:6px 12px}
 .top select{flex:1;min-width:120px;width:auto;font-weight:600}
 
-.app{flex:1;min-height:0;display:grid;grid-template-rows:auto 1fr;gap:10px}
+.app{flex:1;min-height:0;display:grid;grid-template-rows:auto 1fr;grid-template-columns:minmax(0,1fr);gap:10px}
 .stage-wrap{padding:0 10px;display:flex;justify-content:center;align-items:flex-start}
 .stage{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;
   box-shadow:0 0 0 2px var(--line), 0 10px 40px -18px rgba(242,181,68,.55)}
@@ -97,6 +97,18 @@ textarea{resize:vertical;min-height:70px}
 .slot .acts{display:flex;gap:6px}
 .slot .acts button{flex:1;padding:5px 6px;font-size:.85rem}
 
+.setor{margin-bottom:16px}
+.setor-cab{display:flex;align-items:center;gap:8px;margin:14px 0 6px}
+.setor-cab h2{flex:1;margin:0!important}
+.cam{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px;margin:8px 0}
+.cam.on{border-color:var(--lamp);box-shadow:inset 0 0 0 1px var(--lamp)}
+.cam.off{opacity:.55}
+.cam .thumb{width:64px;height:64px;border-radius:10px;background:repeating-conic-gradient(var(--surface2) 0 25%, var(--surface) 0 50%) 0 0/14px 14px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;border:2px dashed var(--line)}
+.cam .thumb img{max-width:100%;max-height:100%;object-fit:contain}
+.cam .info{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cam .acts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.cam .acts button{padding:5px 10px;font-size:.85rem}
+.cam .ed{grid-column:1/-1;border-top:1px solid var(--line);padding-top:4px}
 .actions{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .actions button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
 .actions button .e{font-size:1.5rem;line-height:1}
@@ -155,6 +167,7 @@ textarea{resize:vertical;min-height:70px}
     <nav class="tabs" role="tablist">
       <button role="tab" data-tab="mov" aria-selected="true">🎭 Movimentos</button>
       <button role="tab" data-tab="img" aria-selected="false">🖼️ Imagens</button>
+      <button role="tab" data-tab="rosto" aria-selected="false">🙂 Rosto</button>
       <button role="tab" data-tab="partes" aria-selected="false">🪄 Partes</button>
       <button role="tab" data-tab="fala" aria-selected="false">🎙️ Fala</button>
       <button role="tab" data-tab="acoes" aria-selected="false">✨ Ações</button>
@@ -232,6 +245,14 @@ textarea{resize:vertical;min-height:70px}
           <button class="btn" id="bgClear">Remover imagem</button>
           <input type="file" id="bgFile" accept="image/*" hidden>
         </div>
+      </div>
+
+      <!-- ROSTO -->
+      <div class="pane" id="pane-rosto">
+        <h2>Camadas do rosto</h2>
+        <p class="hint">Olhos, bocas, sobrancelhas e o resto do rosto em camadas separadas, quantas quiser em cada setor. Elas ficam presas na personagem e acompanham tudo que ela faz. Se exportar cada camada com o mesmo tamanho de tela da Parada, ela já entra no lugar certo. Se for só o recorte, toque na miniatura e arraste no palco (dois dedos mudam o tamanho). Lembre de exportar a Parada sem o rosto, senão ele aparece duas vezes.</p>
+        <div id="rostoSetores"></div>
+        <input type="file" id="rostoFile" accept="image/png,image/*" multiple hidden>
       </div>
 
       <!-- PARTES -->
@@ -350,7 +371,7 @@ const DEFAULTS = {
   blinkEvery:4, size:1, x:640, y:720,
   bgMode:'cor', bgColor:'#2a2440',
   gain:3, thresh:0.14, rate:1, pitch:1.1, voice:'',
-  caption:true, actAmt:1, preset:'classico', partes:[]
+  caption:true, actAmt:1, preset:'classico', partes:[], rosto:[]
 };
 /* Vários atores: cada um com poses, movimentos e partes próprios */
 let ATORES = {lista:[{id:'principal', nome:'Tamaki'}], atual:'principal'};
@@ -361,7 +382,7 @@ const chaveImg = (id, k) => id === 'principal' ? 'img-' + k : id + '/img-' + k;
 function salvarAtores(){ try { localStorage.setItem('palco-atores', JSON.stringify(ATORES)); } catch(e) {} }
 function carregarS(id){
   let saved = null; try { saved = JSON.parse(localStorage.getItem(chaveCfg(id)) || 'null'); } catch(e) {}
-  const o = {...DEFAULTS, ...(saved || {})}; o.partes = Array.isArray(saved && saved.partes) ? saved.partes : []; return o;
+  const o = {...DEFAULTS, ...(saved || {})}; o.partes = Array.isArray(saved && saved.partes) ? saved.partes : []; o.rosto = Array.isArray(saved && saved.rosto) ? saved.rosto : []; return o;
 }
 let S = carregarS(ATORES.atual);
 let saveTimer;
@@ -758,6 +779,81 @@ pe.addEventListener('wheel', e => { e.preventDefault(); const f = fracao(e); zoo
 addEventListener('resize', () => desenharEditor());
 
 
+/* ---------- Rosto: camadas por setor, presas na personagem ---------- */
+const SETORES = [
+  {k:'olhos', nome:'👁️ Olhos', q:['aberto','piscando']},
+  {k:'boca', nome:'👄 Boca', q:['calada','falando','falando2']},
+  {k:'sobr', nome:'〰️ Sobrancelhas', q:['sempre']},
+  {k:'boch', nome:'🌸 Bochechas', q:['sempre']},
+  {k:'outros', nome:'✨ Outros (lágrima, suor, acessórios…)', q:['sempre']},
+];
+const ORDEM_ROSTO = ['boch', 'olhos', 'sobr', 'boca', 'outros']; // de trás para a frente
+const QUANDO = [['sempre','Sempre'],['calada','Só parada (boca fechada)'],['falando','Só falando (boca aberta)'],['falando2','Falando 2 (alterna com Falando)'],['aberto','Olho aberto (some ao piscar)'],['piscando','Olho fechado (só ao piscar)']];
+const rostoImgs = {}; let rostoSel = null;
+const escH = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rostoAberto = () => $('#pane-rosto').classList.contains('on');
+const camadaRosto = id => S.rosto.find(c => c.id === id) || null;
+const temFalando2 = () => S.rosto.some(c => c.vis !== false && c.quando === 'falando2' && rostoImgs[c.id]);
+async function carregarRostoPNG(){ for (const c of S.rosto) if (!rostoImgs[c.id]) { const b = await dbGet('rosto-' + c.id); if (b) { try { rostoImgs[c.id] = await blobToImage(b); } catch(e) {} } } renderRosto(); }
+function encaixe(c, im){ // mesma proporção da Parada: ocupa a tela inteira dela; senão, entra no meio do rosto
+  const ref = images.idle || images.talk; if (!ref) return;
+  if (Math.abs(im.w / im.h - ref.w / ref.h) < .01) Object.assign(c, {x:.5, y:.5, k:r4(ref.w / im.w)});
+  else if (c.x == null) Object.assign(c, {x:.5, y:.3, k:1});
+}
+async function novasCamadas(setor, files){
+  const S0 = SETORES.find(x => x.k === setor);
+  for (const f of files){ if (!/^image\//.test(f.type)) continue;
+    const ja = S.rosto.filter(c => c.setor === setor).length, c = {id: 'r' + Math.random().toString(36).slice(2, 9), setor, nome: f.name.replace(/\.[^.]+$/, ''), quando: S0.q[Math.min(ja, S0.q.length - 1)], vis: true, x: null, y: null, k: 1, r: 0};
+    rostoImgs[c.id] = await blobToImage(f); encaixe(c, rostoImgs[c.id]); S.rosto.push(c); dbPut('rosto-' + c.id, f); rostoSel = c.id; }
+  save(); renderRosto();
+}
+async function trocarCamada(c, f){ if (rostoImgs[c.id] && rostoImgs[c.id].url) URL.revokeObjectURL(rostoImgs[c.id].url); rostoImgs[c.id] = await blobToImage(f); dbPut('rosto-' + c.id, f); save(); renderRosto(); }
+function cartao(c){
+  const im = rostoImgs[c.id], on = c.id === rostoSel, linha = (k, rot, min, max, st) => `<div class="row"><label>${rot}</label><input type="range" data-rc="${k}" min="${min}" max="${max}" step="${st}" value="${c[k] ?? 0}"><output>${(+(c[k] ?? 0)).toFixed(2).replace(/\.?0+$/, '') || '0'}</output></div>`;
+  return `<div class="cam${on ? ' on' : ''}${c.vis === false ? ' off' : ''}" data-rid="${c.id}"><div class="thumb" data-ra="sel" title="Posicionar no palco">${im ? `<img src="${im.url}" alt="">` : '<span class="sub">…</span>'}</div>
+    <div class="info"><input type="text" data-rc="nome" value="${escH(c.nome)}" aria-label="Nome da camada"><select data-rc="quando" aria-label="Quando aparece">${QUANDO.map(([v, n]) => `<option value="${v}"${v === c.quando ? ' selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="acts"><button class="btn" data-ra="vis">${c.vis === false ? '🙈 Mostrar' : '👁️ Esconder'}</button><button class="btn" data-ra="sobe" title="Mais para a frente">▲</button><button class="btn" data-ra="desce" title="Mais para trás">▼</button><button class="btn" data-ra="troca">Trocar</button><button class="btn" data-ra="del">Remover</button><button class="btn${on ? ' main' : ''}" data-ra="sel">${on ? '✋ Arraste no palco' : '✋ Posicionar'}</button></div>
+    ${on ? `<div class="ed">${linha('x', 'Horizontal', -.5, 1.5, .001)}${linha('y', 'Vertical', -.5, 1.5, .001)}${linha('k', 'Tamanho', .05, 4, .005)}${linha('r', 'Girar', -180, 180, 1)}<div class="btns"><button class="btn" data-ra="encaixar">Encaixar na Parada</button><button class="btn" data-ra="pronto">Pronto</button></div></div>` : ''}</div>`;
+}
+function renderRosto(){
+  const el = $('#rostoSetores'); if (!el) return;
+  el.innerHTML = SETORES.map(st => { const L = S.rosto.filter(c => c.setor === st.k);
+    return `<div class="setor"><div class="setor-cab"><h2>${st.nome}</h2><button class="btn main" data-radd="${st.k}">+ Camada</button></div>${L.map(cartao).join('') || '<p class="hint">Nenhuma camada. Toque em + Camada (pode escolher várias PNGs de uma vez).</p>'}</div>`; }).join('');
+}
+$('#rostoSetores').addEventListener('click', e => {
+  const add = e.target.closest('[data-radd]'); if (add){ const f = $('#rostoFile'); f.dataset.setor = add.dataset.radd; f.dataset.troca = ''; f.click(); return; }
+  const b = e.target.closest('[data-ra]'), card = e.target.closest('[data-rid]'); if (!b || !card) return;
+  const c = camadaRosto(card.dataset.rid); if (!c) return; const a = b.dataset.ra, irmas = S.rosto.filter(x => x.setor === c.setor);
+  if (a === 'sel') rostoSel = rostoSel === c.id ? null : c.id;
+  else if (a === 'pronto') rostoSel = null;
+  else if (a === 'vis') c.vis = c.vis === false;
+  else if (a === 'troca'){ const f = $('#rostoFile'); f.dataset.setor = c.setor; f.dataset.troca = c.id; f.click(); return; }
+  else if (a === 'encaixar'){ const im = rostoImgs[c.id], ref = images.idle || images.talk; if (im && ref) Object.assign(c, {x:.5, y:.5, k:r4(ref.w / im.w), r:0}); }
+  else if (a === 'del'){ if (!b.dataset.ok){ b.dataset.ok = 1; b.textContent = 'Remover?'; return; } S.rosto = S.rosto.filter(x => x !== c); dbPut('rosto-' + c.id, null); delete rostoImgs[c.id]; if (rostoSel === c.id) rostoSel = null; }
+  else if (a === 'sobe' || a === 'desce'){ const i = irmas.indexOf(c), j = i + (a === 'sobe' ? 1 : -1); if (j < 0 || j >= irmas.length) return; const A = S.rosto.indexOf(c), B = S.rosto.indexOf(irmas[j]); [S.rosto[A], S.rosto[B]] = [S.rosto[B], S.rosto[A]]; }
+  save(); renderRosto();
+});
+$('#rostoSetores').addEventListener('input', e => {
+  const k = e.target.dataset.rc, card = e.target.closest('[data-rid]'); if (!k || !card) return; const c = camadaRosto(card.dataset.rid); if (!c) return;
+  c[k] = e.target.type === 'range' ? parseFloat(e.target.value) : e.target.value;
+  const o = e.target.parentElement.querySelector('output'); if (o) o.textContent = (+c[k]).toFixed(2).replace(/\.?0+$/, '') || '0';
+  save();
+});
+$('#rostoFile').onchange = () => { const f = $('#rostoFile'), fs = [...f.files], troca = f.dataset.troca; f.value = ''; if (!fs.length) return;
+  if (troca){ const c = camadaRosto(troca); if (c) trocarCamada(c, fs[0]); } else novasCamadas(f.dataset.setor, fs); };
+function desenharRosto(sc, ref, abre, blinking){ // dentro da mesma transformação do corpo: acompanha tudo que ela faz
+  const f2 = temFalando2(), selec = [];
+  for (const k of ORDEM_ROSTO) for (const c of S.rosto) {
+    if (c.setor !== k || c.vis === false) continue; const im = rostoImgs[c.id]; if (!im) continue;
+    const q = c.quando, ve = q === 'sempre' || (q === 'calada' && !abre) || (q === 'falando' && abre && !(flap && f2)) || (q === 'falando2' && abre && flap) || (q === 'aberto' && !blinking) || (q === 'piscando' && blinking);
+    const w = im.w * sc * (+c.k || 1), h = im.h * sc * (+c.k || 1), cx = -ref.w * sc / 2 + (c.x ?? .5) * ref.w * sc, cy = -ref.h * sc + (c.y ?? .5) * ref.h * sc;
+    if (c.id === rostoSel && rostoAberto() && !rec) selec.push([cx, cy, w, h, c.r]);
+    if (!ve) continue;
+    ctx.save(); ctx.translate(cx, cy); if (c.r) ctx.rotate(c.r * Math.PI / 180); ctx.drawImage(im.src, -w / 2, -h / 2, w, h); ctx.restore();
+  }
+  for (const [cx, cy, w, h, r] of selec){ ctx.save(); ctx.translate(cx, cy); if (r) ctx.rotate(r * Math.PI / 180); ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = '#f2b544'; ctx.strokeRect(-w / 2, -h / 2, w, h); ctx.restore(); }
+}
+
 /* ---------- Atores ---------- */
 function listaAtores(){
   const sel = $('#atorSel'); sel.innerHTML = ATORES.lista.map(a => `<option value="${a.id}">🎭 ${a.nome.replace(/</g, '&lt;')}</option>`).join(''); sel.value = ATORES.atual;
@@ -767,12 +863,13 @@ async function trocarAtor(id, semSalvar){
   ATORES.atual = id; salvarAtores(); S = carregarS(id);
   for (const k in images){ if (images[k].url) URL.revokeObjectURL(images[k].url); delete images[k]; }
   for (const k in partImgs){ if (partImgs[k].url) URL.revokeObjectURL(partImgs[k].url); delete partImgs[k]; }
+  for (const k in rostoImgs){ if (rostoImgs[k].url) URL.revokeObjectURL(rostoImgs[k].url); delete rostoImgs[k]; } rostoSel = null;
   usePlaceholders();
   for (const s of SLOTS){ const b = await dbGet(chaveImg(id, s.k)); if (b) { try { images[s.k] = await blobToImage(b); } catch(e) {} } }
   if (hasUserImages()) for (const s of SLOTS) if (images[s.k] && !images[s.k].user) delete images[s.k];
   parteSel = (S.partes[0] || {}).id || null; vista = null; pilha.length = 0;
   if (S.voice) voiceSel.value = S.voice;
-  listaAtores(); renderSlots(); syncControls(); listaPartes(); carregarPartesPNG();
+  listaAtores(); renderSlots(); syncControls(); listaPartes(); carregarPartesPNG(); carregarRostoPNG();
   runAction(ACTIONS.find(a => a.id === 'entrada'));
 }
 $('#atorSel').onchange = e => trocarAtor(e.target.value);
@@ -790,6 +887,7 @@ $('#atorApaga').onclick = async () => {
   if (!confirm(`Apagar o ator “${a.nome}” com as poses e partes dele? Ele também sai do Palco.`)) return;
   for (const s of SLOTS) await dbPut(chaveImg(a.id, s.k), null);
   for (const p of S.partes) if (p.png) await dbPut('parte-' + p.id, null);
+  for (const c of S.rosto) await dbPut('rosto-' + c.id, null);
   try { localStorage.removeItem(chaveCfg(a.id)); } catch(e) {}
   ATORES.lista = ATORES.lista.filter(x => x !== a); trocarAtor(ATORES.lista[0].id, true);
 };
@@ -858,6 +956,7 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
   document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + b.dataset.tab));
   if (b.dataset.tab === 'partes') listaPartes();
+  if (b.dataset.tab === 'rosto') renderRosto();
 });
 
 /* ---------- Áudio: microfone e arquivo ---------- */
@@ -968,12 +1067,17 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { if (e.code === 'Space') setManual(false); });
 
 /* ---------- Arrastar e redimensionar no palco ---------- */
-const pts = new Map(); let pinch0 = null;
+const pts = new Map(); let pinch0 = null, cartaoT;
 function toCanvas(e){ const r = cv.getBoundingClientRect(); return {x:(e.clientX - r.left) * W / r.width, y:(e.clientY - r.top) * H / r.height}; }
-cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, toCanvas(e)); if (pts.size === 2){ const [a,b] = [...pts.values()]; pinch0 = {d:Math.hypot(a.x-b.x, a.y-b.y), s:S.size}; } });
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, toCanvas(e)); if (pts.size === 2){ const [a,b] = [...pts.values()]; const c = rostoAberto() && camadaRosto(rostoSel); pinch0 = {d:Math.hypot(a.x-b.x, a.y-b.y), s:S.size, k:c ? +c.k || 1 : 1}; } });
 cv.addEventListener('pointermove', e => {
   if (!pts.has(e.pointerId)) return;
   const p = toCanvas(e), prev = pts.get(e.pointerId); pts.set(e.pointerId, p);
+  const c = rostoAberto() && camadaRosto(rostoSel), ref = images.idle || images.talk;
+  if (c && ref){ const sc = 560 / ref.h * S.size;
+    if (pts.size === 1){ c.x = r4((c.x ?? .5) + (p.x - prev.x) / (ref.w * sc)); c.y = r4((c.y ?? .5) + (p.y - prev.y) / (ref.h * sc)); }
+    else if (pts.size === 2 && pinch0){ const [a,b] = [...pts.values()]; c.k = r4(Math.max(.05, Math.min(4, pinch0.k * Math.hypot(a.x-b.x, a.y-b.y) / pinch0.d))); }
+    clearTimeout(cartaoT); cartaoT = setTimeout(renderRosto, 150); return; }
   if (pts.size === 1){ S.x += p.x - prev.x; S.y += p.y - prev.y; }
   else if (pts.size === 2 && pinch0){ const [a,b] = [...pts.values()]; S.size = Math.max(.2, Math.min(2.5, pinch0.s * Math.hypot(a.x-b.x, a.y-b.y) / pinch0.d)); syncControls(); }
 });
@@ -1054,7 +1158,7 @@ function tick(now){
   mix = mouthOpen ? Math.min(1, mix + fadeRate) : Math.max(0, mix - fadeRate);
 
   // troca entre Falando e Falando 2
-  if (mouthOpen && images.talk2){ flapT += dt*1000; if (flapT > S.flapMs){ flapT = 0; flap = !flap; } } else { flap = false; flapT = 0; }
+  if (mouthOpen && (images.talk2 || temFalando2())){ flapT += dt*1000; if (flapT > S.flapMs){ flapT = 0; flap = !flap; } } else { flap = false; flapT = 0; }
 
   // piscar
   if (now > nextBlink){ blinkUntil = now + 120; nextBlink = now + (Math.random() < .2 ? 260 : S.blinkEvery * 1000 * (.6 + Math.random()*.8)); }
@@ -1148,7 +1252,8 @@ function render(m){
     if (S.swap === 'suave' && mix > 0 && mix < 1){
       drawImg(poseFor(false, m.blinking)); drawImg(poseFor(true, m.blinking), mix);
     } else drawImg(poseFor(mix >= .5, m.blinking));
-    ctx.globalAlpha = 1; SEP.pintar(ctx, S.partes, imgParte, 'frente', -ref.w*sc/2, -ref.h*sc, sc);
+    ctx.globalAlpha = 1; desenharRosto(sc, ref, mix >= .5, m.blinking);
+    SEP.pintar(ctx, S.partes, imgParte, 'frente', -ref.w*sc/2, -ref.h*sc, sc);
   }
   ctx.restore();
   drawCaption();
@@ -1174,7 +1279,7 @@ function drawCaption(){
   for (const s of SLOTS){ const b = await dbGet(chaveImg(ATORES.atual, s.k)); if (b) { try { images[s.k] = await blobToImage(b); } catch(e) {} } }
   if (hasUserImages()) for (const s of SLOTS) if (images[s.k] && !images[s.k].user) delete images[s.k];
   const bg = await dbGet('bg'); if (bg) { try { bgImage = await blobToImage(bg); } catch(e) {} }
-  renderSlots(); syncControls(); carregarPartesPNG();
+  renderSlots(); syncControls(); carregarPartesPNG(); carregarRostoPNG();
   runAction(ACTIONS.find(a => a.id === 'entrada'));
 })();
 requestAnimationFrame(tick);
