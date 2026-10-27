@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kurogane · Gerador de OCs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#262940; --panel:#323652; --panel2:#3b4060; --ink:#14151f;
+  --text:#ecebf6; --muted:#a4a7c4; --lilac:#bba8ee; --sky:#a8c9f2;
+  --line:#4a4f74;
+  --font:"M PLUS Rounded 1c",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.5;padding:16px 14px 104px;max-width:640px;margin:0 auto}
+h1{font-size:30px;font-weight:800;margin:4px 0 2px;letter-spacing:-.5px;color:var(--lilac)}
+.sub{color:var(--muted);margin:0 0 16px;font-size:14px}
+.panel{background:var(--panel);border:2px solid var(--ink);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:3px 3px 0 var(--ink)}
+.panel h2{font-size:16px;margin:0 0 10px;font-weight:800;color:var(--sky)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px;font-weight:700}
+select,input[type=text],textarea{width:100%;background:var(--ink);color:var(--text);border:2px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:15px}
+select:focus,input:focus,textarea:focus{outline:3px solid var(--lilac);outline-offset:1px;border-color:var(--lilac)}
+textarea{resize:vertical;min-height:84px}
+.full{grid-column:1/-1}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:flex;align-items:center;gap:6px;background:var(--ink);border:2px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;cursor:pointer;user-select:none}
+.chip input{accent-color:var(--lilac);margin:0}
+.chip:has(input:checked){border-color:var(--lilac);background:#3a3360}
+.swatch{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);vertical-align:-2px;margin-right:6px}
+#out{background:var(--ink);border:2px solid var(--lilac);border-radius:12px;padding:12px;font-size:14px;white-space:pre-wrap;word-break:break-word;min-height:120px}
+.neg{color:var(--muted);font-size:13px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--ink);border-top:2px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;justify-content:center}
+.bar button{flex:1;max-width:300px}
+button{font:inherit;font-weight:800;font-size:16px;border-radius:12px;border:2px solid var(--ink);padding:12px;cursor:pointer;color:var(--ink);background:var(--sky);box-shadow:2px 2px 0 #000}
+button.main{background:var(--lilac)}
+button.ghost{background:var(--panel2);color:var(--text);border-color:var(--line);box-shadow:none;font-size:14px;padding:8px 12px}
+button:active{transform:translate(1px,1px)}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.gang{border:2px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px;background:var(--ink)}
+.gang .grid{margin-top:8px}
+.row{display:flex;gap:8px;justify-content:space-between;align-items:center}
+details summary{cursor:pointer;font-weight:800;color:var(--sky)}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--lilac);color:var(--ink);font-weight:800;padding:8px 16px;border-radius:999px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<h1>Gerador de OCs</h1>
+<p class="sub">Escolha a base e a gangue. Copie o prompt e gere a imagem na sua ferramenta.</p>
+
+<div class="panel">
+  <h2>Prompt pronto</h2>
+  <div id="out"></div>
+  <p class="neg" id="neg"></p>
+</div>
+
+<div class="panel">
+  <h2>Corpo</h2>
+  <div class="grid" id="corpo"></div>
+</div>
+
+<div class="panel">
+  <h2>Rosto e cabelo</h2>
+  <div class="grid" id="rosto"></div>
+</div>
+
+<div class="panel">
+  <h2>Gangue</h2>
+  <label for="gangSel">Gangue do personagem</label>
+  <select id="gangSel"></select>
+  <div class="grid" style="margin-top:10px" id="roupa"></div>
+  <details style="margin-top:12px">
+    <summary>Editar gangues</summary>
+    <div id="gangList" style="margin-top:10px"></div>
+    <div class="row">
+      <button class="ghost" id="addGang">+ Nova gangue</button>
+      <button class="ghost" id="resetGang">Restaurar padrão</button>
+    </div>
+  </details>
+</div>
+
+<div class="panel">
+  <h2>Acessórios</h2>
+  <div class="chips" id="acess"></div>
+</div>
+
+<div class="panel">
+  <h2>Saída e estilo</h2>
+  <div class="grid">
+    <div class="full"><label for="formato">O que gerar</label><select id="formato"></select></div>
+    <div class="full"><label for="estilo">Estilo (fixo, edite se quiser)</label><textarea id="estilo"></textarea></div>
+  </div>
+</div>
+
+<div class="bar">
+  <button class="main" id="sortear">Sortear</button>
+  <button id="copiar">Copiar prompt</button>
+</div>
+<div id="toast" role="status" aria-live="polite">Copiado!</div>
+
+<script>
+/* ---------- OPÇÕES: [rótulo em português, texto em inglês pro prompt] ---------- */
+const CAMPOS = {
+  corpo: [
+    ["genero","Presença",[["Masculina","male"],["Feminina","female"],["Andrógina","androgynous"]]],
+    ["biotipo","Biotipo",[
+      ["Magro e esguio","slim lanky build, narrow shoulders"],
+      ["Baixinho e compacto","short compact build, small frame"],
+      ["Médio, normal","average build, medium height"],
+      ["Atlético","athletic build, defined but lean muscles"],
+      ["Alto e largo","tall and broad-shouldered build"],
+      ["Forte e parrudo","stocky heavyset muscular build"],
+      ["Curvilíneo","curvy build, wide hips, soft proportions"],
+      ["Robusto, gordinho","plus-size soft round build"]]],
+    ["altura","Altura",[["Baixa (1,55 m)","short height, about 155 cm"],["Média (1,68 m)","medium height, about 168 cm"],["Alta (1,80 m)","tall height, about 180 cm"],["Muito alta (1,90 m)","very tall, about 190 cm"]]],
+    ["pele","Tom de pele",[["Clara","fair skin"],["Morena clara","light tan skin"],["Morena","medium brown skin"],["Marrom escura","dark brown skin"],["Negra retinta","deep dark skin"]]]
+  ],
+  rosto: [
+    ["cabTipo","Tipo de cabelo",[["Liso","straight hair"],["Ondulado","wavy hair"],["Cacheado","curly hair"],["Crespo/afro","coily afro-textured hair"],["Raspado com degradê","short fade haircut"],["Bagunçado","messy tousled hair"]]],
+    ["cabComp","Comprimento",[["Curto","short"],["Médio","medium-length"],["Longo","long"],["Muito longo","very long, down to the waist"]]],
+    ["cabCor","Cor do cabelo",[["Preto","black"],["Castanho","dark brown"],["Ruivo/acobreado","auburn copper"],["Loiro","blonde"],["Loiro com raiz preta","blonde with black roots"],["Degradê azul e roxo","blue-to-purple gradient"],["Branco/prata","silver white"]]],
+    ["olhos","Cor dos olhos",[["Castanhos","brown eyes"],["Âmbar","amber eyes"],["Verdes","green eyes"],["Cinza","grey eyes"],["Azuis","blue eyes"]]],
+    ["vibe","Expressão base",[["Calmo e observador","calm, observant, neutral expression"],["Provocador","smug teasing smirk"],["Irritado","annoyed scowl"],["Tímido","shy, looking away slightly"],["Sorriso aberto","bright cheerful grin"],["Entediado","bored half-lidded eyes"]]]
+  ],
+  roupa: [
+    ["jaqueta","Jaqueta",[["Gakuran preto fechado","black gakuran-style jacket with high stand collar and gold buttons"],["Gakuran aberto","open black gakuran-style jacket over a black shirt"],["Casaco cropped","cropped black school blazer"]]],
+    ["calca","Parte de baixo",[["Calça larguíssima","extra baggy black trousers with side stripe"],["Calça cargo","baggy black cargo pants with straps"],["Saia xadrez","pleated plaid skirt with belt and chain, loose white socks"]]],
+    ["sapato","Calçado",[["Mocassim plataforma","chunky black platform loafers"],["Coturno","black combat boots"],["Tênis preto","black chunky sneakers"]]]
+  ]
+};
+const ACESS = [
+  ["Óculos","round glasses"],["Brinco","a pendant earring"],["Corrente na calça","a chain hanging from the belt"],
+  ["Pirulito na boca","a lollipop stick in the mouth"],["Mochila","a black backpack"],["Chaveiro fofo","a cute plush keychain"],
+  ["Pulseira de corrente","a chain bracelet"],["Gravata","a school tie"],["Choker","a choker necklace"],
+  ["Presilhas no cabelo","metal hair clips"],["Caderno/livro","holding a small black notebook"],["Curativo no rosto","a bandage on the cheek"]
+];
+const FORMATOS = [
+  ["Corpo inteiro, pose neutra (pra desenhar por cima)","full body character reference, standing neutral A-pose, front view, hands relaxed, plain flat background, even lighting, no cast shadows, clean readable silhouette"],
+  ["Ficha completa (turnaround + expressões)","character reference sheet: large front full-body view, turnaround (front, right, back, left), 6 head expressions, color palette swatches, labeled sections"],
+  ["Só turnaround (4 ângulos)","character turnaround sheet, four full-body views: front, right side, back, left side, same pose, plain background"],
+  ["Só expressões (rosto)","head expression sheet, 6 expressions: neutral, side glance, annoyed, subtle smile, looking down, profile"]
+];
+const ESTILO_PADRAO = "anime illustration, thick bold outer outline with thinner delicate inner lines, flat blocked colors with simple cel shading, hair in solid chunky locks without stray strands, strong expressive cartoon-like face, dark navy slate background";
+const NEGATIVO = "blurry, photorealistic, 3d render, extra fingers, deformed hands, text artifacts, watermark, busy background, dramatic shadows";
+
+const GANGUES_PADRAO = [
+  {nome:"Corvos Índigo",cor:"black",detalhe:"indigo purple",emblema:"a shield crest with a crow and stars"},
+  {nome:"Lilás Prateado",cor:"black",detalhe:"silvery lilac",emblema:"a silver wolf-mask crest"},
+  {nome:"Azul Celeste",cor:"black",detalhe:"silvery sky blue",emblema:"a pale blue star crest"}
+];
+
+/* ---------- ESTADO ---------- */
+const $ = id => document.getElementById(id);
+const sel = {};           // id -> <select>
+let gangues = [];
+const guardar = (k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
+const ler = (k,f)=>{ try{ const v=JSON.parse(localStorage.getItem(k)); return v||f; }catch(e){ return f; } };
+gangues = ler("kg_gangues", GANGUES_PADRAO);
+
+/* ---------- MONTAGEM DA TELA ---------- */
+function montarSelect(box,[id,rotulo,itens]){
+  const w=document.createElement("div");
+  w.innerHTML=`<label for="${id}">${rotulo}</label><select id="${id}"></select>`;
+  box.appendChild(w);
+  const s=w.querySelector("select");
+  itens.forEach(([pt,en],i)=>s.add(new Option(pt,i)));
+  s.addEventListener("change",()=>{atualizar();salvarEscolhas();});
+  sel[id]={el:s,itens};
+}
+Object.keys(CAMPOS).forEach(g=>CAMPOS[g].forEach(c=>montarSelect($(g),c)));
+
+FORMATOS.forEach(([pt],i)=>$("formato").add(new Option(pt,i)));
+$("estilo").value=ler("kg_estilo",ESTILO_PADRAO);
+$("estilo").addEventListener("input",()=>{guardar("kg_estilo",$("estilo").value);atualizar();});
+$("formato").addEventListener("change",()=>{atualizar();salvarEscolhas();});
+$("gangSel").addEventListener("change",()=>{atualizar();salvarEscolhas();});
+
+ACESS.forEach(([pt],i)=>{
+  const l=document.createElement("label");
+  l.className="chip";
+  l.innerHTML=`<input type="checkbox" value="${i}"> ${pt}`;
+  l.querySelector("input").addEventListener("change",()=>{atualizar();salvarEscolhas();});
+  $("acess").appendChild(l);
+});
+
+function montarGangues(){
+  const atual=$("gangSel").value;
+  $("gangSel").innerHTML="";
+  gangues.forEach((g,i)=>$("gangSel").add(new Option(g.nome,i)));
+  if(atual && gangues[atual]) $("gangSel").value=atual;
+  $("gangList").innerHTML="";
+  gangues.forEach((g,i)=>{
+    const d=document.createElement("div");
+    d.className="gang";
+    d.innerHTML=`
+      <div class="row"><strong>${esc(g.nome)||"Sem nome"}</strong><button class="ghost" data-del="${i}">Remover</button></div>
+      <div class="grid">
+        <div class="full"><label>Nome</label><input type="text" data-k="nome" data-i="${i}" value="${esc(g.nome)}"></div>
+        <div><label>Cor da roupa (inglês)</label><input type="text" data-k="cor" data-i="${i}" value="${esc(g.cor)}"></div>
+        <div><label>Cor do detalhe (inglês)</label><input type="text" data-k="detalhe" data-i="${i}" value="${esc(g.detalhe)}"></div>
+        <div class="full"><label>Emblema/brasão (inglês)</label><input type="text" data-k="emblema" data-i="${i}" value="${esc(g.emblema)}"></div>
+      </div>`;
+    $("gangList").appendChild(d);
+  });
+}
+const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+
+$("gangList").addEventListener("input",e=>{
+  const t=e.target; if(t.dataset.k===undefined) return;
+  gangues[t.dataset.i][t.dataset.k]=t.value;
+  guardar("kg_gangues",gangues);
+  const opt=$("gangSel").options[t.dataset.i]; if(opt && t.dataset.k==="nome") opt.text=t.value||"Sem nome";
+  atualizar();
+});
+$("gangList").addEventListener("click",e=>{
+  const i=e.target.dataset.del; if(i===undefined) return;
+  if(gangues.length<=1){ aviso("Mantenha pelo menos uma gangue"); return; }
+  gangues.splice(i,1); guardar("kg_gangues",gangues); montarGangues(); atualizar();
+});
+$("addGang").onclick=()=>{
+  gangues.push({nome:"Nova gangue",cor:"black",detalhe:"red",emblema:"a simple emblem crest"});
+  guardar("kg_gangues",gangues); montarGangues();
+  $("gangSel").value=gangues.length-1; atualizar();
+};
+$("resetGang").onclick=()=>{
+  gangues=JSON.parse(JSON.stringify(GANGUES_PADRAO)); guardar("kg_gangues",gangues); montarGangues(); atualizar();
+};
+
+/* ---------- PROMPT ---------- */
+const val = id => sel[id].itens[sel[id].el.value][1];
+
+function atualizar(){
+  const g=gangues[$("gangSel").value]||gangues[0];
+  const ac=[...document.querySelectorAll("#acess input:checked")].map(c=>ACESS[c.value][1]);
+  const cabelo=`${val("cabComp")} ${val("cabTipo")}, ${val("cabCor")}`;
+  const roupa=`${val("jaqueta")} in ${g.cor} with ${g.detalhe} piping and ${g.emblema} on the chest, ${val("calca")}, ${val("sapato")}`;
+  const partes=[
+    FORMATOS[$("formato").value][1],
+    `original character, ${val("genero")}, ${val("biotipo")}, ${val("altura")}, ${val("pele")}`,
+    `${cabelo}, ${val("olhos")}, ${val("vibe")}`,
+    `wearing ${roupa}`,
+    ac.length ? `accessories: ${ac.join(", ")}` : "",
+    $("estilo").value.trim()
+  ].filter(Boolean);
+  $("out").textContent=partes.join(". ")+".";
+  $("neg").textContent="Negativo (se a ferramenta tiver): "+NEGATIVO;
+}
+
+/* ---------- SALVAR / SORTEAR / COPIAR ---------- */
+function salvarEscolhas(){
+  const o={};
+  Object.keys(sel).forEach(k=>o[k]=sel[k].el.value);
+  o.formato=$("formato").value; o.gang=$("gangSel").value;
+  o.acess=[...document.querySelectorAll("#acess input:checked")].map(c=>c.value);
+  guardar("kg_escolhas",o);
+}
+function carregarEscolhas(){
+  const o=ler("kg_escolhas",null); if(!o) return;
+  Object.keys(sel).forEach(k=>{ if(o[k]!==undefined && sel[k].itens[o[k]]) sel[k].el.value=o[k]; });
+  if(FORMATOS[o.formato]) $("formato").value=o.formato;
+  if(gangues[o.gang]) $("gangSel").value=o.gang;
+  document.querySelectorAll("#acess input").forEach(c=>c.checked=(o.acess||[]).includes(c.value));
+}
+const rnd = n => Math.floor(Math.random()*n);
+$("sortear").onclick=()=>{
+  Object.keys(sel).forEach(k=>{ sel[k].el.value=rnd(sel[k].itens.length); });
+  $("gangSel").value=rnd(gangues.length);
+  document.querySelectorAll("#acess input").forEach(c=>c.checked=false);
+  const n=rnd(4); const ids=ACESS.map((_,i)=>i).sort(()=>Math.random()-.5).slice(0,n);
+  document.querySelectorAll("#acess input").forEach(c=>c.checked=ids.includes(+c.value));
+  atualizar(); salvarEscolhas();
+};
+function aviso(t){ const el=$("toast"); el.textContent=t; el.classList.add("on"); setTimeout(()=>el.classList.remove("on"),1600); }
+$("copiar").onclick=async()=>{
+  const txt=$("out").textContent;
+  try{ await navigator.clipboard.writeText(txt); aviso("Copiado!"); }
+  catch(e){
+    const r=document.createRange(); r.selectNodeContents($("out"));
+    const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+    aviso("Selecionado, toque em copiar");
+  }
+};
+
+/* ---------- INÍCIO ---------- */
+montarGangues(); carregarEscolhas(); atualizar();
+</script>
+</body>
+</html>

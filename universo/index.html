@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Universo</title>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#15181d">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+:root{--bg:#15181d;--card:#1e2229;--line:#343b46;--tx:#e9e6df;--mut:#9aa3af;--ac:#8fb3d1;--bad:#d9605a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,sans-serif}
+h1,h2{font-family:"Iowan Old Style",Georgia,serif;font-weight:600;margin:0}
+header{flex-wrap:wrap;display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+header h1{flex:1;font-size:1.6rem}
+main{max-width:760px;margin:0 auto;padding:16px}
+button,.btn{min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--tx);font:inherit;cursor:pointer}
+button.pri{background:var(--ac);color:#10151a;border-color:var(--ac);font-weight:600}
+button.bad{color:var(--bad)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+input,textarea{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--tx);font:inherit}
+textarea{min-height:50vh;font-family:"Iowan Old Style",Georgia,serif;line-height:1.7}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.chips button{min-height:36px;padding:0 12px}.chips .on{border-color:var(--ac);color:var(--ac)}
+.item{display:block;width:100%;text-align:left;padding:12px 14px;margin:8px 0;height:auto}
+.item small{color:var(--mut);display:block}
+.dot{color:var(--ac)}
+.empty{color:var(--mut);text-align:center;padding:40px 10px}
+dialog{background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:12px;max-width:420px;width:90%}
+dialog::backdrop{background:#000a}
+img.pv{max-width:100%;border-radius:8px}audio{width:100%}
+.hide{display:none}
+#board{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);z-index:5}
+#board.hide{display:none}
+#bt{display:flex;gap:8px;padding:8px;border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center}
+#bt input{flex:1;min-width:140px;width:auto}
+#sc{flex:1;overflow:auto}
+#cv{position:relative;width:3200px;height:2400px;background-image:radial-gradient(var(--line) 1px,transparent 1px);background-size:32px 32px}
+.cd{position:absolute;width:220px;background:var(--card);border:1px solid var(--line);border-radius:8px;z-index:1}
+.cd.g{width:440px;height:320px;background:#191e25;border-style:dashed;z-index:0}
+.hd{display:flex;justify-content:space-between;align-items:center;height:34px;padding:0 6px 0 10px;background:#262c35;border-radius:7px 7px 0 0;touch-action:none;cursor:grab;color:var(--mut);font-size:.85rem}
+.hd button{min-height:28px;padding:0 10px}
+.cd textarea{min-height:90px;border:0;background:transparent;line-height:1.4;font-family:inherit}
+.cd.g textarea{min-height:40px}
+#cv .cd{display:flex;flex-direction:column;overflow:hidden}
+.bd{flex:1;min-height:0;overflow:auto}
+.cd textarea,.cd.g textarea{min-height:0;height:100%;resize:none}
+.hd span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.rz{position:absolute;right:0;bottom:0;width:30px;height:30px;touch-action:none;cursor:nwse-resize;background:linear-gradient(135deg,transparent 55%,var(--mut) 55%,var(--mut) 62%,transparent 62%,transparent 75%,var(--mut) 75%,var(--mut) 82%,transparent 82%);opacity:.7}
+.irow{display:flex;gap:8px;align-items:stretch;margin:8px 0}
+.irow .item{margin:0;flex:1;width:auto}
+.irow .bad{min-width:76px;height:auto}
+#tabs{display:flex;gap:8px;padding:8px 16px;border-bottom:1px solid var(--line)}
+#tabs button{flex:1}#tabs .on{border-color:var(--ac);color:var(--ac)}
+#mnote{min-height:45vh;font:.9rem/1.5 ui-monospace,monospace}
+</style></head><body>
+<header><h1>Universo</h1><button id="imp">Importar backup</button><button id="sair">Sair</button></header>
+<nav id="tabs"><button data-tab="list" class="on">Biblioteca</button><button data-tab="meet">Reunião</button></nav>
+<main>
+<section id="list">
+ <input id="q" type="search" placeholder="Buscar no universo">
+ <div class="row chips" id="chips"></div>
+ <div class="row"><button class="pri" id="add">Adicionar material</button></div>
+ <div id="items"></div>
+</section>
+<section id="edit" class="hide">
+ <div class="row"><button id="back">Voltar</button><button class="bad" id="del">Apagar</button></div>
+ <input id="t" placeholder="Título"><div id="extra"></div>
+ <textarea id="x" placeholder="Texto, anotações, transcrição"></textarea>
+ <input id="tags" placeholder="Etiquetas (personagem, lugar, capítulo…) separadas por vírgula">
+</section>
+<section id="meet" class="hide">
+ <h2>Reunião</h2>
+ <p style="color:var(--mut)">Nota somente leitura com todo o seu universo até agora. Copie e cole no Claude.</p>
+ <div class="row"><button class="pri" id="mcopy">Copiar nota</button><button id="exp">Enviar como arquivo</button></div>
+ <textarea id="mnote" readonly aria-label="Nota da reunião, somente leitura"></textarea>
+ <h2 style="margin-top:20px">Trazer de volta</h2>
+ <div class="row"><button id="cola">Colar resposta do Claude</button><button id="mhtml">Importar arquivo HTML</button><button id="und" style="display:none">Desfazer última atualização</button></div>
+</section>
+<section id="bye" class="hide"><div class="empty"><h2>Tudo salvo</h2><p>Você já pode fechar o app.</p><button id="volta">Voltar ao app</button></div></section>
+</main>
+
+<section id="board" class="hide">
+ <div id="bt"><button id="bback">Voltar</button><input id="bn" placeholder="Nome do quadro">
+  <button id="bnota">+ Nota</button><button id="bgrupo">+ Grupo</button><button id="bref">+ Adicionar</button><button class="bad" id="bdel">Apagar</button></div>
+ <div id="sc"><div id="cv"></div></div>
+</section>
+<dialog id="dAddB"><h2>Adicionar ao quadro</h2><div class="row"><button data-a="img">Imagem</button><button data-a="doc">Word (.docx)</button><button data-a="audio">Áudio</button><button data-a="link">Link</button><button data-a="ref">Do universo</button><button id="cB">Cancelar</button></div></dialog>
+<dialog id="dPaste"><h2>Colar do Claude</h2><input id="pt" placeholder="Título (ex.: Ideias do capítulo 3)"><textarea id="pb" style="min-height:30vh;margin-top:8px" placeholder="Cole aqui o texto da conversa"></textarea><div class="row"><button class="pri" id="ps">Salvar ou aplicar</button><button id="pcn">Cancelar</button></div></dialog>
+<dialog id="dPlan"><h2>Atualizar o universo?</h2><div id="plist" style="max-height:50vh;overflow:auto"></div><div class="row"><button class="pri" id="pok">Aplicar</button><button id="pno">Cancelar</button></div></dialog>
+<dialog id="dPick"><h2>Adicionar do universo</h2><div id="pl"></div><div class="row"><button id="pc">Cancelar</button></div></dialog>
+<dialog id="dAdd"><h2>Adicionar</h2><div class="row">
+ <button data-a="quadro">Quadro novo</button><button data-a="nota">Nota nova</button><button data-a="doc">Word (.docx)</button>
+ <button data-a="img">Imagem</button><button data-a="audio">Áudio</button><button data-a="link">Link</button>
+ <button id="c1">Cancelar</button></div></dialog>
+<dialog id="dSair"><h2>Quer realmente sair?</h2><p>Se sim, você escolhe onde salvar.</p>
+ <div class="row"><button id="s1">Continuar no app</button><button class="pri" id="s2">Sair</button></div></dialog>
+<dialog id="dSave"><h2>Onde salvar?</h2><p id="resumo"></p>
+ <div class="row"><button class="pri" id="sv">Salvar backup e escolher destino</button><button id="sn">Sair sem salvar</button><button id="scn">Cancelar</button></div></dialog>
+<input type="file" id="fi" class="hide" multiple>
+
+<script>
+const $=s=>document.querySelector(s),T={html:'HTML',quadro:'Quadro',nota:'Nota',doc:'Documento',img:'Imagem',audio:'Áudio',link:'Link'};
+const db=new Promise(r=>{const q=indexedDB.open('universo',1);q.onupgradeneeded=()=>q.result.createObjectStore('s');q.onsuccess=()=>r(q.result)});
+const put=async(k,v)=>(await db).transaction('s','readwrite').objectStore('s').put(v,k);
+const get=async k=>{const d=await db;return new Promise(r=>{const q=d.transaction('s').objectStore('s').get(k);q.onsuccess=()=>r(q.result)})};
+let S={items:[],base:{}},cur=null,flt='todos';
+const uid=()=>Math.random().toString(36).slice(2,10);
+const save=()=>put('s',S);
+const show=v=>{['list','edit','bye','board','meet'].forEach(i=>$('#'+i).classList.toggle('hide',i!==v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab==(v=='meet'?'meet':'list')))};
+const dirty=i=>S.base[i.id]===undefined||i.updatedAt>S.base[i.id];
+function mk(type,title,extra={}){const it={id:uid(),type,title,text:'',tags:'',updatedAt:Date.now(),...extra};S.items.unshift(it);save();return it}
+function render(){
+ const q=$('#q').value.toLowerCase();
+ $('#chips').innerHTML=['todos',...Object.keys(T)].map(k=>`<button class="${k===flt?'on':''}" data-f="${k}">${k=='todos'?'Todos':T[k]}</button>`).join('');
+ const L=S.items.filter(i=>(flt=='todos'||i.type==flt)&&(i.title+i.text+i.tags).toLowerCase().includes(q));
+ $('#items').innerHTML=L.length?L.map(i=>`<div class="irow"><button class="item" data-id="${i.id}">${dirty(i)?'<span class="dot">● </span>':''}${esc(i.title||'Sem título')}<small>${T[i.type]}${i.tags?' · '+esc(i.tags):''}</small></button><button class="bad" data-del="${i.id}" aria-label="Apagar">Apagar</button></div>`).join(''):'<div class="empty">Nada aqui ainda. Adicione sua primeira nota ou importe um arquivo Word.</div>';
+}
+function open(id){
+ const it=S.items.find(i=>i.id==id);if(it.type=='quadro')return openB(id);
+ cur=it;show('edit');
+ $('#t').value=cur.title;$('#x').value=cur.text;$('#tags').value=cur.tags;
+ $('#extra').innerHTML=cur.type=='img'?`<img class="pv" src="${cur.data}">`:cur.type=='audio'?`<audio controls src="${cur.data}"></audio>`:cur.type=='html'?'<div class="row"><button id="prev">Visualizar</button></div><div id="pvw"></div>':cur.type=='link'?`<p><a style="color:var(--ac)" href="${cur.url}" target="_blank" rel="noopener">${cur.url}</a></p>`:'';
+}
+const edit=()=>{cur.title=$('#t').value;cur.text=$('#x').value;cur.tags=$('#tags').value;cur.updatedAt=Date.now();save()};
+['#t','#x','#tags'].forEach(s=>$(s).addEventListener('input',edit));
+$('#back').onclick=()=>goBack();
+$('#del').onclick=()=>{if(confirm('Apagar este item?')){S.items=S.items.filter(i=>i!==cur);save();goBack()}};
+$('#q').oninput=render;
+$('#chips').onclick=e=>{if(e.target.dataset.f){flt=e.target.dataset.f;render()}};
+$('#items').onclick=e=>{const d=e.target.closest('[data-del]');
+ if(d){const it=S.items.find(i=>i.id==d.dataset.del);if(it&&confirm('Apagar "'+(it.title||'Sem título')+'"?')){S.items=S.items.filter(i=>i!==it);save();render()}return}
+ const b=e.target.closest('.item');if(b)open(b.dataset.id)};
+$('#add').onclick=()=>$('#dAdd').showModal();$('#c1').onclick=()=>$('#dAdd').close();
+const ACC={doc:'.docx',img:'image/*',audio:'audio/*'};let kind,inB=false;
+$('#dAdd').onclick=e=>{const a=e.target.dataset.a;if(!a)return;$('#dAdd').close();
+ if(a=='quadro'){open(mk('quadro','Novo quadro').id)}
+ else if(a=='nota'){open(mk('nota','').id)}
+ else if(a=='link'){const u=prompt('Endereço do link:');if(u){open(mk('link',u,{url:u}).id)}}
+ else{kind=a;inB=false;$('#fi').accept=ACC[a];$('#fi').value='';$('#fi').click()}};
+const rd=f=>new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)});
+async function shrink(src,M){const im=new Image();im.src=src;await im.decode();const k=Math.min(1,M/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.85)}
+async function small(f,M=1600){return shrink(await rd(f),M)}
+$('#fi').onchange=async e=>{
+ if(e.target.dataset.imp)return;
+ const n0=S.items.length;for(const f of e.target.files){const n=f.name.replace(/\.[^.]+$/,'');
+  try{
+   if(kind=='doc'){const r=await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});mk('doc',n,{text:r.value})}
+   else if(kind=='html')mk('html',n,{text:await f.text()});
+   else if(kind=='img')mk('img',n,{data:await small(f),thumb:await small(f,360)});
+   else mk('audio',n,{data:await rd(f),text:'(transcrição ainda não feita)'});
+  }catch(err){alert('Não consegui ler "'+f.name+'". Use arquivos .docx (Word novo).')}}
+ if(inB)S.items.slice(0,S.items.length-n0).reverse().forEach(it=>addC('ref',it.id));else{render();if(kind=='html')tab('list')}};
+function pend(){const n=S.items.filter(i=>S.base[i.id]===undefined).length,m=S.items.filter(i=>S.base[i.id]!==undefined&&i.updatedAt>S.base[i.id]).length;return[n,m]}
+$('#sair').onclick=()=>$('#dSair').showModal();$('#s1').onclick=()=>$('#dSair').close();
+$('#s2').onclick=()=>{$('#dSair').close();const[n,m]=pend();$('#resumo').textContent=n+m?`Novos: ${n}. Alterados: ${m}.`:'Nada novo desde o último backup.';$('#dSave').showModal()};
+$('#scn').onclick=()=>$('#dSave').close();
+$('#sn').onclick=()=>{$('#dSave').close();show('bye')};
+$('#sv').onclick=async()=>{
+ const f=new File([JSON.stringify({v:1,items:S.items})],'universo-backup.json',{type:'application/json'});
+ try{if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:'Backup do Universo'});
+  else{const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;a.click()}}
+ catch(err){return}
+ S.items.forEach(i=>S.base[i.id]=i.updatedAt);await save();$('#dSave').close();show('bye')};
+$('#volta').onclick=()=>{show('list');render()};
+$('#imp').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=async()=>{
+ try{const d=JSON.parse(await i.files[0].text());let k=0;
+  for(const n of d.items){const o=S.items.find(x=>x.id==n.id);if(!o){S.items.push(n);S.base[n.id]=n.updatedAt;k++}else if(n.updatedAt>o.updatedAt){Object.assign(o,n);S.base[n.id]=n.updatedAt;k++}}
+  await save();render();alert(k+' item(ns) novos ou atualizados.')}catch(err){alert('Arquivo de backup inválido.')}};i.click()};
+let B=null,nav=[];
+const esc=t=>String(t).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+function goBack(){if(nav.length)openB(nav.pop());else{show('list');render()}}
+function openB(id){B=S.items.find(i=>i.id==id);B.cards=B.cards||[];show('board');$('#bn').value=B.title;drawB()}
+const tb=()=>{B.updatedAt=Date.now();save()};
+const dim=c=>[c.w||(c.kind=='g'?440:220),c.h||(c.kind=='g'?320:c.kind=='ref'?110:150)];
+async function mkThumb(it){try{it.thumb=await shrink(it.data,360)}catch(err){it.thumb=it.data}save();if(B)drawB()}
+function drawB(){$('#cv').innerHTML=B.cards.map(c=>{
+ const r=c.ref&&S.items.find(i=>i.id==c.ref),g=c.kind=='g',[w,h]=dim(c);
+ if(r&&r.type=='img'&&!r.thumb)mkThumb(r);
+ let body;
+ if(c.kind=='ref')body=!r?'<div style="padding:10px;color:var(--mut)">(item apagado)</div>':r.type=='img'?`<img data-o="${c.id}" src="${r.thumb||''}" alt="${esc(r.title||'')}" style="width:100%;height:100%;object-fit:contain;display:block">`:`<div style="padding:10px"><small style="color:var(--mut)">${T[r.type]}</small><div style="color:var(--mut);margin:4px 0 8px;overflow-wrap:anywhere">${esc((r.type=='link'?r.url:r.text||'').slice(0,140))}</div><button data-o="${c.id}">Abrir</button></div>`;
+ else body=`<textarea data-t="${c.id}" placeholder="${g?'Nome do grupo':'Escreva aqui'}">${esc(c.text||'')}</textarea>`;
+ return `<div class="cd${g?' g':''}" data-id="${c.id}" style="left:${c.x}px;top:${c.y}px;width:${w}px;height:${h}px"><div class="hd" data-d="${c.id}"><span>${c.kind=='ref'?(r?esc(r.title||T[r.type]):'Do universo'):g?'Grupo':'Nota'}</span><button data-x="${c.id}">×</button></div><div class="bd">${body}</div><div class="rz" data-r="${c.id}"></div></div>`}).join('')}
+const addC=(kind,ref)=>{const s=$('#sc'),n=B.cards.length%6*24,r=ref&&S.items.find(i=>i.id==ref),h=kind=='g'?320:kind=='ref'?(r&&r.type=='img'?190:110):150;
+ B.cards.push({id:uid(),kind,ref,text:'',w:kind=='g'?440:220,h,x:s.scrollLeft+30+n,y:s.scrollTop+30+n});tb();drawB()};
+$('#cv').addEventListener('input',e=>{const id=e.target.dataset.t;if(id){B.cards.find(c=>c.id==id).text=e.target.value;tb()}});
+$('#cv').addEventListener('click',e=>{const d=e.target.dataset;
+ if(d.x){B.cards=B.cards.filter(c=>c.id!=d.x);tb();drawB()}
+ if(d.o){const c=B.cards.find(c=>c.id==d.o);nav.push(B.id);open(c.ref)}});
+$('#cv').addEventListener('pointerdown',e=>{
+ const z=e.target.closest('.rz');
+ if(z){const c=B.cards.find(c=>c.id==z.dataset.r),[w0,h0]=dim(c),sx=e.clientX,sy=e.clientY,el=z.parentElement;
+  z.setPointerCapture(e.pointerId);
+  z.onpointermove=m=>{c.w=Math.max(120,w0+m.clientX-sx);c.h=Math.max(80,h0+m.clientY-sy);el.style.width=c.w+'px';el.style.height=c.h+'px'};
+  z.onpointerup=()=>{z.onpointermove=z.onpointerup=null;tb()};return}
+ const h=e.target.closest('.hd');if(!h||e.target.dataset.x)return;
+ const c=B.cards.find(c=>c.id==h.dataset.d);let kids=[];
+ if(c.kind=='g'){const[gw,gh]=dim(c);kids=B.cards.filter(k=>{const[kw,kh]=dim(k),cx=k.x+kw/2,cy=k.y+kh/2;return k!==c&&k.kind!='g'&&cx>c.x&&cx<c.x+gw&&cy>c.y&&cy<c.y+gh})}
+ const sx=e.clientX,sy=e.clientY,o=[c,...kids].map(k=>[k,k.x,k.y]);
+ h.setPointerCapture(e.pointerId);
+ h.onpointermove=m=>o.forEach(([k,x,y])=>{k.x=Math.max(0,x+m.clientX-sx);k.y=Math.max(0,y+m.clientY-sy);const n=$('#cv').querySelector(`[data-id="${k.id}"]`);n.style.left=k.x+'px';n.style.top=k.y+'px'});
+ h.onpointerup=()=>{h.onpointermove=h.onpointerup=null;tb()}});
+$('#bnota').onclick=()=>addC('nota');$('#bgrupo').onclick=()=>addC('g');
+function pickRef(){$('#pl').innerHTML=S.items.filter(i=>i!==B).map(i=>`<button class="item" data-p="${i.id}">${esc(i.title||'Sem título')}<small>${T[i.type]}</small></button>`).join('')||'<p>A biblioteca ainda está vazia.</p>';$('#dPick').showModal()}
+$('#bref').onclick=()=>$('#dAddB').showModal();$('#cB').onclick=()=>$('#dAddB').close();
+$('#dAddB').onclick=e=>{const a=e.target.dataset.a;if(!a)return;$('#dAddB').close();
+ if(a=='ref')return pickRef();
+ if(a=='link'){const u=prompt('Endereço do link:');if(u)addC('ref',mk('link',u,{url:u}).id);return}
+ kind=a;inB=true;$('#fi').accept=ACC[a];$('#fi').value='';$('#fi').click()};
+$('#pl').onclick=e=>{const b=e.target.closest('.item');if(b){$('#dPick').close();addC('ref',b.dataset.p)}};
+$('#pc').onclick=()=>$('#dPick').close();
+$('#bn').oninput=e=>{B.title=e.target.value;tb()};
+$('#bback').onclick=()=>goBack();
+$('#bdel').onclick=()=>{if(confirm('Apagar este quadro?')){S.items=S.items.filter(i=>i!==B);save();goBack()}};
+function bible(){
+ const L=['# Bíblia do universo','Exportado em '+new Date().toLocaleDateString('pt-BR'),''];
+ for(const i of S.items.slice().reverse()){
+  L.push('## ['+T[i.type]+'] '+(i.title||'Sem título'));
+  if(i.tags)L.push('Etiquetas: '+i.tags);
+  if(i.type=='link')L.push('Endereço: '+i.url);
+  if(i.type=='img')L.push('(imagem; não incluída neste arquivo)');
+  if(i.type=='audio')L.push('(áudio; não incluído neste arquivo)');
+  if(i.type=='quadro')(i.cards||[]).forEach(c=>{const r=c.ref&&S.items.find(x=>x.id==c.ref);L.push('- '+(c.kind=='g'?'Grupo: '+(c.text||''):c.kind=='ref'?'Item: '+(r?r.title:'(apagado)'):'Nota: '+(c.text||'')))});
+  if(i.text)L.push('',i.type=='html'?'```html\n'+i.text+'\n```':i.text);
+  L.push('')}
+ return L.join('\n')}
+async function sendFile(f,title){try{if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title});else{const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;a.click()}}catch(err){}}
+$('#exp').onclick=()=>sendFile(new File([meetText()],'universo-reuniao.md',{type:'text/markdown'}),'Bíblia do universo');
+$('#cola').onclick=()=>$('#dPaste').showModal();$('#pcn').onclick=()=>$('#dPaste').close();
+$('#ps').onclick=()=>{const t=$('#pb').value.trim();if(!t)return;const d=parseUpd(t);if(d==='erro'){alert('O bloco parece ser uma atualização, mas o formato está inválido. Peça ao Claude para reenviar em JSON válido.');return}if(d){askPlan(d);return}mk(/^\s*(<!doctype html|<html)/i.test(t)?'html':'nota',$('#pt').value||'Do Claude',{text:t,tags:'do-claude'});$('#pb').value=$('#pt').value='';$('#dPaste').close();show('list');render()};
+function meetText(){return ['=== INSTRUÇÕES PARA O CLAUDE ===',
+'Responda sempre normalmente ao que eu pedir.',
+'No final de cada resposta, entregue UM bloco de código em JSON válido, pronto para eu colar no app Universo (botão Colar resposta do Claude). Formato:',
+'{"universo":1,"substituir":[{"de":"texto antigo","para":"texto novo"}],"atualizar":[{"titulo":"título exato do item","anexar":"texto a acrescentar"},{"titulo":"...","trocar":"trecho antigo exato","por":"trecho novo"},{"titulo":"...","texto":"novo texto completo"}],"criar":[{"titulo":"...","texto":"...","etiquetas":"a, b"}]}',
+'Use só as chaves necessárias. Escape aspas e quebras de linha (\\n) para o JSON ser válido. Se nada precisar mudar, use "criar" com uma nota-resumo da conversa.',
+'Se eu pedir algo em HTML, entregue um único arquivo HTML completo e autocontido, também em bloco de código.',
+'=== FIM DAS INSTRUÇÕES ==='].join('\n')+'\n\n'+bible()}
+function tab(t){if(t=='meet'){$('#mnote').value=meetText();$('#und').style.display=S.undo?'':'none'}show(t);if(t=='list')render()}
+$('#tabs').onclick=e=>{const t=e.target.dataset.tab;if(t)tab(t)};
+$('#mcopy').onclick=async()=>{const n=$('#mnote'),b=$('#mcopy');try{await navigator.clipboard.writeText(n.value)}catch(err){n.select();document.execCommand('copy')}b.textContent='Copiado!';setTimeout(()=>b.textContent='Copiar nota',1800)};
+$('#mhtml').onclick=()=>{kind='html';inB=false;$('#fi').accept='.html,.htm,text/html';$('#fi').value='';$('#fi').click()};
+$('#extra').onclick=e=>{if(e.target.id=='prev'){$('#pvw').innerHTML='<iframe sandbox="allow-scripts" style="width:100%;height:60vh;border:1px solid var(--line);border-radius:8px;background:#fff"></iframe>';$('#pvw').firstChild.srcdoc=cur.text}};
+const esc2=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const mkRe=d=>new RegExp('(?<![\\p{L}\\p{N}])'+esc2(d)+'(?![\\p{L}\\p{N}])','gu');
+let U=null,PL=null;
+function snap(i){if(!U.mods.some(m=>m.id==i.id))U.mods.push({id:i.id,title:i.title,text:i.text,tags:i.tags,cards:i.cards?JSON.parse(JSON.stringify(i.cards)):undefined})}
+function sub(i,re,p,go){let n=0;const f=v=>(v||'').replace(re,()=>{n++;return p});
+ const a=f(i.title),b=f(i.text),c=f(i.tags),k=(i.cards||[]).map(x=>f(x.text));
+ if(go&&n){snap(i);i.title=a;i.text=b;i.tags=c;(i.cards||[]).forEach((x,j)=>{if(x.text)x.text=k[j]});i.updatedAt=Date.now()}
+ return n}
+function parseUpd(t){t=t.trim().replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();if(!/^\{[\s\S]*"universo"/.test(t))return null;try{return JSON.parse(t)}catch(e){return 'erro'}}
+function mkPlan(d){const P=[],W=[];
+ (d.substituir||[]).forEach(r=>{if(!r||!r.de)return;const de=String(r.de),pa=String(r.para==null?'':r.para);let n=0,m=0;
+  S.items.forEach(i=>{const c=sub(i,mkRe(de),pa,false);if(c){n+=c;m++}});
+  if(n)P.push({t:'Trocar "'+de+'" por "'+pa+'": '+n+' ocorrência(s) em '+m+' item(ns)',go:()=>S.items.forEach(i=>sub(i,mkRe(de),pa,true))});else W.push('"'+de+'" não foi encontrado')});
+ (d.atualizar||[]).forEach(u=>{const k=String(u.titulo||'').trim().toLowerCase();
+  const i=S.items.find(x=>(x.title||'').trim().toLowerCase()==k)||S.items.find(x=>k&&(x.title||'').toLowerCase().includes(k));
+  if(!i){W.push('Item "'+u.titulo+'" não encontrado');return}
+  if(u.anexar)P.push({t:'Acrescentar texto em "'+i.title+'"',go:()=>{snap(i);i.text=(i.text?i.text+'\n\n':'')+u.anexar;i.updatedAt=Date.now()}});
+  else if(u.trocar!=null){if(!(i.text||'').includes(u.trocar))W.push('Trecho a trocar não encontrado em "'+i.title+'"');else P.push({t:'Trocar um trecho em "'+i.title+'"',go:()=>{snap(i);i.text=i.text.replace(u.trocar,()=>u.por==null?'':u.por);i.updatedAt=Date.now()}})}
+  else if(u.texto!=null)P.push({t:'Substituir o texto inteiro de "'+i.title+'"',go:()=>{snap(i);i.text=u.texto;i.updatedAt=Date.now()}})});
+ (d.criar||[]).forEach(c=>{if(c&&(c.titulo||c.texto))P.push({t:'Criar nota "'+(c.titulo||'Sem título')+'"',go:()=>{const it=mk('nota',c.titulo||'Do Claude',{text:c.texto||'',tags:c.etiquetas||'do-claude'});U.created.push(it.id)}})});
+ return{P,W}}
+function askPlan(d){PL=mkPlan(d);if(!PL.P.length&&!PL.W.length){alert('Nada a atualizar neste bloco.');return}
+ $('#plist').innerHTML=PL.P.map(p=>'<p>• '+esc(p.t)+'</p>').join('')+PL.W.map(w=>'<p style="color:var(--bad)">⚠ '+esc(w)+'</p>').join('');
+ $('#pok').style.display=PL.P.length?'':'none';$('#dPlan').showModal()}
+$('#pno').onclick=()=>$('#dPlan').close();
+$('#pok').onclick=()=>{U={mods:[],created:[]};PL.P.forEach(p=>p.go());S.undo=U;save();$('#dPlan').close();$('#dPaste').close();$('#pb').value='';show('list');render();alert(PL.P.length+' alteração(ões) aplicada(s). Para voltar atrás, use Desfazer última atualização na aba Reunião.')};
+$('#und').onclick=()=>{if(!S.undo||!confirm('Desfazer a última atualização?'))return;
+ S.undo.mods.forEach(m=>{const i=S.items.find(x=>x.id==m.id);if(i){i.title=m.title;i.text=m.text;i.tags=m.tags;if(m.cards)i.cards=m.cards;i.updatedAt=Date.now()}});
+ S.items=S.items.filter(i=>!S.undo.created.includes(i.id));S.undo=null;save();tab('meet');alert('Atualização desfeita.')};
+addEventListener('beforeunload',e=>{if(pend()[0]+pend()[1]){e.preventDefault();e.returnValue=''}});
+get('s').then(v=>{if(v)S=v;render()});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+</script><script src="gerar.js"></script></body></html>
