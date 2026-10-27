@@ -60,6 +60,7 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
     <a id="sozinho" target="_blank" rel="noopener" role="menuitem">↗ Abrir esta aba sozinha</a>
     <button id="recarregar" role="menuitem">⟳ Recarregar esta aba</button>
     <button id="editar" role="menuitem" class="hide">✎ Editar esta aba</button>
+    <button id="baixarAba" role="menuitem" class="hide">⬇ Baixar o código desta aba</button>
     <button id="remover" role="menuitem" class="hide">🗑 Remover esta aba</button>
   </div>
 </header>
@@ -154,7 +155,7 @@ async function ir(k){
   document.querySelectorAll("#abas [data-k]").forEach(b => b.classList.toggle("on", b.dataset.k == k));
   const a = ABAS[k];
   $("#sozinho").classList.toggle("hide", !a.src); if (a.src) $("#sozinho").href = a.src;
-  $("#editar").classList.toggle("hide", !a.extra); $("#remover").classList.toggle("hide", !a.extra);
+  $("#editar").classList.toggle("hide", !a.extra); $("#remover").classList.toggle("hide", !a.extra); $("#baixarAba").classList.toggle("hide", !a.extra || a.extra.tipo != "html");
   if (k == "reuniao") { $("#v-reuniao").classList.remove("hide"); montar(); }
   else { if (!frames[k]) frame(k, await srcDe(k)); if (atual == k) frames[k].classList.remove("hide"); }
   const b = $(`#abas [data-k="${k}"]`), nv = $("#abas"); if (b) nv.scrollLeft = b.offsetLeft - (nv.clientWidth - b.offsetWidth) / 2;
@@ -183,6 +184,12 @@ $("#nSalvar").onclick = async () => {
   if (!editando) extras.push(x); localStorage.setItem("central-extras", JSON.stringify(extras));
   esqueceFrame("x-" + x.id); montarAbas(); $("#dNicho").close(); ir("x-" + x.id);
 };
+// Baixa (ou compartilha) o código de uma aba colada, para mandar ao Claude ou guardar no repositório.
+$("#baixarAba").onclick = async () => { const a = ABAS[atual]; if (!a || !a.extra) return; fecharMenu();
+  const h = await cGet("x-" + a.extra.id); if (!h) return alert("Código desta aba não encontrado neste aparelho.");
+  const nome = a.n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() + ".html", f = new File([h], nome, {type: "text/html"});
+  try { if (navigator.canShare && navigator.canShare({files: [f]})) return await navigator.share({files: [f], title: a.n}); } catch (e) { return; }
+  const l = document.createElement("a"); l.href = URL.createObjectURL(f); l.download = nome; l.click(); };
 $("#editar").onclick = () => { const a = ABAS[atual]; if (a && a.extra) abrirNicho(a.extra); };
 $("#remover").onclick = async () => { const a = ABAS[atual]; if (!a || !a.extra) return; fecharMenu();
   if (!confirm("Remover a aba " + a.n + "? Os dados que ela guardou continuam no aparelho.")) return;
