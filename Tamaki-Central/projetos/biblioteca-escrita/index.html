@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f6f6">
+<meta name="color-scheme" content="light dark">
+<title>Biblioteca de Escrita</title>
+<style>
+/* Visual inspirado no Samsung Notes (One UI): cartões arredondados, títulos grandes e botão laranja */
+:root{--bg:#f6f6f6;--card:#ffffff;--card2:#ececec;--tx:#111111;--mu:#7a7a7a;--ln:#e2e2e2;--ac:#f7871e;--ac-tx:#ffffff;--sel:#fff1e3;--sombra:0 1px 3px #0000001a;--papel:#ffffff;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]){--bg:#000000;--card:#1c1c1e;--card2:#2a2a2c;--tx:#f5f5f5;--mu:#9a9a9a;--ln:#2e2e30;--ac:#ff9a3c;--ac-tx:#1a0e00;--sel:#3a2510;--sombra:none;--papel:#121212;color-scheme:dark}}
+:root[data-tema="escuro"]{--bg:#000000;--card:#1c1c1e;--card2:#2a2a2c;--tx:#f5f5f5;--mu:#9a9a9a;--ln:#2e2e30;--ac:#ff9a3c;--ac-tx:#1a0e00;--sel:#3a2510;--sombra:none;--papel:#121212;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--tx);font:15px/1.45 "SamsungOne","Samsung Sans",Roboto,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.esc{display:none!important}
+.ic{width:44px;height:44px;border:0;background:none;border-radius:50%;display:inline-grid;place-items:center;font-size:1.2rem;flex:none}
+.ic:hover,.ic:active{background:var(--card2)}
+.ic.on{color:var(--ac)}
+#app{display:grid;grid-template-columns:280px minmax(0,1fr);height:100dvh}
+/* gaveta de pastas */
+#gaveta{background:var(--bg);border-right:1px solid var(--ln);display:flex;flex-direction:column;min-height:0;padding:18px 10px 10px;overflow:auto}
+#gaveta h1{font-size:1.45rem;font-weight:700;margin:6px 12px 16px}
+.gi{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;text-align:left;padding:12px 14px;border-radius:26px;font-size:.98rem}
+.gi .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gi small{color:var(--mu)}
+.gi.on{background:var(--sel);color:var(--ac);font-weight:700}
+.gi .bola{width:12px;height:12px;border-radius:50%;flex:none}
+.gsep{font-size:.78rem;color:var(--mu);margin:16px 14px 6px;font-weight:700;letter-spacing:.04em}
+.gnova{color:var(--ac)}
+#fundo{display:none}
+/* lista */
+#lista{display:flex;flex-direction:column;min-width:0;min-height:0}
+#topo{padding:26px 22px 6px}
+#topo h2{font-size:2rem;font-weight:700;margin:0;line-height:1.15}
+#topo .cont{color:var(--mu);font-size:.9rem;margin-top:4px}
+#barra{display:flex;align-items:center;gap:2px;padding:0 12px 6px}
+#barra .esp{flex:1}
+#busca{flex:1;min-width:0;border:0;background:var(--card);border-radius:24px;padding:11px 16px;box-shadow:var(--sombra)}
+#notas{flex:1;min-height:0;overflow:auto;padding:6px 16px 110px}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.linhas{display:flex;flex-direction:column;gap:8px}
+.nota{position:relative;display:flex;flex-direction:column;text-align:left;border:0;background:var(--card);border-radius:18px;padding:14px 14px 12px;box-shadow:var(--sombra);min-height:170px;overflow:hidden;width:100%}
+.linhas .nota{min-height:0;flex-direction:row;align-items:center;gap:12px}
+.nota .t{font-weight:700;font-size:1rem;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:22px}
+.nota .p{color:var(--mu);font-size:.86rem;line-height:1.4;flex:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;word-break:break-word}
+.linhas .nota .p{-webkit-line-clamp:1}
+.nota .d{color:var(--mu);font-size:.75rem;margin-top:8px;display:flex;align-items:center;gap:6px}
+.linhas .nota .d{margin:0;flex:none}
+.linhas .nota .meio{flex:1;min-width:0}
+.nota .d i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.nota .fav{position:absolute;right:10px;top:10px;color:var(--ac);font-size:.9rem}
+.nota .mini{max-width:100%;max-height:70px;border-radius:8px;margin-top:6px;object-fit:cover}
+.nota.sel{outline:2px solid var(--ac)}
+.vazio{color:var(--mu);text-align:center;margin-top:16vh;line-height:1.6}
+.vazio b{display:block;font-size:3rem;opacity:.5}
+#fab{position:fixed;right:24px;bottom:24px;width:62px;height:62px;border-radius:50%;border:0;background:var(--ac);color:var(--ac-tx);font-size:2rem;box-shadow:0 6px 18px #0000004d;display:grid;place-items:center;z-index:5}
+#selbar{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;gap:4px;background:var(--card);border-radius:28px;padding:6px 10px;box-shadow:0 6px 24px #0005;z-index:6}
+#selbar button{border:0;background:none;padding:8px 12px;border-radius:20px;font-size:.88rem}
+/* editor */
+#editor{position:fixed;inset:0;background:var(--papel);display:flex;flex-direction:column;z-index:10}
+#etopo{display:flex;align-items:center;gap:2px;padding:8px 8px 4px}
+#etopo .esp{flex:1}
+#salvar{border:0;background:none;color:var(--ac);font-weight:700;font-size:1rem;padding:10px 14px;border-radius:22px}
+#salvar:active{background:var(--card2)}
+#titulo{border:0;background:none;font-size:1.55rem;font-weight:700;padding:6px 20px 2px;width:100%;outline:none}
+#titulo::placeholder{color:var(--mu)}
+#emeta{display:flex;align-items:center;gap:8px;padding:0 20px 8px;color:var(--mu);font-size:.82rem}
+#emeta button{border:1px solid var(--ln);background:none;border-radius:999px;padding:3px 10px;font-size:.8rem;display:flex;align-items:center;gap:6px}
+#emeta button i{width:9px;height:9px;border-radius:50%;display:inline-block}
+#corpo{flex:1;min-height:0;overflow:auto;padding:4px 20px 30px;outline:none;font-size:1.05rem;line-height:1.65;word-break:break-word}
+#corpo:empty::before{content:"Comece a escrever";color:var(--mu)}
+#corpo img{max-width:100%;border-radius:10px;display:block;margin:8px 0}
+#corpo ul.check{list-style:none;padding-left:4px}
+#corpo ul.check li{position:relative;padding-left:32px;margin:4px 0}
+#corpo ul.check li::before{content:"";position:absolute;left:0;top:.25em;width:20px;height:20px;border:2px solid var(--mu);border-radius:6px;box-sizing:border-box}
+#corpo ul.check li.feito{color:var(--mu);text-decoration:line-through}
+#corpo ul.check li.feito::before{background:var(--ac);border-color:var(--ac);content:"✓";color:var(--ac-tx);font-size:14px;line-height:16px;text-align:center;font-weight:700}
+#ferr{display:flex;align-items:center;gap:2px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--ln);overflow-x:auto;scrollbar-width:none;background:var(--papel)}
+#ferr::-webkit-scrollbar{display:none}
+#ferr .ic{font-size:1.05rem;font-weight:700}
+#ferr .sepv{width:1px;height:26px;background:var(--ln);margin:0 4px;flex:none}
+#ferr select{border:1px solid var(--ln);background:var(--card);border-radius:10px;padding:6px;flex:none}
+#contagem{color:var(--mu);font-size:.78rem;padding:0 20px 4px;text-align:right}
+.pop{position:fixed;z-index:20;background:var(--card);border-radius:18px;box-shadow:0 10px 32px #0006;padding:8px;min-width:220px}
+.pop button.it{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;text-align:left;padding:11px 12px;border-radius:12px}
+.pop button.it:hover{background:var(--card2)}
+.pop .cores{display:grid;grid-template-columns:repeat(6,32px);gap:8px;padding:6px}
+.pop .cores button{width:32px;height:32px;border-radius:50%;border:2px solid var(--ln)}
+.pop h4{margin:6px 12px;font-size:.8rem;color:var(--mu)}
+#toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#323232;color:#fff;padding:10px 18px;border-radius:24px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;font-size:.9rem}
+#toast.on{opacity:1}
+@media (max-width:899px){
+  #app{grid-template-columns:minmax(0,1fr)}
+  #gaveta{position:fixed;left:0;top:0;bottom:0;width:min(300px,84vw);z-index:8;transform:translateX(-105%);transition:transform .2s;box-shadow:0 0 40px #0006}
+  #gaveta.aberta{transform:none}
+  #fundo.aberta{display:block;position:fixed;inset:0;background:#0006;z-index:7}
+  #topo{padding:20px 16px 4px}
+  #topo h2{font-size:1.7rem}
+  .grade{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+}
+@media (min-width:900px){ #menuG{display:none} }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="gaveta" aria-label="Pastas"></aside>
+  <div id="fundo"></div>
+  <section id="lista">
+    <div id="topo"><h2 id="tituloPasta">Todas as notas</h2><div class="cont" id="contagemNotas"></div></div>
+    <div id="barra">
+      <button class="ic" id="menuG" aria-label="Pastas">☰</button>
+      <input id="busca" type="search" placeholder="Pesquisar" aria-label="Pesquisar notas">
+      <button class="ic" id="bVista" aria-label="Mudar visualização" title="Grade ou lista">▦</button>
+      <button class="ic" id="bOrdem" aria-label="Ordenar" title="Ordenar">⇅</button>
+    </div>
+    <div id="notas"></div>
+  </section>
+</div>
+<button id="fab" aria-label="Nova nota" title="Nova nota">＋</button>
+<div id="selbar" class="esc"></div>
+
+<section id="editor" class="esc" aria-label="Editor de nota">
+  <div id="etopo">
+    <button class="ic" id="eVoltar" aria-label="Salvar e voltar para a biblioteca">←</button>
+    <span class="esp"></span>
+    <button class="ic" data-cmd="undo" aria-label="Desfazer">↶</button>
+    <button class="ic" data-cmd="redo" aria-label="Refazer">↷</button>
+    <button class="ic" id="eFav" aria-label="Favorita">☆</button>
+    <button class="ic" id="eMais" aria-label="Mais opções">⋮</button>
+    <button id="salvar">Salvar</button>
+  </div>
+  <input id="titulo" placeholder="Título" maxlength="120" aria-label="Título">
+  <div id="emeta"><button id="ePasta" aria-label="Mudar pasta"></button><span id="eData"></span></div>
+  <div id="corpo" contenteditable="true" spellcheck="true" aria-label="Texto da nota"></div>
+  <div id="contagem"></div>
+  <div id="ferr">
+    <select id="fTam" aria-label="Tamanho da letra"><option value="2">Pequeno</option><option value="3" selected>Normal</option><option value="5">Grande</option><option value="6">Título</option></select>
+    <button class="ic" data-cmd="bold" aria-label="Negrito"><b>B</b></button>
+    <button class="ic" data-cmd="italic" aria-label="Itálico"><i>I</i></button>
+    <button class="ic" data-cmd="underline" aria-label="Sublinhado"><u>U</u></button>
+    <button class="ic" data-cmd="strikeThrough" aria-label="Riscado"><s>S</s></button>
+    <span class="sepv"></span>
+    <button class="ic" id="fCor" aria-label="Cor do texto">🎨</button>
+    <button class="ic" id="fMarca" aria-label="Marca-texto">🖍</button>
+    <span class="sepv"></span>
+    <button class="ic" data-cmd="insertUnorderedList" aria-label="Lista com marcadores">•≡</button>
+    <button class="ic" data-cmd="insertOrderedList" aria-label="Lista numerada">1≡</button>
+    <button class="ic" id="fCheck" aria-label="Lista de tarefas">☑</button>
+    <button class="ic" id="fAlinha" aria-label="Alinhamento">⇤</button>
+    <span class="sepv"></span>
+    <label class="ic" for="fImg" aria-label="Inserir imagem" title="Inserir imagem" style="cursor:pointer">🖼</label>
+    <button class="ic" data-cmd="removeFormat" aria-label="Limpar formatação">⌫</button>
+  </div>
+</section>
+<input type="file" id="fImg" accept="image/*" class="esc">
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 2000); }
+const texto = h => { const d = document.createElement("div"); d.innerHTML = h || ""; d.querySelectorAll("br,p,div,li,h1,h2,h3").forEach(e => e.append(" ")); return d.textContent.replace(/\s+/g, " ").trim(); };
+
+/* ---------- dados: o mesmo lugar que a Reunião da Central lê ("kurogane:data") ---------- */
+const KEY = "kurogane:data", PREF = "biblioteca-prefs";
+const FIXAS = [
+  {id: "capitulos", nome: "Capítulos", cor: "#f7871e", arr: "chapters"},
+  {id: "personagens", nome: "Personagens", cor: "#e2557b", arr: "personagens"},
+  {id: "cenarios", nome: "Cenários", cor: "#3aa675", arr: "cenarios"},
+  {id: "mundo", nome: "Mundo", cor: "#4f8ef7", arr: "mundo"},
+  {id: "notas", nome: "Notas", cor: "#9a9a9a", arr: "notas"}
+];
+const CORES_PASTA = ["#f7871e", "#e2557b", "#3aa675", "#4f8ef7", "#9b6bdf", "#d6a400", "#00a3b4", "#9a9a9a"];
+const PAPEIS = {"": "Padrão", amarelo: "#fff6cc", rosa: "#ffe3ec", azul: "#e2efff", verde: "#e3f6e8", roxo: "#efe6ff"};
+let D = {}, N = [], P = {vista: "grade", ordem: "editado", tema: "auto", pasta: "todas"};
+try { D = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { D = {}; }
+try { Object.assign(P, JSON.parse(localStorage.getItem(PREF)) || {}); } catch (e) {}
+const blocosTexto = o => (o.blocks || []).filter(b => b.type == "texto").map(b => b.content || "").join("<p></p>");
+function carregar(){ // transforma o formato da Reunião numa lista única de notas
+  N = [];
+  const add = (o, pasta, titulo, html, i) => N.push({id: o.id || uid(), pasta, titulo: titulo || "", html: html || "", criado: o.criado || o.createdAt || Date.now() - i * 1000, editado: o.editado || o.updatedAt || o.criado || Date.now() - i * 1000, fav: !!o.fav, papel: o.papel || "", ordem: o.order ?? i, _o: o});
+  (D.chapters || []).forEach((o, i) => add(o, "capitulos", o.title, o.content, i));
+  (D.personagens || []).forEach((o, i) => add(o, "personagens", o.nome, blocosTexto(o), i));
+  (D.cenarios || []).forEach((o, i) => add(o, "cenarios", o.nome, blocosTexto(o), i));
+  (D.mundo || []).forEach((o, i) => add(o, "mundo", o.titulo, o.content, i));
+  (D.notas || []).forEach((o, i) => add(o, o.pasta || "notas", o.titulo, o.html, i));
+  D.pastas = D.pastas || []; D.lixeira = (D.lixeira || []).filter(n => Date.now() - n.apagado < 30 * 864e5);
+}
+function guardar(){ // devolve no formato que a Reunião entende, sem perder campos que já existiam
+  const base = n => ({id: n.id, order: n.ordem, criado: n.criado, editado: n.editado, fav: n.fav, papel: n.papel});
+  const blocos = n => [{type: "texto", content: n.html}, ...((n._o && n._o.blocks) || []).filter(b => b.type != "texto")];
+  const de = p => N.filter(n => n.pasta == p);
+  D.chapters = de("capitulos").map(n => Object.assign({}, n._o, base(n), {title: n.titulo, content: n.html}));
+  D.personagens = de("personagens").map(n => Object.assign({}, n._o, base(n), {nome: n.titulo, blocks: blocos(n)}));
+  D.cenarios = de("cenarios").map(n => Object.assign({}, n._o, base(n), {nome: n.titulo, blocks: blocos(n)}));
+  D.mundo = de("mundo").map(n => Object.assign({tipo: "item"}, n._o, base(n), {titulo: n.titulo, content: n.html}));
+  D.notas = N.filter(n => !FIXAS.slice(0, 4).some(f => f.id == n.pasta)).map(n => Object.assign({}, n._o, base(n), {titulo: n.titulo, html: n.html, pasta: n.pasta}));
+  try { localStorage.setItem(KEY, JSON.stringify(D)); return true; }
+  catch (e) { toast("Sem espaço no aparelho. Tire imagens grandes das notas."); return false; }
+}
+const salvarPrefs = () => { try { localStorage.setItem(PREF, JSON.stringify(P)); } catch (e) {} };
+const pastas = () => [...FIXAS, ...D.pastas];
+const pastaDe = id => pastas().find(p => p.id == id) || FIXAS[4];
+carregar();
+
+/* ---------- tema ---------- */
+function tema(){ if (P.tema == "auto") document.documentElement.removeAttribute("data-tema"); else document.documentElement.dataset.tema = P.tema;
+  const escuro = P.tema == "escuro" || (P.tema == "auto" && matchMedia("(prefers-color-scheme: dark)").matches); document.querySelector('meta[name=theme-color]').content = escuro ? "#000000" : "#f6f6f6"; }
+tema();
+
+/* ---------- gaveta ---------- */
+function gaveta(){
+  const conta = id => id == "todas" ? N.length : id == "favoritas" ? N.filter(n => n.fav).length : id == "lixeira" ? D.lixeira.length : N.filter(n => n.pasta == id).length;
+  const it = (id, ic, nome, cor) => `<button class="gi${P.pasta == id ? " on" : ""}" data-pasta="${id}">${cor ? `<span class="bola" style="background:${cor}"></span>` : `<span aria-hidden="true">${ic}</span>`}<span class="n">${esc(nome)}</span><small>${conta(id)}</small></button>`;
+  $("#gaveta").innerHTML = `<h1>Biblioteca</h1>${it("todas", "📒", "Todas as notas")}${it("favoritas", "⭐", "Favoritas")}
+    <div class="gsep">PASTAS</div>${pastas().map(p => it(p.id, "", p.nome, p.cor)).join("")}
+    <button class="gi gnova" data-a="novaPasta"><span>＋</span><span class="n">Criar pasta</span></button>
+    <div class="gsep">OUTROS</div>${it("lixeira", "🗑", "Lixeira")}
+    <button class="gi" data-a="tema"><span>${P.tema == "escuro" ? "🌙" : P.tema == "claro" ? "☀️" : "🌗"}</span><span class="n">Tema: ${{auto: "do aparelho", claro: "claro", escuro: "escuro"}[P.tema]}</span></button>
+    ${D.pastas.some(p => p.id == P.pasta) ? '<button class="gi" data-a="editarPasta"><span>✎</span><span class="n">Renomear esta pasta</span></button><button class="gi" data-a="apagarPasta"><span>🗑</span><span class="n">Apagar esta pasta</span></button>' : ""}`;
+}
+const fecharGaveta = () => { $("#gaveta").classList.remove("aberta"); $("#fundo").classList.remove("aberta"); };
+$("#menuG").onclick = () => { $("#gaveta").classList.add("aberta"); $("#fundo").classList.add("aberta"); };
+$("#fundo").onclick = fecharGaveta;
+$("#gaveta").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.pasta) { P.pasta = b.dataset.pasta; sel.clear(); salvarPrefs(); fecharGaveta(); return tudo(); }
+  const a = b.dataset.a;
+  if (a == "tema") { P.tema = {auto: "claro", claro: "escuro", escuro: "auto"}[P.tema]; salvarPrefs(); tema(); return gaveta(); }
+  if (a == "novaPasta") { const n = (prompt("Nome da pasta:") || "").trim(); if (!n) return; const p = {id: "p" + uid(), nome: n, cor: CORES_PASTA[D.pastas.length % CORES_PASTA.length]}; D.pastas.push(p); P.pasta = p.id; guardar(); salvarPrefs(); return tudo(); }
+  const p = D.pastas.find(x => x.id == P.pasta); if (!p) return;
+  if (a == "editarPasta") { const n = (prompt("Novo nome da pasta:", p.nome) || "").trim(); if (n) { p.nome = n; guardar(); tudo(); } }
+  if (a == "apagarPasta" && confirm(`Apagar a pasta "${p.nome}"? As notas dela vão para "Notas".`)) { N.forEach(n => { if (n.pasta == p.id) n.pasta = "notas"; }); D.pastas = D.pastas.filter(x => x != p); P.pasta = "todas"; guardar(); salvarPrefs(); tudo(); }
+};
+
+/* ---------- lista de notas ---------- */
+const sel = new Set();
+const quando = t => { const d = new Date(t), h = new Date(); return d.toDateString() == h.toDateString() ? d.toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"}) : d.getFullYear() == h.getFullYear() ? d.toLocaleDateString("pt-BR", {day: "numeric", month: "short"}) : d.toLocaleDateString("pt-BR"); };
+function visiveis(){
+  const q = $("#busca").value.trim().toLowerCase();
+  let L = P.pasta == "lixeira" ? D.lixeira : P.pasta == "todas" ? N : P.pasta == "favoritas" ? N.filter(n => n.fav) : N.filter(n => n.pasta == P.pasta);
+  if (q) L = L.filter(n => (n.titulo + " " + texto(n.html)).toLowerCase().includes(q));
+  const o = P.ordem; return L.slice().sort((a, b) => o == "titulo" ? a.titulo.localeCompare(b.titulo, "pt-BR", {numeric: true}) : o == "criado" ? b.criado - a.criado : P.pasta == "lixeira" ? b.apagado - a.apagado : b.editado - a.editado);
+}
+function lista(){
+  const L = visiveis(), lix = P.pasta == "lixeira", nomeP = {todas: "Todas as notas", favoritas: "Favoritas", lixeira: "Lixeira"}[P.pasta] || pastaDe(P.pasta).nome;
+  $("#tituloPasta").textContent = nomeP; $("#contagemNotas").textContent = L.length + (L.length == 1 ? " nota" : " notas") + (lix ? " · apagadas há mais de 30 dias somem" : "");
+  $("#bVista").textContent = P.vista == "grade" ? "▤" : "▦"; $("#fab").classList.toggle("esc", lix);
+  $("#notas").innerHTML = L.length ? `<div class="${P.vista == "grade" ? "grade" : "linhas"}">${L.map(n => { const pa = pastaDe(n.pasta), im = (n.html.match(/<img[^>]+src="([^"]+)"/) || [])[1], fundo = PAPEIS[n.papel] && n.papel ? `background:${PAPEIS[n.papel]};color:#111` : "";
+    return `<button class="nota${sel.has(n.id) ? " sel" : ""}" data-n="${n.id}" style="${fundo}">${n.fav ? '<span class="fav">★</span>' : ""}<span class="meio"><div class="t">${esc(n.titulo || "Sem título")}</div><div class="p">${esc(texto(n.html).slice(0, 300)) || (im ? "" : "Nota vazia")}</div>${im && P.vista == "grade" ? `<img class="mini" src="${im}" alt="">` : ""}</span>
+      <div class="d"><i style="background:${pa.cor}"></i>${esc(pa.nome)} · ${quando(lix ? n.apagado : n.editado)}</div></button>`; }).join("")}</div>`
+    : `<div class="vazio"><b>${lix ? "🗑" : "📝"}</b>${lix ? "A lixeira está vazia" : $("#busca").value ? "Nenhuma nota encontrada" : "Nenhuma nota ainda.<br>Toque em ＋ para escrever."}</div>`;
+  barraSel();
+}
+function tudo(){ gaveta(); lista(); }
+$("#busca").oninput = lista;
+$("#bVista").onclick = () => { P.vista = P.vista == "grade" ? "lista" : "grade"; salvarPrefs(); lista(); };
+$("#bOrdem").onclick = e => pop(e.currentTarget, `<h4>ORDENAR POR</h4>${[["editado", "Data de modificação"], ["criado", "Data de criação"], ["titulo", "Título"]].map(([k, n]) => `<button class="it" data-ordem="${k}">${P.ordem == k ? "●" : "○"} ${n}</button>`).join("")}`, b => { P.ordem = b.dataset.ordem; salvarPrefs(); lista(); });
+// toque abre; toque longo seleciona (como no celular)
+let segura = null, longo = false;
+$("#notas").addEventListener("pointerdown", e => { const b = e.target.closest("[data-n]"); if (!b) return; longo = false; segura = setTimeout(() => { longo = true; alternarSel(b.dataset.n); if (navigator.vibrate) navigator.vibrate(20); }, 500); });
+["pointerup", "pointercancel", "pointerleave"].forEach(t => $("#notas").addEventListener(t, () => clearTimeout(segura)));
+$("#notas").addEventListener("contextmenu", e => { if (e.target.closest("[data-n]")) e.preventDefault(); });
+$("#notas").addEventListener("click", e => { const b = e.target.closest("[data-n]"); if (!b || longo) return; if (sel.size) return alternarSel(b.dataset.n); if (P.pasta == "lixeira") return alternarSel(b.dataset.n); abrir(b.dataset.n); });
+function alternarSel(id){ sel.has(id) ? sel.delete(id) : sel.add(id); lista(); }
+function barraSel(){
+  const s = $("#selbar"); if (!sel.size) { s.classList.add("esc"); return; } s.classList.remove("esc");
+  s.innerHTML = P.pasta == "lixeira" ? `<button data-s="restaurar">↩ Restaurar (${sel.size})</button><button data-s="sempre">Excluir para sempre</button><button data-s="cancelar">✕</button>`
+    : `<button data-s="fav">⭐ Favoritar</button><button data-s="mover">📁 Mover</button><button data-s="apagar">🗑 Excluir (${sel.size})</button><button data-s="cancelar">✕</button>`;
+}
+$("#selbar").onclick = e => {
+  const b = e.target.closest("[data-s]"); if (!b) return; const a = b.dataset.s, ids = [...sel];
+  if (a == "cancelar") { sel.clear(); return lista(); }
+  if (a == "fav") { const todas = ids.every(id => N.find(n => n.id == id).fav); ids.forEach(id => N.find(n => n.id == id).fav = !todas); }
+  if (a == "mover") return pop(b, `<h4>MOVER PARA</h4>${pastas().map(p => `<button class="it" data-mover="${p.id}"><span class="bola" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.cor}"></span> ${esc(p.nome)}</button>`).join("")}`, x => { ids.forEach(id => { const n = N.find(n => n.id == id); n.pasta = x.dataset.mover; n.editado = Date.now(); }); sel.clear(); guardar(); tudo(); toast("Movidas para " + pastaDe(x.dataset.mover).nome); });
+  if (a == "apagar") { ids.forEach(id => paraLixeira(N.find(n => n.id == id))); toast(ids.length + (ids.length == 1 ? " nota foi" : " notas foram") + " para a lixeira"); }
+  if (a == "restaurar") { ids.forEach(id => { const n = D.lixeira.find(x => x.id == id); if (n) { D.lixeira = D.lixeira.filter(x => x != n); delete n.apagado; N.push(n); } }); toast("Restaurada"); }
+  if (a == "sempre") { if (!confirm("Excluir para sempre? Não dá para desfazer.")) return; D.lixeira = D.lixeira.filter(x => !sel.has(x.id)); }
+  sel.clear(); guardar(); tudo();
+};
+function paraLixeira(n){ if (!n) return; N = N.filter(x => x != n); D.lixeira.push(Object.assign({}, n, {apagado: Date.now()})); }
+
+/* ---------- menus flutuantes ---------- */
+let popEl = null;
+function pop(alvo, html, aoEscolher){
+  fecharPop(); popEl = document.createElement("div"); popEl.className = "pop"; popEl.innerHTML = html; document.body.appendChild(popEl);
+  const r = alvo.getBoundingClientRect(), w = popEl.offsetWidth, h = popEl.offsetHeight;
+  popEl.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + "px"; popEl.style.top = (r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 6) : r.bottom + 6) + "px";
+  popEl.onclick = e => { const b = e.target.closest("button"); if (!b) return; fecharPop(); aoEscolher(b); };
+  setTimeout(() => document.addEventListener("pointerdown", foraPop), 0);
+}
+function foraPop(e){ if (popEl && !popEl.contains(e.target)) fecharPop(); }
+function fecharPop(){ if (popEl) { popEl.remove(); popEl = null; } document.removeEventListener("pointerdown", foraPop); }
+
+/* ---------- editor ---------- */
+let atual = null, sujo = false, rascunho, descartar = false;
+function abrir(id){
+  const n = id ? N.find(x => x.id == id) : null;
+  atual = n ? Object.assign({}, n) : {id: uid(), pasta: FIXAS.concat(D.pastas).some(p => p.id == P.pasta) ? P.pasta : "notas", titulo: "", html: "", criado: Date.now(), editado: Date.now(), fav: false, papel: "", ordem: N.length, nova: true};
+  $("#titulo").value = atual.titulo; $("#corpo").innerHTML = atual.html; sujo = false;
+  metaEditor(); $("#editor").classList.remove("esc"); contar();
+  if (!n) setTimeout(() => { if (!$("#editor").contains(document.activeElement)) $("#titulo").focus(); }, 50);
+  history.pushState({nota: 1}, "");
+}
+function metaEditor(){
+  const pa = pastaDe(atual.pasta); $("#ePasta").innerHTML = `<i style="background:${pa.cor}"></i>${esc(pa.nome)} ▾`;
+  $("#eData").textContent = atual.nova ? "Nova nota" : "Editado " + quando(atual.editado);
+  $("#eFav").textContent = atual.fav ? "★" : "☆"; $("#eFav").classList.toggle("on", atual.fav);
+  const cor = PAPEIS[atual.papel]; $("#editor").style.background = atual.papel && cor ? cor : ""; $("#editor").style.color = atual.papel ? "#111" : "";
+}
+function contar(){ const t = texto($("#corpo").innerHTML), p = t ? t.split(/\s+/).length : 0; $("#contagem").textContent = p + (p == 1 ? " palavra" : " palavras") + " · " + t.length + " caracteres"; }
+function gravarNota(){ // salva a nota aberta na biblioteca
+  if (!atual) return false;
+  atual.titulo = $("#titulo").value.trim(); atual.html = limpar($("#corpo").innerHTML);
+  const vazia = !atual.titulo && !texto(atual.html) && !/<img/.test(atual.html);
+  if (vazia) { if (!atual.nova) paraLixeira(N.find(x => x.id == atual.id)); guardar(); return false; }
+  atual.editado = Date.now(); delete atual.nova;
+  const i = N.findIndex(x => x.id == atual.id); if (i >= 0) N[i] = Object.assign(N[i], atual); else N.push(Object.assign({}, atual));
+  return guardar();
+}
+const limpar = h => h.replace(/<(script|style)[\s\S]*?<\/\1>/gi, "").replace(/\son\w+="[^"]*"/gi, "").replace(/^(<br>|\s)+$/, "");
+function fechar(salvar){
+  const novaVazia = atual && atual.nova && !$("#titulo").value.trim() && !texto($("#corpo").innerHTML);
+  if (salvar && gravarNota()) toast("Salvo em " + pastaDe(atual.pasta).nome);
+  else if (salvar && novaVazia) toast("Nota vazia descartada");
+  clearTimeout(rascunho); atual = null; descartar = false; $("#editor").classList.add("esc"); fecharPop();
+  $("#busca").value = ""; tudo(); $("#notas").scrollTop = 0;
+}
+// "Salvar" e a seta voltam direto para a biblioteca
+$("#salvar").onclick = () => { if (history.state && history.state.nota) history.back(); else fechar(true); };
+$("#eVoltar").onclick = () => $("#salvar").click();
+addEventListener("popstate", () => { if (atual) fechar(!descartar); });
+const marcarSujo = () => { sujo = true; contar(); clearTimeout(rascunho); rascunho = setTimeout(() => { if (atual && !atual.nova && sujo) { gravarNota(); sujo = false; } }, 2500); };
+$("#corpo").addEventListener("input", marcarSujo); $("#titulo").addEventListener("input", marcarSujo);
+$("#titulo").addEventListener("keydown", e => { if (e.key == "Enter") { e.preventDefault(); $("#corpo").focus(); } });
+$("#eFav").onclick = () => { atual.fav = !atual.fav; metaEditor(); marcarSujo(); };
+$("#ePasta").onclick = e => pop(e.currentTarget, `<h4>PASTA</h4>${pastas().map(p => `<button class="it" data-p="${p.id}"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.cor}"></span> ${esc(p.nome)}${p.id == atual.pasta ? " ✓" : ""}</button>`).join("")}`, b => { atual.pasta = b.dataset.p; metaEditor(); marcarSujo(); });
+$("#eMais").onclick = e => pop(e.currentTarget, `<h4>COR DA PÁGINA</h4><div class="cores">${Object.entries(PAPEIS).map(([k, c]) => `<button data-papel="${k}" aria-label="${k || "padrão"}" style="background:${k ? c : "var(--papel)"}${atual.papel == k ? ";border-color:var(--ac)" : ""}"></button>`).join("")}</div>
+  <button class="it" data-m="txt">⬇ Baixar como texto (.txt)</button><button class="it" data-m="html">⬇ Baixar como página (.html)</button><button class="it" data-m="copiar">📋 Copiar texto</button><button class="it" data-m="apagar">🗑 Excluir nota</button>`, b => {
+  if (b.dataset.papel != null) { atual.papel = b.dataset.papel; metaEditor(); return marcarSujo(); }
+  const m = b.dataset.m, nome = ($("#titulo").value.trim() || "nota").replace(/[\\/:*?"<>|]+/g, "-");
+  if (m == "txt") baixar(new Blob([$("#titulo").value + "\n\n" + $("#corpo").innerText], {type: "text/plain;charset=utf-8"}), nome + ".txt");
+  if (m == "html") baixar(new Blob([`<!DOCTYPE html><meta charset="utf-8"><title>${esc($("#titulo").value)}</title><body style="font:17px/1.6 Georgia,serif;max-width:720px;margin:40px auto;padding:0 20px"><h1>${esc($("#titulo").value)}</h1>${limpar($("#corpo").innerHTML)}</body>`], {type: "text/html"}), nome + ".html");
+  if (m == "copiar") navigator.clipboard.writeText($("#titulo").value + "\n\n" + $("#corpo").innerText).then(() => toast("Texto copiado"), () => {});
+  if (m == "apagar" && confirm("Mandar esta nota para a lixeira?")) { if (!atual.nova) paraLixeira(N.find(x => x.id == atual.id)); guardar(); descartar = true; history.state && history.state.nota ? history.back() : fechar(false); toast("Nota na lixeira"); }
+});
+function baixar(blob, nome){ const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); }
+
+/* ---------- barra de formatação ---------- */
+const cmd = (c, v) => { $("#corpo").focus(); document.execCommand(c, false, v); marcarSujo(); };
+$("#ferr").addEventListener("pointerdown", e => { if (e.target.closest("button")) e.preventDefault(); }); // não perde a seleção do texto
+document.addEventListener("click", e => { const b = e.target.closest("[data-cmd]"); if (b) cmd(b.dataset.cmd); });
+$("#fTam").onchange = e => { cmd("fontSize", e.target.value); };
+const PALETA = ["#111111", "#7a7a7a", "#e53935", "#f7871e", "#d6a400", "#3aa675", "#4f8ef7", "#9b6bdf", "#e2557b", "#ffffff"];
+const MARCAS = ["transparent", "#fff176", "#ffcc80", "#a5d6a7", "#90caf9", "#f48fb1"];
+$("#fCor").onclick = e => pop(e.currentTarget, `<h4>COR DO TEXTO</h4><div class="cores">${PALETA.map(c => `<button data-c="${c}" style="background:${c}" aria-label="${c}"></button>`).join("")}</div>`, b => cmd("foreColor", b.dataset.c));
+$("#fMarca").onclick = e => pop(e.currentTarget, `<h4>MARCA-TEXTO</h4><div class="cores">${MARCAS.map(c => `<button data-c="${c}" style="background:${c == "transparent" ? "var(--papel)" : c}" aria-label="${c == "transparent" ? "sem marca" : c}">${c == "transparent" ? "✕" : ""}</button>`).join("")}</div>`, b => cmd("hiliteColor", b.dataset.c));
+let alinh = 0; $("#fAlinha").onclick = () => { alinh = (alinh + 1) % 3; cmd(["justifyLeft", "justifyCenter", "justifyRight"][alinh]); $("#fAlinha").textContent = ["⇤", "↔", "⇥"][alinh]; };
+$("#fCheck").onclick = () => { cmd("insertUnorderedList"); const s = getSelection(), n = s.anchorNode && (s.anchorNode.nodeType == 1 ? s.anchorNode : s.anchorNode.parentElement), ul = n && n.closest("ul"); if (ul && $("#corpo").contains(ul)) ul.classList.toggle("check"); };
+$("#corpo").addEventListener("click", e => { const li = e.target.closest("ul.check > li"); if (li && e.offsetX < 28) { li.classList.toggle("feito"); marcarSujo(); } });
+$("#fImg").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; // reduz a imagem para caber no aparelho
+  const im = new Image(); im.src = URL.createObjectURL(f); await im.decode().catch(() => {}); const k = Math.min(1, 1100 / Math.max(im.naturalWidth || 1, im.naturalHeight || 1)), c = document.createElement("canvas");
+  c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); cmd("insertImage", c.toDataURL("image/jpeg", .8)); };
+
+/* ---------- início ---------- */
+addEventListener("storage", e => { if (e.key == KEY && !atual) { try { D = JSON.parse(e.newValue) || {}; } catch (x) {} carregar(); tudo(); } });
+$("#fab").onclick = () => abrir(null);
+document.addEventListener("keydown", e => { if (atual && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() == "s") { e.preventDefault(); $("#salvar").click(); } if (e.key == "Escape") fecharPop(); });
+tudo();
+})();
+</script>
+</body>
+</html>

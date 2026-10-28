@@ -48,6 +48,12 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
 .tuto b{color:var(--am)}.tuto ol{margin:6px 0 0;padding-left:20px;color:var(--mut);line-height:1.5}.tuto ol b{color:var(--tx)}
 .campo{display:grid;gap:4px;margin-bottom:10px;font-size:.85rem;color:var(--mut)}
 .campo input,.campo select{background:#0d0d0d;color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:10px;font:inherit}
+.ord{list-style:none;margin:0 0 10px;padding:0;max-height:55vh;overflow:auto}
+.ord li{display:flex;align-items:center;gap:8px;background:#1b1b1b;border:1px solid var(--ln);border-radius:12px;padding:6px 8px;margin-bottom:6px;touch-action:none}
+.ord li.arr{border-color:var(--am);opacity:.85}
+.ord li .al{cursor:grab;color:var(--mut);font-size:1.2rem;padding:0 4px}
+.ord li .nm{flex:1}
+.ord li button{background:var(--pn);border:1px solid var(--ln);border-radius:10px;width:38px;height:38px}
 @media (max-width:700px){#abas button:not(.on) .t{display:none}#abas button{padding:0 12px}}
 </style>
 </head>
@@ -59,6 +65,7 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
   <div id="menu" class="hide" role="menu">
     <a id="sozinho" target="_blank" rel="noopener" role="menuitem">↗ Abrir esta aba sozinha</a>
     <button id="recarregar" role="menuitem">⟳ Recarregar esta aba</button>
+    <button id="organizar" role="menuitem">↕ Organizar abas</button>
     <button id="editar" role="menuitem" class="hide">✎ Editar esta aba</button>
     <button id="baixarAba" role="menuitem" class="hide">⬇ Baixar o código desta aba</button>
     <button id="remover" role="menuitem" class="hide">🗑 Remover esta aba</button>
@@ -73,6 +80,7 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
       <button class="bt" id="arquivo">Enviar como arquivo</button>
       <button class="bt" id="colar">Colar resposta do Claude</button>
       <button class="bt" id="atualizar">Atualizar</button>
+      <button class="bt" id="baixarTudo">⬇ Baixar tudo (.zip)</button>
     </div>
     <div class="tuto"><b>Pedir coisas novas ao Claude</b><ol>
       <li>Toque em <b>Copiar nota</b> e cole numa conversa com o Claude.</li>
@@ -91,6 +99,13 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
   <input type="file" id="nArq" accept=".html,text/html" class="hide">
   <p class="mut" id="nMsg" style="margin:8px 0 0"></p>
   <div class="row" style="margin-top:10px"><button class="bt pri" id="nSalvar">Salvar aba</button><button class="bt" id="nFechar">Cancelar</button></div>
+</dialog>
+
+<dialog id="dOrdem">
+  <h2 style="margin:0 0 6px;font-family:Georgia,serif">Organizar abas</h2>
+  <p class="mut" style="margin-bottom:10px">Arraste pelo ☰ ou use as setas. A ordem fica guardada neste aparelho.</p>
+  <ul class="ord" id="ordLista"></ul>
+  <div class="row"><button class="bt pri" id="ordOk">Pronto</button><button class="bt" id="ordPadrao">Ordem original</button></div>
 </dialog>
 
 <dialog id="dCola">
@@ -127,10 +142,14 @@ let ABAS = {};
 const cdb = () => new Promise((ok, no) => { const r = indexedDB.open("central", 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
 async function cPut(k, v){ const d = await cdb(); await new Promise(ok => { const t = d.transaction("h", "readwrite"); v == null ? t.objectStore("h").delete(k) : t.objectStore("h").put(v, k); t.oncomplete = ok; }); }
 async function cGet(k){ const d = await cdb(); return new Promise(ok => { const q = d.transaction("h").objectStore("h").get(k); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); }
+// Ordem das abas escolhida pela pessoa (guardada neste aparelho)
+const lerOrdem = () => { try { return JSON.parse(localStorage.getItem("central-ordem")) || []; } catch (e) { return []; } };
 function montarAbas(){
   ABAS = {}; const {reuniao, ...resto} = BASE; Object.assign(ABAS, resto);
   for (const x of extras) ABAS["x-" + x.id] = {i: x.i || "⭐", n: x.n, src: x.tipo == "url" ? x.src : null, extra: x};
   ABAS.reuniao = reuniao;
+  const ord = lerOrdem(), pos = k => { const i = ord.indexOf(k); return i < 0 ? 1e3 + Object.keys(ABAS).indexOf(k) : i; };
+  ABAS = Object.fromEntries(Object.entries(ABAS).sort((a, b) => pos(a[0]) - pos(b[0])));
   $("#abas").innerHTML = Object.entries(ABAS).map(([k, a]) => `<button data-k="${k}" aria-label="${esc(a.n)}" title="${esc(a.n)}"><span class="i" aria-hidden="true">${esc(a.i)}</span><span class="t">${esc(a.n)}</span></button>`).join("")
     + '<button class="add" id="addAba" aria-label="Adicionar nicho" title="Adicionar nicho"><span class="i" aria-hidden="true">＋</span><span class="t">Adicionar</span></button>';
   if (atual) document.querySelectorAll("#abas [data-k]").forEach(b => b.classList.toggle("on", b.dataset.k == atual));
@@ -196,6 +215,77 @@ $("#editar").onclick = () => { const a = ABAS[atual]; if (a && a.extra) abrirNic
 $("#remover").onclick = async () => { const a = ABAS[atual]; if (!a || !a.extra) return; fecharMenu();
   if (!confirm("Remover a aba " + a.n + "? Os dados que ela guardou continuam no aparelho.")) return;
   extras = extras.filter(x => x != a.extra); localStorage.setItem("central-extras", JSON.stringify(extras)); await cPut("x-" + a.extra.id, null); esqueceFrame(atual); montarAbas(); ir("universo"); };
+/* ---------- organizar abas ---------- */
+let ordem = [];
+function listaOrdem(){ $("#ordLista").innerHTML = ordem.map((k, i) => `<li data-k="${k}"><span class="al" aria-hidden="true">☰</span><span>${esc(ABAS[k].i)}</span><span class="nm">${esc(ABAS[k].n)}</span><button data-mv="-1" aria-label="Subir" ${i ? "" : "disabled"}>▲</button><button data-mv="1" aria-label="Descer" ${i < ordem.length - 1 ? "" : "disabled"}>▼</button></li>`).join(""); }
+function guardarOrdem(){ try { localStorage.setItem("central-ordem", JSON.stringify(ordem)); } catch (e) {} montarAbas(); }
+$("#organizar").onclick = () => { fecharMenu(); ordem = Object.keys(ABAS); listaOrdem(); $("#dOrdem").showModal(); };
+$("#ordLista").addEventListener("click", e => { const b = e.target.closest("[data-mv]"); if (!b) return; const i = ordem.indexOf(b.closest("li").dataset.k), j = i + +b.dataset.mv; [ordem[i], ordem[j]] = [ordem[j], ordem[i]]; listaOrdem(); guardarOrdem(); });
+let arrasto = null;
+$("#ordLista").addEventListener("pointerdown", e => { const al = e.target.closest(".al"); if (!al) return; const li = al.closest("li"); arrasto = {li, k: li.dataset.k}; li.classList.add("arr"); li.setPointerCapture(e.pointerId); });
+$("#ordLista").addEventListener("pointermove", e => { if (!arrasto) return; const irmaos = [...$("#ordLista").children], i = ordem.indexOf(arrasto.k);
+  const alvo = irmaos.find(li => { const r = li.getBoundingClientRect(); return li != arrasto.li && e.clientY > r.top && e.clientY < r.bottom; }); if (!alvo) return;
+  ordem.splice(i, 1); const j = ordem.indexOf(alvo.dataset.k); ordem.splice(j + (j >= i ? 1 : 0), 0, arrasto.k); listaOrdem(); arrasto.li = $(`#ordLista [data-k="${arrasto.k}"]`); arrasto.li.classList.add("arr"); });
+const soltaOrdem = () => { if (!arrasto) return; arrasto = null; listaOrdem(); guardarOrdem(); };
+$("#ordLista").addEventListener("pointerup", soltaOrdem); $("#ordLista").addEventListener("pointercancel", soltaOrdem);
+$("#ordOk").onclick = () => $("#dOrdem").close();
+$("#ordPadrao").onclick = () => { try { localStorage.removeItem("central-ordem"); } catch (e) {} montarAbas(); ordem = Object.keys(ABAS); listaOrdem(); };
+
+/* ---------- baixar tudo: um .zip com uma pasta para cada aba ---------- */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u => { let c = ~0; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 255] ^ (c >>> 8); return (~c) >>> 0; };
+function zip(arqs){ // .zip sem compressão, com nomes em UTF-8 (acentos funcionam)
+  const enc = new TextEncoder(), partes = [], cent = [], d0 = new Date(), hora = d0.getHours() << 11 | d0.getMinutes() << 5 | d0.getSeconds() >> 1, dia = (d0.getFullYear() - 1980) << 9 | (d0.getMonth() + 1) << 5 | d0.getDate(); let off = 0;
+  for (const a of arqs) { const nb = enc.encode(a.nome), d = a.dados, c = crc32(d), h = new DataView(new ArrayBuffer(30)), ce = new DataView(new ArrayBuffer(46));
+    [[0, 0x04034b50, 4], [4, 20, 2], [6, 0x0800, 2], [10, hora, 2], [12, dia, 2], [14, c, 4], [18, d.length, 4], [22, d.length, 4], [26, nb.length, 2]].forEach(([o, v, t]) => t == 4 ? h.setUint32(o, v, true) : h.setUint16(o, v, true));
+    [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0x0800, 2], [12, hora, 2], [14, dia, 2], [16, c, 4], [20, d.length, 4], [24, d.length, 4], [28, nb.length, 2], [42, off, 4]].forEach(([o, v, t]) => t == 4 ? ce.setUint32(o, v, true) : ce.setUint16(o, v, true));
+    partes.push(h, nb, d); cent.push(ce, nb); off += 30 + nb.length + d.length; }
+  const tam = cent.reduce((s, x) => s + x.byteLength, 0), fim = new DataView(new ArrayBuffer(22));
+  fim.setUint32(0, 0x06054b50, true); fim.setUint16(8, arqs.length, true); fim.setUint16(10, arqs.length, true); fim.setUint32(12, tam, true); fim.setUint32(16, off, true);
+  return new Blob([...partes, ...cent, fim], {type: "application/zip"});
+}
+// Lista de reserva, caso o GitHub não responda (sem internet ou limite de consultas)
+const RESERVA = {universo: ["index.html", "gerador.html", "gerar.js", "icon.svg", "manifest.webmanifest", "palco.html", "sw.js"],
+  Tamaki_Personagem: ["index.html", "icon-192.png", "icon-512.png", "instalar-voz.sh", "manifest.json", "palco.js", "palco_server.py", "sw.js", "tamaki_voz.py"]};
+async function arvore(repo){ // lista os arquivos de um repositório público do GitHub
+  try { const r = await fetch(`https://api.github.com/repos/tamakishions2-tech/${repo}/git/trees/main?recursive=1`); if (!r.ok) return null; const j = await r.json(); return (j.tree || []).filter(x => x.type == "blob").map(x => x.path); } catch (e) { return null; }
+}
+async function baixarTudo(){
+  const st = t => $("#resumo").textContent = t, enc = new TextEncoder(), arqs = [], faltou = [], usados = new Set(), mapa = {};
+  const pasta = n => n.replace(/[\\/:*?"<>|]+/g, "-").trim() || "Aba";
+  const pega = async (url, nome) => { try { const r = await fetch(url, {cache: "no-store"}); if (!r.ok) throw 0; arqs.push({nome, dados: new Uint8Array(await r.arrayBuffer())}); } catch (e) { faltou.push(nome); } };
+  st("Listando os arquivos…");
+  const base = location.pathname.replace(/[^/]*$/, ""), partes = base.split("/").filter(Boolean), repo = partes[0] || "Tamaki-Central", pre = partes.slice(1).map(x => x + "/").join("");
+  const tree = await arvore(repo), meus = tree ? tree.filter(p => p.startsWith(pre)).map(p => p.slice(pre.length)) : null;
+  const nomeCentral = pasta(ABAS.reuniao.n);
+  for (const [k, a] of Object.entries(ABAS)) {
+    if (k == "reuniao") continue; const P = pasta(a.n); st("Juntando " + a.n + "…");
+    if (a.extra && a.extra.tipo == "html") { const h = await cGet("x-" + a.extra.id); if (h) { arqs.push({nome: P + "/index.html", dados: enc.encode(h)}); mapa[k] = "../" + P + "/index.html"; } continue; }
+    const src = a.src; if (!src) continue;
+    if (/^https?:/.test(src) && new URL(src).origin != location.origin) { arqs.push({nome: P + "/endereco.txt", dados: enc.encode("Esta aba abre um site de fora:\n" + src + "\n")}); continue; }
+    if (src.startsWith("/")) { // outro repositório da conta (ex.: /universo/)
+      const r = src.split("/").filter(Boolean)[0], t2 = await arvore(r), lista = (t2 || RESERVA[r] || ["index.html"]).filter(p => !/^\.|\/\./.test(p) && !/\.ipynb$/.test(p));
+      for (const p of lista) await pega("/" + r + "/" + p, P + "/" + p); mapa[k] = "../" + P + "/"; continue; }
+    if (src.endsWith("/")) { const lista = meus ? meus.filter(p => p.startsWith(src)) : [src + "index.html"]; for (const p of lista) { usados.add(p); await pega(base + p, P + "/" + p.slice(src.length)); } mapa[k] = "../" + P + "/"; }
+    else { usados.add(src); await pega(base + src, P + "/" + src.split("/").pop()); mapa[k] = "../" + P + "/" + src.split("/").pop(); }
+  }
+  // a própria Central (onde fica a Reunião): o resto dos arquivos do repositório
+  st("Juntando a Central…");
+  const resto = (meus || ["index.html", "index-5.html", "README.md", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "manifest.webmanifest", "sw.js"]).filter(p => !usados.has(p) && !/^\.|\.ipynb$/.test(p));
+  for (const p of resto) await pega(base + p, nomeCentral + "/" + p);
+  const idx = arqs.find(x => x.nome == nomeCentral + "/index.html"); // dentro do .zip, a Central aponta para as pastas das outras abas
+  if (idx) { let h = new TextDecoder().decode(idx.dados); for (const [k, a] of Object.entries(BASE)) if (a.src && mapa[k]) h = h.split(`src: "${a.src}"`).join(`src: "${mapa[k]}"`); idx.dados = enc.encode(h); }
+  arqs.push({nome: "LEIA-ME.txt", dados: enc.encode(["Tamaki · todos os arquivos do site", "Baixado em " + new Date().toLocaleString("pt-BR"), "",
+    "Cada pasta é uma aba da Central:", ...Object.values(ABAS).map(a => "- " + pasta(a.n) + (a == ABAS.reuniao ? "  (a Central em si, com a Reunião: abra o index.html daqui)" : "")), "",
+    "Para publicar de novo: envie o conteúdo para um repositório do GitHub e ative o GitHub Pages.",
+    "Os dados (notas, poses, projetos) ficam guardados no navegador de cada aparelho e não vão neste .zip.",
+    ...(faltou.length ? ["", "Não consegui baixar:", ...faltou.map(f => "- " + f)] : [])].join("\r\n"))});
+  st("Criando o .zip…");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(zip(arqs)); a.download = "tamaki-site-" + new Date().toISOString().slice(0, 10) + ".zip"; a.click();
+  st(`Pronto: ${arqs.length} arquivos em ${new Set(arqs.map(x => x.nome.split("/")[0])).size - 1} pastas${faltou.length ? " · " + faltou.length + " não baixaram (veja o LEIA-ME)" : ""}.`);
+}
+$("#baixarTudo").onclick = async () => { const b = $("#baixarTudo"); b.disabled = true; try { await baixarTudo(); } catch (e) { $("#resumo").textContent = "Não consegui criar o .zip: " + e.message; } b.disabled = false; };
+
 $("#mais").onclick = e => { e.stopPropagation(); const m = $("#menu"); m.classList.toggle("hide"); $("#mais").setAttribute("aria-expanded", String(!m.classList.contains("hide"))); };
 document.addEventListener("click", e => { if (!e.target.closest("#menu")) fecharMenu(); });
 document.addEventListener("keydown", e => { if (e.key == "Escape") fecharMenu(); });
@@ -247,6 +337,8 @@ function escrita(){
   ord(s.personagens).forEach(p => L.push("## [Personagem] " + (p.nome || "Sem nome"), (p.blocks || []).filter(b => b.type == "texto").map(b => texto(b.content)).join("\n"), ""));
   ord(s.cenarios).forEach(p => L.push("## [Cenário] " + (p.nome || "Sem nome"), (p.blocks || []).filter(b => b.type == "texto").map(b => texto(b.content)).join("\n"), ""));
   ord(s.mundo).forEach(m => L.push("## [Mundo · " + (m.tipo || "item") + "] " + (m.titulo || "Sem título"), texto(m.content), ""));
+  const pn = id => ((s.pastas || []).find(p => p.id == id) || {}).nome || "Nota";
+  ord(s.notas).forEach(n => L.push("## [" + pn(n.pasta) + "] " + (n.titulo || "Sem título"), texto(n.html), ""));
   return L.join("\n");
 }
 async function novel(){
@@ -266,7 +358,7 @@ const CAB = ["=== INSTRUÇÕES PARA O CLAUDE ===",
   "Se eu pedir algo em HTML, entregue um único arquivo HTML completo e autocontido, também em bloco de código.",
   "",
   "=== COMO ATENDER PEDIDOS NOVOS ===",
-  "A Central é um site no GitHub Pages: https://tamakishions2-tech.github.io/Tamaki-Central/ (repositório Tamaki-Central: index.html = Central, palco.html = Palco, palco-animacao.html = Palco Animação (atriz, poses e camadas do rosto), motion.html = Motion, decupagem.html = Decupagem, efeitos.html = Efeitos (sons e efeitos visuais gerados do zero; caixa comum IndexedDB "tamaki-caixa"), projetos/biblioteca-escrita/ = Escrita). Universo (/universo/) e Ficha da Tamaki (/Tamaki_Personagem/) são outros repositórios: nunca mande arquivos para eles sem eu pedir.",
+  "A Central é um site no GitHub Pages: https://tamakishions2-tech.github.io/Tamaki-Central/ (repositório Tamaki-Central: index.html = Central, palco.html = Palco, palco-animacao.html = Palco Animação (atriz, poses e camadas do rosto), motion.html = Motion, decupagem.html = Decupagem, efeitos.html = Efeitos (sons e efeitos visuais gerados do zero; caixa comum IndexedDB 'tamaki-caixa'), projetos/biblioteca-escrita/ = Escrita). Universo (/universo/) e Ficha da Tamaki (/Tamaki_Personagem/) são outros repositórios: nunca mande arquivos para eles sem eu pedir.",
   "Visual: fundo #121212, painéis #1b1b1b e #242424, destaque amarelo #f2b51d, texto #f4f1e8, cantos arredondados, tudo cabendo na tela sem rolar a página, funcionando no celular e no tablet (Galaxy A11).",
   "1) NICHO NOVO (aba nova): entregue UM arquivo HTML completo e autocontido, em bloco de código. Eu adiciono pela aba ＋ Adicionar da barra (Colar o código). Guarde os dados em localStorage ou IndexedDB com um prefixo próprio. Dados que já existem no mesmo endereço e podem ser lidos: IndexedDB \"universo\" (loja \"s\", chave \"s\"), localStorage \"tamaki\", \"palco-cfg\", \"motion-proj\" e \"kurogane:data\".",
   "2) MOTION NOVO: entregue só um bloco JavaScript que chama Motion.registrar({...}). Eu colo em Motion › ＋ Adicionar › Novo tipo. Formato:",

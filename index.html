@@ -58,6 +58,12 @@ dialog textarea{width:100%;min-height:36vh;background:#0d0d0d;color:var(--tx);bo
 .tuto a{color:var(--am)}
 .campo{display:grid;gap:4px;margin-bottom:10px;font-size:.85rem;color:var(--mut)}
 .campo input,.campo select{background:#0d0d0d;color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:10px;font:inherit}
+.ord{list-style:none;margin:0 0 10px;padding:0;max-height:55vh;overflow:auto}
+.ord li{display:flex;align-items:center;gap:8px;background:#1b1b1b;border:1px solid var(--ln);border-radius:12px;padding:6px 8px;margin-bottom:6px;touch-action:none}
+.ord li.arr{border-color:var(--am);opacity:.85}
+.ord li .al{cursor:grab;color:var(--mut);font-size:1.2rem;padding:0 4px}
+.ord li .nm{flex:1}
+.ord li button{background:var(--pn);border:1px solid var(--ln);border-radius:10px;width:38px;height:38px}
 @media (max-width:700px){#abas button:not(.on) .t{display:none}#abas button{padding:0 12px}}
 </style>
 </head>
@@ -71,6 +77,7 @@ dialog textarea{width:100%;min-height:36vh;background:#0d0d0d;color:var(--tx);bo
     <button id="recarregar" role="menuitem">⟳ Recarregar esta aba</button>
     <button id="editar" role="menuitem" class="hide">✎ Editar esta aba</button>
     <button id="arquivar" role="menuitem">🗄 Arquivar esta aba</button>
+    <button id="organizar" role="menuitem">↕ Organizar abas</button>
     <button id="remover" role="menuitem" class="hide">🗑 Remover esta aba</button>
   </div>
 </header>
@@ -84,6 +91,13 @@ dialog textarea{width:100%;min-height:36vh;background:#0d0d0d;color:var(--tx);bo
     <div class="grade" id="arquivadas"></div>
   </div></section>
 </main>
+
+<dialog id="dOrdem">
+  <h2 style="margin:0 0 6px;font-family:Georgia,serif">Organizar abas</h2>
+  <p class="mut" style="margin-bottom:10px">Arraste pelo ☰ ou use as setas. A ordem fica guardada neste aparelho.</p>
+  <ul class="ord" id="ordLista"></ul>
+  <div class="row"><button class="bt pri" id="ordOk">Pronto</button><button class="bt" id="ordPadrao">Ordem original</button></div>
+</dialog>
 
 <dialog id="dNova">
   <h2 style="margin:0 0 10px;font-family:Georgia,serif" id="novaTit">Adicionar página</h2>
@@ -135,6 +149,8 @@ function montarAbas(){
   ABAS = {...BASE};
   for (const p of achadas) ABAS["p-" + p.nome] = {i: "📄", n: bonito(p.nome), src: p.src, orig: "paginas/" + p.nome};
   for (const x of extras) ABAS["x-" + x.id] = {i: x.i || "⭐", n: x.n, src: x.tipo == "url" ? x.src : null, extra: x, orig: "só neste aparelho"};
+  const ord = lerLS("tamaki-hub-ordem", []), pos = k => { const i = ord.indexOf(k); return i < 0 ? 1e3 + Object.keys(ABAS).indexOf(k) : i; };
+  ABAS = Object.fromEntries(Object.entries(ABAS).sort((a, b) => pos(a[0]) - pos(b[0])));
   const vis = Object.entries(ABAS).filter(([k]) => !arquivo.includes(k));
   $("#abas").innerHTML = vis.map(([k, a]) => `<button data-k="${k}" aria-label="${esc(a.n)}" title="${esc(a.n)}"><span class="i" aria-hidden="true">${esc(a.i)}</span><span class="t">${esc(a.n)}</span></button>`).join("")
     + '<button class="add" id="addAba" aria-label="Adicionar página" title="Adicionar página"><span class="i" aria-hidden="true">＋</span><span class="t">Adicionar</span></button>';
@@ -182,6 +198,19 @@ $("#v-inicio").onclick = e => { const t = e.target.closest("button"); if (!t) re
   else if (t.dataset.arq) arquivar(t.dataset.arq);
   else if (t.dataset.rest) restaurar(t.dataset.rest); };
 $("#arquivar").onclick = () => { if (ABAS[atual]) arquivar(atual); };
+// organizar a ordem das abas (as arquivadas ficam de fora da barra, mas guardam o lugar)
+let ordem = [], arrasto = null;
+function listaOrdem(){ $("#ordLista").innerHTML = ordem.map((k, i) => `<li data-k="${k}"><span class="al" aria-hidden="true">☰</span><span>${esc(ABAS[k].i)}</span><span class="nm">${esc(ABAS[k].n)}${arquivo.includes(k) ? " (arquivada)" : ""}</span><button data-mv="-1" aria-label="Subir" ${i ? "" : "disabled"}>▲</button><button data-mv="1" aria-label="Descer" ${i < ordem.length - 1 ? "" : "disabled"}>▼</button></li>`).join(""); }
+const guardarOrdem = () => { gravarLS("tamaki-hub-ordem", ordem); montarAbas(); };
+$("#organizar").onclick = () => { fecharMenu(); ordem = Object.keys(ABAS); listaOrdem(); $("#dOrdem").showModal(); };
+$("#ordLista").addEventListener("click", e => { const b = e.target.closest("[data-mv]"); if (!b) return; const i = ordem.indexOf(b.closest("li").dataset.k), j = i + +b.dataset.mv; [ordem[i], ordem[j]] = [ordem[j], ordem[i]]; listaOrdem(); guardarOrdem(); });
+$("#ordLista").addEventListener("pointerdown", e => { const al = e.target.closest(".al"); if (!al) return; const li = al.closest("li"); arrasto = {li, k: li.dataset.k}; li.classList.add("arr"); li.setPointerCapture(e.pointerId); });
+$("#ordLista").addEventListener("pointermove", e => { if (!arrasto) return; const i = ordem.indexOf(arrasto.k), alvo = [...$("#ordLista").children].find(li => { const r = li.getBoundingClientRect(); return li != arrasto.li && e.clientY > r.top && e.clientY < r.bottom; }); if (!alvo) return;
+  ordem.splice(i, 1); const j = ordem.indexOf(alvo.dataset.k); ordem.splice(j + (j >= i ? 1 : 0), 0, arrasto.k); listaOrdem(); arrasto.li = $(`#ordLista [data-k="${arrasto.k}"]`); arrasto.li.classList.add("arr"); });
+const soltaOrdem = () => { if (!arrasto) return; arrasto = null; listaOrdem(); guardarOrdem(); };
+$("#ordLista").addEventListener("pointerup", soltaOrdem); $("#ordLista").addEventListener("pointercancel", soltaOrdem);
+$("#ordOk").onclick = () => $("#dOrdem").close();
+$("#ordPadrao").onclick = () => { try { localStorage.removeItem("tamaki-hub-ordem"); } catch (e) {} montarAbas(); ordem = Object.keys(ABAS); listaOrdem(); };
 
 // ---------- Adicionar / editar página ----------
 let editando = null;
