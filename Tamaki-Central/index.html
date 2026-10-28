@@ -246,7 +246,7 @@ function zip(arqs){ // .zip sem compressão, com nomes em UTF-8 (acentos funcion
 }
 // Lista de reserva, caso o GitHub não responda (sem internet ou limite de consultas)
 const RESERVA = {universo: ["index.html", "gerador.html", "gerar.js", "icon.svg", "manifest.webmanifest", "palco.html", "sw.js"],
-  Tamaki_Personagem: ["index.html", "icon-192.png", "icon-512.png", "instalar-voz.sh", "manifest.json", "palco.js", "palco_server.py", "sw.js", "tamaki_voz.py"]};
+  Tamaki_Personagem: ["index.html", "icon-192.png", "icon-512.png", "instalar-voz.sh", "manifest.json", "palco_server.py", "sw.js", "tamaki_voz.py"]};
 async function arvore(repo){ // lista os arquivos de um repositório público do GitHub
   try { const r = await fetch(`https://api.github.com/repos/tamakishions2-tech/${repo}/git/trees/main?recursive=1`); if (!r.ok) return null; const j = await r.json(); return (j.tree || []).filter(x => x.type == "blob").map(x => x.path); } catch (e) { return null; }
 }

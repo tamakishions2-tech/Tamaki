@@ -84,6 +84,20 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 #ferr .ic{font-size:1.05rem;font-weight:700}
 #ferr .sepv{width:1px;height:26px;background:var(--ln);margin:0 4px;flex:none}
 #ferr select{border:1px solid var(--ln);background:var(--card);border-radius:10px;padding:6px;flex:none}
+#ferr .ic.tk{width:auto;border-radius:22px;padding:0 12px;gap:4px;display:inline-flex;align-items:center;font-weight:600}
+#ferr .ic.tk small{font-size:.8rem}
+#ferr .ic.tk.on{background:var(--ac);color:var(--ac-tx)}
+#dTk{border:0;border-radius:22px;background:var(--card);color:var(--tx);width:min(640px,94vw);max-height:90vh;padding:18px;box-shadow:0 20px 60px #0008}
+#dTk::backdrop{background:#0008}
+#dTk h3{margin:0 0 4px;font-size:1.2rem}
+#dTk .mut{color:var(--mu);font-size:.85rem;margin:0 0 10px}
+#dTk textarea,#dTk input,#dTk select{width:100%;background:var(--bg);border:1px solid var(--ln);border-radius:12px;padding:10px;color:var(--tx)}
+#dTk textarea{min-height:120px;resize:vertical;line-height:1.5}
+#dTk #tkOrig{min-height:70px;max-height:140px;color:var(--mu)}
+#dTk .lin{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+#dTk .bt{border:0;border-radius:22px;padding:10px 16px;background:var(--card2);font-weight:600}
+#dTk .bt.pri{background:var(--ac);color:var(--ac-tx)}
+#dTk label{font-size:.82rem;color:var(--mu);display:block;margin:10px 0 4px}
 #contagem{color:var(--mu);font-size:.78rem;padding:0 20px 4px;text-align:right}
 .pop{position:fixed;z-index:20;background:var(--card);border-radius:18px;box-shadow:0 10px 32px #0006;padding:8px;min-width:220px}
 .pop button.it{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;text-align:left;padding:11px 12px;border-radius:12px}
@@ -138,6 +152,9 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div id="corpo" contenteditable="true" spellcheck="true" aria-label="Texto da nota"></div>
   <div id="contagem"></div>
   <div id="ferr">
+    <button class="ic tk" id="fTamaki" aria-label="Colocar nas palavras da Tamaki" title="Colocar nas palavras da Tamaki">🎭<small>Tamaki</small></button>
+    <button class="ic tk" id="fOuvir" aria-label="Ouvir com a voz da Tamaki" title="Ouvir o trecho selecionado">🔊<small>Ouvir</small></button>
+    <span class="sepv"></span>
     <select id="fTam" aria-label="Tamanho da letra"><option value="2">Pequeno</option><option value="3" selected>Normal</option><option value="5">Grande</option><option value="6">Título</option></select>
     <button class="ic" data-cmd="bold" aria-label="Negrito"><b>B</b></button>
     <button class="ic" data-cmd="italic" aria-label="Itálico"><i>I</i></button>
@@ -156,6 +173,20 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <button class="ic" data-cmd="removeFormat" aria-label="Limpar formatação">⌫</button>
   </div>
 </section>
+<dialog id="dTk" aria-label="Colocar nas palavras da Tamaki">
+  <h3>🎭 Colocar nas palavras da Tamaki</h3>
+  <p class="mut" id="tkDe"></p>
+  <textarea id="tkOrig" readonly aria-label="Texto original"></textarea>
+  <div class="duas" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div><label for="tkFormato">Como ela vai falar</label><select id="tkFormato"><option value="call">Fala em call com o público</option><option value="narracao">Narração do vídeo</option><option value="dialogo">Diálogo com outros personagens</option></select></div>
+    <div><label for="tkExtra">Pedido extra (opcional)</label><input id="tkExtra" placeholder="Ex.: mais dramática, mais curta"></div>
+  </div>
+  <div class="lin"><button class="bt pri" id="tkIA">✨ Reescrever com o Claude</button><button class="bt" id="tkCopiar">📋 Copiar pedido</button><button class="bt" id="tkChave">🔑 Chave</button></div>
+  <p class="mut" id="tkMsg"></p>
+  <label for="tkRes">Roteiro nas palavras dela (edite à vontade; cole aqui a resposta se usou "Copiar pedido")</label>
+  <textarea id="tkRes" aria-label="Roteiro nas palavras da Tamaki"></textarea>
+  <div class="lin"><button class="bt pri" id="tkNovo">💾 Salvar como roteiro</button><button class="bt" id="tkTrocar">↔ Trocar o trecho na nota</button><button class="bt" id="tkOuvir">🔊 Ouvir</button><button class="bt" id="tkFechar">Fechar</button></div>
+</dialog>
 <input type="file" id="fImg" accept="image/*" class="esc">
 <div id="toast" role="status" aria-live="polite"></div>
 
@@ -175,7 +206,8 @@ const FIXAS = [
   {id: "personagens", nome: "Personagens", cor: "#e2557b", arr: "personagens"},
   {id: "cenarios", nome: "Cenários", cor: "#3aa675", arr: "cenarios"},
   {id: "mundo", nome: "Mundo", cor: "#4f8ef7", arr: "mundo"},
-  {id: "notas", nome: "Notas", cor: "#9a9a9a", arr: "notas"}
+  {id: "notas", nome: "Notas", cor: "#9a9a9a", arr: "notas"},
+  {id: "roteiros", nome: "Roteiros da Tamaki", cor: "#9b6bdf", arr: "notas"}
 ];
 const CORES_PASTA = ["#f7871e", "#e2557b", "#3aa675", "#4f8ef7", "#9b6bdf", "#d6a400", "#00a3b4", "#9a9a9a"];
 const PAPEIS = {"": "Padrão", amarelo: "#fff6cc", rosa: "#ffe3ec", azul: "#e2efff", verde: "#e3f6e8", roxo: "#efe6ff"};
@@ -207,7 +239,7 @@ function guardar(){ // devolve no formato que a Reunião entende, sem perder cam
 }
 const salvarPrefs = () => { try { localStorage.setItem(PREF, JSON.stringify(P)); } catch (e) {} };
 const pastas = () => [...FIXAS, ...D.pastas];
-const pastaDe = id => pastas().find(p => p.id == id) || FIXAS[4];
+const pastaDe = id => pastas().find(p => p.id == id) || FIXAS.find(p => p.id == "notas");
 carregar();
 
 /* ---------- tema ---------- */
@@ -307,7 +339,7 @@ function abrir(id){
   $("#titulo").value = atual.titulo; $("#corpo").innerHTML = atual.html; sujo = false;
   metaEditor(); $("#editor").classList.remove("esc"); contar();
   if (!n) setTimeout(() => { if (!$("#editor").contains(document.activeElement)) $("#titulo").focus(); }, 50);
-  history.pushState({nota: 1}, "");
+  if (!(history.state && history.state.nota)) history.pushState({nota: 1}, "");
 }
 function metaEditor(){
   const pa = pastaDe(atual.pasta); $("#ePasta").innerHTML = `<i style="background:${pa.cor}"></i>${esc(pa.nome)} ▾`;
@@ -368,6 +400,99 @@ $("#corpo").addEventListener("click", e => { const li = e.target.closest("ul.che
 $("#fImg").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if (!f) return; // reduz a imagem para caber no aparelho
   const im = new Image(); im.src = URL.createObjectURL(f); await im.decode().catch(() => {}); const k = Math.min(1, 1100 / Math.max(im.naturalWidth || 1, im.naturalHeight || 1)), c = document.createElement("canvas");
   c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); cmd("insertImage", c.toDataURL("image/jpeg", .8)); };
+
+
+/* ---------- Tamaki: a voz dela (mesma do Palco) e reescrever nas palavras dela ---------- */
+const lerJ = k => { try { return JSON.parse(localStorage.getItem(k)) || null; } catch (e) { return null; } };
+const escXml = s => String(s).replace(/[<>&'"]/g, c => ({"<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;"}[c]));
+let falando = null; // {parar()}
+function partes(t){ // frases juntas até ~220 letras: soa mais natural e cabe nos motores
+  const fr = t.replace(/\s+/g, " ").match(/[^.!?…]+[.!?…]*["”']?\s*/g) || [t], out = []; let a = "";
+  for (const f of fr) { if ((a + f).length > 220 && a) { out.push(a.trim()); a = ""; } a += f; } if (a.trim()) out.push(a.trim()); return out;
+}
+async function audioDe(t, cfg, ch){
+  const m = cfg.motor, V = cfg.voz || {}, E = cfg.ed || {};
+  if (m == "termux") { const r = await fetch((cfg.url || "http://127.0.0.1:8765") + "/tts", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text: t, voice: cfg.voice || "pf_dora", speed: cfg.speed || 1.05, pause: cfg.pause ?? .4})}); if (!r.ok) throw new Error("o Termux respondeu " + r.status); return r.blob(); }
+  if (m == "azure") { if (!ch.az) throw new Error("falta a chave do Azure no Palco"); const st = +E.tom || 0, pct = Math.round(((+E.vel || 1) - 1) * 100);
+    const r = await fetch(`https://${ch.azReg || "brazilsouth"}.tts.speech.microsoft.com/cognitiveservices/v1`, {method: "POST", headers: {"Ocp-Apim-Subscription-Key": ch.az, "Content-Type": "application/ssml+xml", "X-Microsoft-OutputFormat": "audio-24khz-96kbitrate-mono-mp3"},
+      body: `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-BR"><voice name="${escXml(V.azVoz || "pt-BR-FranciscaNeural")}"><prosody pitch="${st >= 0 ? "+" : ""}${st}st" rate="${pct >= 0 ? "+" : ""}${pct}%">${escXml(t)}</prosody></voice></speak>`});
+    if (!r.ok) throw new Error("o Azure respondeu " + r.status); return r.blob(); }
+  if (m == "eleven") { if (!ch.el || !V.elVoz) throw new Error("falta a chave ou a voz do ElevenLabs no Palco");
+    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(V.elVoz)}?output_format=mp3_44100_128`, {method: "POST", headers: {"xi-api-key": ch.el, "Content-Type": "application/json"}, body: JSON.stringify({text: t, model_id: V.elModelo || "eleven_multilingual_v2", voice_settings: {stability: +(V.elEst ?? .45), similarity_boost: +(V.elSim ?? .8), style: +(V.elStyle ?? .15), use_speaker_boost: true}})});
+    if (!r.ok) throw new Error("o ElevenLabs respondeu " + r.status); return r.blob(); }
+  return null; // voz do aparelho
+}
+function vozDoAparelho(t){ return new Promise(ok => { if (!window.speechSynthesis) return ok(); const u = new SpeechSynthesisUtterance(t), V = (lerJ("palco-cfg") || {}).voz || {}, vs = speechSynthesis.getVoices();
+  u.voice = vs.find(v => v.voiceURI == V.navVoz) || vs.find(v => /^pt(-|_)BR/i.test(v.lang)) || null; u.lang = "pt-BR"; u.onend = u.onerror = ok; speechSynthesis.speak(u); setTimeout(ok, 2000 + t.length * 90); }); } // alguns aparelhos nunca avisam que terminou
+async function ouvir(texto, botao){
+  if (falando) { falando.parar(); return; }
+  texto = (texto || "").trim(); if (!texto) return toast("Selecione o trecho que você quer ouvir");
+  const cfg = lerJ("palco-cfg") || {motor: "browser"}, ch = lerJ("palco-chaves") || {}; let parou = false, el = null;
+  falando = {parar(){ parou = true; if (el) el.pause(); if (window.speechSynthesis) speechSynthesis.cancel(); }};
+  const marca = on => document.querySelectorAll("#fOuvir,#tkOuvir").forEach(b => { b.classList.toggle("on", on); b.innerHTML = on ? "⏹ <small>Parar</small>" : (b.id == "fOuvir" ? "🔊<small>Ouvir</small>" : "🔊 Ouvir"); });
+  marca(true); let motor = cfg.motor || "browser";
+  try {
+    for (const t of partes(texto)) { if (parou) break; let blob = null;
+      if (motor != "browser") { try { blob = await audioDe(t, Object.assign({}, cfg, {motor}), ch); } catch (e) { toast("Voz do Palco indisponível (" + e.message + "): usando a voz do aparelho"); motor = "browser"; } }
+      if (parou) break;
+      if (blob) { el = new Audio(URL.createObjectURL(blob)); await new Promise(ok => { el.onended = el.onerror = ok; el.play().catch(ok); }); URL.revokeObjectURL(el.src); }
+      else await vozDoAparelho(t);
+    }
+  } finally { falando = null; marca(false); }
+}
+const selecionado = () => { const s = getSelection(); return s.rangeCount && $("#corpo").contains(s.anchorNode) ? s.toString() : ""; };
+$("#fOuvir").onclick = () => ouvir(selecionado() || $("#corpo").innerText, $("#fOuvir"));
+
+// personagem: a ficha (aba Tamaki da Central) e os documentos marcados com "Usar"
+async function docsTamaki(){ try { const d = await new Promise((ok, no) => { const r = indexedDB.open("tamaki-docs", 1); r.onupgradeneeded = () => r.result.createObjectStore("docs", {keyPath: "id"}); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+  return await new Promise(ok => { const q = d.transaction("docs").objectStore("docs").getAll(); q.onsuccess = () => { ok((q.result || []).filter(x => x.usar && x.texto)); d.close(); }; q.onerror = () => ok([]); }); } catch (e) { return []; } }
+async function sistemaTamaki(){
+  const F = lerJ("tamaki"), docs = await docsTamaki();
+  const ficha = F && Array.isArray(F.mods) ? F.mods.filter(m => m.inc).map(m => "## " + m.t + "\n" + m.f.map(x => "- " + x[0] + ": " + x[1]).join("\n")).join("\n\n")
+    : "Tamaki Shion, elfa de 25 anos. Fala em primeira pessoa, papo de call com o público, português brasileiro informal. Fofoqueira, dramática, sarcástica e competitiva. Bordões: “gente”, “amiga”, “tintim por tintim”. Palavrões sempre suavizados.";
+  return {texto: "Você escreve falas da personagem Tamaki Shion, uma VTuber. Use a ficha e os documentos abaixo como fonte única sobre quem ela é, como fala e o universo dela. Não invente fatos que contradigam a ficha.\n\n# Ficha da Tamaki\n" + ficha
+    + (docs.length ? "\n\n# Documentos de referência\n" + docs.map(d => "## " + d.nome + "\n" + d.texto).join("\n\n") : ""), docs: docs.length, temFicha: !!F};
+}
+const FORMATOS = {call: "uma fala dela em call com o público, para virar áudio com voz sintética", narracao: "a narração do vídeo na voz dela, para virar áudio com voz sintética", dialogo: "um diálogo em que ela conversa com outros personagens; marque cada fala com o nome de quem fala (ex.: Tamaki: …)"};
+function pedido(texto){ const f = $("#tkFormato").value, extra = $("#tkExtra").value.trim();
+  return `Reescreva o texto abaixo nas palavras da Tamaki, como ${FORMATOS[f]}. Mantenha o sentido e os fatos do texto; mude o jeito de falar para o dela (vocabulário, bordões com moderação, humor, ritmo).${f != "dialogo" ? " Frases curtas e fáceis de falar em voz alta; sem emojis, sem marcações de cena e sem listas." : ""}${extra ? " Pedido extra: " + extra + "." : ""} Responda só com o texto reescrito, sem comentários.\n\n<texto>\n${texto}\n</texto>`; }
+let tk = {texto: "", range: null, nota: null};
+$("#fTamaki").onclick = async () => {
+  const s = getSelection(), sel = selecionado(); tk = {texto: sel || $("#corpo").innerText.trim(), range: sel ? s.getRangeAt(0).cloneRange() : null, nota: atual};
+  if (!tk.texto) return toast("Escreva ou selecione um texto primeiro");
+  const S = await sistemaTamaki();
+  $("#tkDe").textContent = (sel ? "Usando o trecho selecionado" : "Usando a nota inteira") + " · " + (S.temFicha ? "ficha da Tamaki" : "ficha básica (abra a aba Tamaki uma vez para usar a ficha completa)") + (S.docs ? " + " + S.docs + (S.docs == 1 ? " documento" : " documentos") : "");
+  $("#tkOrig").value = tk.texto; $("#tkRes").value = ""; $("#tkMsg").textContent = localStorage.getItem("tamaki-claude-chave") ? "" : "Para reescrever aqui mesmo, toque em 🔑 Chave e cole uma chave da API do Claude. Sem chave, use 📋 Copiar pedido e cole numa conversa com o Claude.";
+  $("#tkTrocar").hidden = !tk.range; $("#dTk").showModal();
+};
+$("#tkFechar").onclick = () => { if (falando) falando.parar(); $("#dTk").close(); };
+$("#tkChave").onclick = () => { const v = prompt("Chave da API do Claude (começa com sk-ant-). Fica guardada só neste aparelho e o uso é cobrado na sua conta da Anthropic. Deixe vazio para apagar:", localStorage.getItem("tamaki-claude-chave") || "");
+  if (v === null) return; v.trim() ? localStorage.setItem("tamaki-claude-chave", v.trim()) : localStorage.removeItem("tamaki-claude-chave"); $("#tkMsg").textContent = v.trim() ? "Chave guardada." : "Chave apagada."; };
+$("#tkCopiar").onclick = async () => { const S = await sistemaTamaki(), t = S.texto + "\n\n---\n\n" + pedido(tk.texto);
+  try { await navigator.clipboard.writeText(t); $("#tkMsg").textContent = "Pedido copiado. Cole numa conversa com o Claude e traga a resposta para o campo de baixo."; } catch (e) { $("#tkRes").value = t; $("#tkMsg").textContent = "Não consegui copiar sozinho: o pedido está no campo de baixo, copie e troque pela resposta."; } };
+$("#tkIA").onclick = async () => {
+  const chave = localStorage.getItem("tamaki-claude-chave"); if (!chave) return $("#tkChave").click();
+  const b = $("#tkIA"); b.disabled = true; $("#tkMsg").textContent = "Reescrevendo nas palavras da Tamaki…";
+  try {
+    const sdk = await import("https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.3.0/+esm").catch(() => import("https://esm.sh/@anthropic-ai/sdk@1.3.0")), Anthropic = sdk.default || sdk.Anthropic;
+    const client = new Anthropic({apiKey: chave, dangerouslyAllowBrowser: true}), S = await sistemaTamaki();
+    // fallbacks "default": se o pedido for recusado, o próprio serviço tenta em outro modelo
+    const r = await client.beta.messages.create({model: "claude-opus-5-5", max_tokens: 16000, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default", output_config: {effort: "medium"},
+      system: [{type: "text", text: S.texto, cache_control: {type: "ephemeral"}}], messages: [{role: "user", content: pedido(tk.texto)}]});
+    if (r.stop_reason == "refusal") throw new Error("o Claude não quis reescrever este trecho");
+    const txt = r.content.filter(x => x.type == "text").map(x => x.text).join("").trim(); if (!txt) throw new Error("a resposta veio vazia");
+    $("#tkRes").value = txt; $("#tkMsg").textContent = "Pronto. Edite se quiser, selecione um pedaço e toque em 🔊 para ouvir.";
+  } catch (e) { $("#tkMsg").textContent = "Não deu certo: " + (e.status == 401 ? "a chave não é válida" : e.status == 429 ? "muitos pedidos seguidos, espere um pouco" : e.message); }
+  b.disabled = false;
+};
+$("#tkOuvir").onclick = () => { const t = $("#tkRes"), sel = t.value.slice(t.selectionStart, t.selectionEnd); ouvir(sel || t.value, $("#tkOuvir")); };
+$("#tkTrocar").onclick = () => { const v = $("#tkRes").value.trim(); if (!v || !tk.range) return; $("#dTk").close(); $("#corpo").focus(); const s = getSelection(); s.removeAllRanges(); s.addRange(tk.range); document.execCommand("insertHTML", false, v.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c])).replace(/\n/g, "<br>")); marcarSujo(); toast("Trecho trocado. Toque em Salvar para guardar."); };
+$("#tkNovo").onclick = () => { const v = $("#tkRes").value.trim(); if (!v) return toast("O roteiro está vazio");
+  const base = ($("#titulo").value.trim() || "Roteiro"), html = v.split(/\n{2,}/).map(p => "<p>" + p.split("\n").map(l => l.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"}[c]))).join("<br>") + "</p>").join("");
+  if (atual) { gravarNota(); } $("#dTk").close();
+  const n = {id: uid(), pasta: "roteiros", titulo: base + " · nas palavras da Tamaki", html, criado: Date.now(), editado: Date.now(), fav: false, papel: "", ordem: N.length};
+  N.push(n); guardar(); P.pasta = "roteiros"; salvarPrefs(); atual = null; abrir(n.id); toast("Roteiro salvo em Roteiros da Tamaki");
+};
 
 /* ---------- início ---------- */
 addEventListener("storage", e => { if (e.key == KEY && !atual) { try { D = JSON.parse(e.newValue) || {}; } catch (x) {} carregar(); tudo(); } });
