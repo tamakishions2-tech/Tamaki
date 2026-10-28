@@ -116,7 +116,7 @@ main{min-height:0;overflow:auto}
   </section>
   <!-- ENVIADOS -->
   <section class="pane" id="p-enviados">
-    <p class="mut">Tudo o que você manda com <b>📤 Enviar ao editor</b> fica nesta caixa. O <b>Editor de vídeos</b> pega daqui. Também dá para baixar de novo ou tirar da caixa.</p>
+    <p class="mut">Tudo o que você manda com <b>📤 Enviar ao editor</b> fica nesta caixa e na <b>Biblioteca</b>. Se o <b>Editor</b> estiver aberto, entra direto no cursor; se não, abra o Editor e toque em <b>📥 Recebidos</b>.</p>
     <div class="row"><button class="bt" id="bLimpar">Esvaziar a caixa</button></div>
     <div id="listaEnv"></div>
   </section>
@@ -155,9 +155,23 @@ const meus = {
   tira: id => op(...MEUS, "readwrite", s => s.delete(id))
 };
 async function contar(){ const n = (await caixa.lista()).length, b = $("#nEnv"); b.hidden = !n; b.textContent = n; if (aba == "enviados") listaEnviados(); }
+// Também guarda na Biblioteca (IndexedDB "tamaki-biblioteca") e, se o Editor estiver aberto, ele já põe no cursor.
+function paraBiblioteca(blob, nome, tipo, extra){ return new Promise((ok, no) => { const r = indexedDB.open("tamaki-biblioteca", 1);
+  r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains("itens")) r.result.createObjectStore("itens", {keyPath: "id"}); }; r.onerror = () => no(r.error);
+  r.onsuccess = () => { const db = r.result, id = "b" + Date.now().toString(36) + uid().slice(0, 5), t = db.transaction("itens", "readwrite");
+    t.objectStore("itens").put(Object.assign({id, origem: "efeitos", tipo, nome, texto: "", mime: (blob.type || "").split(";")[0], tamanho: blob.size, criado: Date.now(), blob}, extra));
+    t.oncomplete = () => { db.close(); try { const c = new BroadcastChannel("tamaki-biblioteca"); c.postMessage({novo: id}); c.close(); } catch (e) {} ok(id); }; t.onerror = () => no(t.error); }; }); }
+function aoEditor(ids){ return new Promise(ok => { let bc; try { bc = new BroadcastChannel("tamaki-editor"); } catch (e) { return ok(0); }
+  const eu = "efeitos" + uid(), fim = n => { clearTimeout(t); bc.close(); ok(n); }; let t = setTimeout(() => fim(0), 900);
+  bc.onmessage = e => { const d = e.data || {};
+    if (d.tipo == "pong" && d.de == eu) { if (d.exportando) return fim(-1); clearTimeout(t); t = setTimeout(() => fim(0), 30000); bc.postMessage({tipo: "add", para: d.id, de: eu, ids, modo: "efeito"}); }
+    else if (d.tipo == "ok" && d.para == eu) fim(d.n); };
+  bc.postMessage({tipo: "ping", de: eu}); }); }
 async function enviar(blob, nome, tipo, extra){
   const item = Object.assign({id: uid(), nome, tipo, mime: blob.type, blob, criado: Date.now(), origem: "Efeitos"}, extra || {});
-  try { await caixa.por(item); toast("📤 Enviado ao editor: " + nome); } catch (e) { toast("Não consegui enviar (" + e.message + ")"); }
+  try { await caixa.por(item); } catch (e) { return toast("Não consegui enviar (" + e.message + ")"); }
+  let n = 0; try { n = await aoEditor([await paraBiblioteca(blob, nome, tipo, {fundo: item.fundo, dur: item.dur})]); } catch (e) {}
+  toast(n > 0 ? "📤 Pronto! Está no Editor, no cursor" : n < 0 ? "📤 Guardado: o Editor está exportando, use 📥 Recebidos depois" : "📤 Guardado: no Editor, toque em 📥 Recebidos (também está na Biblioteca)");
 }
 
 /* ---------- abas ---------- */

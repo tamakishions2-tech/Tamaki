@@ -272,6 +272,9 @@ textarea:focus{outline:none;border-color:var(--gold)}
   body.fs{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) var(--trH);grid-template-areas:"stage" "tr"}
 }
 @media (prefers-reduced-motion: reduce){.sheet.open,.recBtn.on,.keyBtn.wait{animation:none}#toast{transition:none}.grip i{transition:none}}
+.rcb{display:flex;flex-direction:column;gap:8px}
+.rc{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;background:rgba(127,127,127,.12)}
+.rc .ri{font-size:1.4rem}.rc .rt{flex:1;min-width:0;display:flex;flex-direction:column}.rc .rt b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rc small{opacity:.7}.rc em{color:#F2B705;font-style:normal;font-weight:700}
 </style>
 </head>
 <body>
@@ -347,6 +350,7 @@ textarea:focus{outline:none;border-color:var(--gold)}
 'use strict';
 /* ================= ícones ================= */
 const ICON={
+  inbox:'<path d="M3 13h5l2 3h4l2-3h5"/><path d="M5.5 5h13L21 13v6H3v-6z"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   music:'<path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   ratio:'<rect x="4" y="5" width="16" height="14" rx="1"/>',
@@ -1302,7 +1306,7 @@ function updUR(){$('#undoBtn').disabled=!undoS.length;$('#redoBtn').disabled=!re
 /* ================= ferramentas (ordem do CapCut) ================= */
 const SEP=['|'];
 const TOOLSETS={
-  none:[['claude','claude','Claude'],['editAt','scissors','Editar'],['audioMenu','music','Áudio'],['addText','text','Texto'],['cfx','fx','Efeitos'],['addOverlay','layers','Sobrepor'],['layers','stack','Camadas'],['captions','cc','Legendas'],['cfilter','filter','Filtros'],['cadjust','adjust','Ajustar'],['stickers','smile','Stickers'],['ratio','ratio','Proporção de aspecto'],['bg','bgicon','Plano de fundo'],['keys','keyboard','Atalhos']],
+  none:[['claude','claude','Claude'],['recebidos','inbox','Recebidos'],['editAt','scissors','Editar'],['audioMenu','music','Áudio'],['addText','text','Texto'],['cfx','fx','Efeitos'],['addOverlay','layers','Sobrepor'],['layers','stack','Camadas'],['captions','cc','Legendas'],['cfilter','filter','Filtros'],['cadjust','adjust','Ajustar'],['stickers','smile','Stickers'],['ratio','ratio','Proporção de aspecto'],['bg','bgicon','Plano de fundo'],['keys','keyboard','Atalhos']],
   clip:[['back','back',''],['split','split','Dividir'],['volume','volume','Volume'],['anim','anim','Animações'],['fx','fx','Efeitos'],['del','trash','Excluir'],['speed','speed','Velocidade'],['beats','beat','Ritmos'],['crop','crop','Recortar'],['dup','dup','Duplicar'],['replace','replace','Substituir'],['toLayer','swap','Camada'],['adjust','adjust','Ajustar'],['filter','filter','Filtros'],SEP,
     ['trans','trans','Transição'],['opacity','opacity','Opacidade'],['transform','move','Transformar'],['fit','fit','Encaixe'],['chroma','chroma','Chroma key'],SEP,
     ['extract','extract','Extrair áudio'],['noise','noise','Reduzir ruído'],['afx','afx','Efeitos de áudio'],SEP,['freeze','freeze','Congelar'],['reverse','reverse','Reverso'],['mask','mask','Mascarar'],['unlink','unlink','Desvincular'],SEP,['left','left','Para trás'],['right','right','Para frente']],
@@ -2515,6 +2519,7 @@ async function addFromBib(ids,modo){
         const f=new File([r.blob],(r.nome||'gravacao')+'.'+((r.mime||'').split('/')[1]||'bin'),{type:r.mime});
         const m=await loadMedia(f);commit();
         if(m.type==='audio'){const a=newAudio(m);S.audios.push(a);makePeaks(m,f);if(firstStart===null)firstStart=a.start;}
+        else if(modo==='efeito'||r.fundo){const o=newVisual(m,efeitoExtra(r.fundo));S.ovs.push(o);if(m.type==='video')makeThumbs(m);if(firstStart===null)firstStart=o.start;}
         else if(modo==='camada'){const o=newVisual(m,{start:S.t,tf:{x:0,y:0,s:.5,r:0}});S.ovs.push(o);if(m.type==='video')makeThumbs(m);if(firstStart===null)firstStart=o.start;}
         else{const st=videoEnd();S.clips.push(newVisual(m,{tr:{type:'none',dur:.5}}));if(m.type==='video')makeThumbs(m);if(firstStart===null)firstStart=st;}
         n++;
@@ -2526,6 +2531,36 @@ async function addFromBib(ids,modo){
   return n;
 }
 const msgBib=n=>n<0?'O Editor está exportando agora':n?(n===1?'Chegou 1 item da Biblioteca':`Chegaram ${n} itens da Biblioteca`):'Não encontrei o item na Biblioteca';
+/* ================= recebidos da aba Efeitos =================
+   A aba Efeitos põe sons e efeitos na caixa comum (IndexedDB "tamaki-caixa").
+   Efeito com fundo verde entra com chroma key; com fundo preto, mesclado em Tela. */
+const efeitoExtra=f=>Object.assign({start:S.t,tf:{x:0,y:0,s:1,r:0}},f==='verde'?{chroma:{on:true,color:'#00B140',tol:.4}}:f==='preto'?{blend:'screen'}:{});
+function caixa(modo,fn){return new Promise((ok,no)=>{const r=indexedDB.open('tamaki-caixa',1);r.onupgradeneeded=()=>r.result.createObjectStore('itens',{keyPath:'id'});
+  r.onerror=()=>no(r.error);r.onsuccess=()=>{const db=r.result,t=db.transaction('itens',modo),q=fn(t.objectStore('itens'));t.oncomplete=()=>{ok(q&&q.result);db.close();};t.onerror=()=>no(t.error);};});}
+let vistos=new Set();try{vistos=new Set(JSON.parse(localStorage.getItem('tamaki-editor-vistos')||'[]'));}catch(_){}
+const guardaVistos=()=>{try{localStorage.setItem('tamaki-editor-vistos',JSON.stringify([...vistos].slice(-300)));}catch(_){}};
+async function usarRecebido(it){
+  if(exporting)return toast('Espere a exportação terminar');
+  const tipo=it.tipo==='audio'?'audio':it.tipo==='imagem'?'image':'video',f=new File([it.blob],it.nome+'.'+((it.mime||'').split('/')[1]||'bin').split(';')[0],{type:it.mime||it.blob.type});
+  const m=await loadMedia(f,tipo);commit();
+  if(tipo==='audio'){S.audios.push(newAudio(m));makePeaks(m,f);}
+  else{const o=newVisual(m,efeitoExtra(it.fundo));if(tipo==='image')o.out=3;S.ovs.push(o);S.sel={kind:'ov',id:o.id};if(tipo==='video')makeThumbs(m);}
+  vistos.add(it.id);guardaVistos();renderTL();renderTools();needDraw=true;updateTime();
+  toast(`“${it.nome}” entrou no cursor`+(it.fundo==='verde'?', com chroma key':it.fundo==='preto'?', mesclado em Tela':''));
+}
+async function abrirRecebidos(){
+  let L=[];try{L=((await caixa('readonly',s=>s.getAll()))||[]).sort((a,b)=>b.criado-a.criado);}catch(_){}
+  const ic=t=>t==='audio'?'🔊':t==='imagem'?'🖼️':'🎬',dur=d=>d?' · '+d.toFixed(1)+' s':'';
+  sheet('Recebidos',L.length?'<div class="rcb">'+L.map(it=>`<div class="rc" data-id="${esc(it.id)}"><span class="ri">${ic(it.tipo)}</span><span class="rt"><b>${esc(it.nome)}</b><small>${it.tipo}${dur(it.dur)}${it.fundo?' · fundo '+esc(it.fundo):''}${vistos.has(it.id)?'':' · <em>novo</em>'}</small></span><button class="chip on" data-a="usar">＋ Usar</button><button class="chip" data-a="tirar" aria-label="Tirar da caixa">✕</button></div>`).join('')+'</div>'+hint('Entra no cursor. Efeito com fundo verde já vem com chroma key; com fundo preto, mesclado em Tela.')
+    :hint('Nada recebido ainda. Na aba 🎧 Efeitos, toque em 📤 Enviar ao editor.'),b=>{
+    b.onclick=async e=>{const bt=e.target.closest('[data-a]'),row=e.target.closest('[data-id]');if(!bt||!row)return;const it=L.find(x=>x.id===row.dataset.id);if(!it)return;
+      if(bt.dataset.a==='usar'){closeSheet();try{await usarRecebido(it);}catch(err){toast('Não deu para abrir “'+it.nome+'”');}}
+      else{await caixa('readwrite',s=>s.delete(it.id));abrirRecebidos();}};
+  });
+}
+ACT.recebidos=abrirRecebidos;
+addEventListener('storage',e=>{if(e.key==='tamaki-caixa-aviso')toast('📥 Chegou um efeito: toque em Recebidos');});
+
 /* pelo endereço: editor.html?bib=id1,id2&modo=fim */
 (async()=>{
   const q=new URLSearchParams(location.search),ids=(q.get('bib')||'').split(',').filter(Boolean);if(!ids.length)return;

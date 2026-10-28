@@ -93,6 +93,32 @@ body.sel .chk{display:grid}
 .store .m{height:4px;border-radius:2px;background:var(--panel2);margin-top:6px;overflow:hidden}
 .store .m i{display:block;height:100%;background:var(--gold);width:0}
 
+.pastas{flex:none;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 10px 8px;align-items:center}
+.pastas::-webkit-scrollbar{display:none}
+.pch{flex:none;display:flex;align-items:center;gap:6px;border:1.5px dashed var(--line);background:none;border-radius:10px;padding:6px 11px;font-size:13px;white-space:nowrap}
+.pch svg{width:15px;height:15px}
+.pch b{font-weight:600;color:var(--mute);font-size:12px}
+.pch.on{background:var(--gold);color:var(--gold-ink);border:1.5px solid var(--gold)}
+.pch.on b{color:inherit;opacity:.7}
+.pch.nova{color:var(--gold);border-color:var(--gold)}
+.pHead{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:4px 0 12px}
+.pHead h2{font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px}
+.pHead h2 svg{width:20px;height:20px;color:var(--gold)}
+.pHead p{font-size:13px;color:var(--mute);margin-top:2px}
+.pHead .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pHead .acts button{border:0;border-radius:6px;padding:8px 11px;font-size:13px;font-weight:600;background:var(--panel2);display:flex;align-items:center;gap:5px}
+.pHead .acts button svg{width:15px;height:15px}
+.pHead .acts .pri{background:var(--gold);color:var(--gold-ink)}
+.pHead .acts .danger{color:var(--danger)}
+.rots{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.rot{display:flex;align-items:center;gap:8px;background:var(--panel2);border-radius:8px;padding:8px 10px;font-size:13px}
+.rot span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rot button{border:0;background:none;color:var(--mute);padding:2px 6px}
+.box input[type=text]{width:100%;margin-top:12px;background:var(--bg);border:1.5px solid var(--line);border-radius:8px;padding:10px;color:var(--ink);font-size:15px}
+.box .lst{max-height:46vh;overflow:auto;margin-top:12px;display:flex;flex-direction:column;gap:4px}
+.box .lst label{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;background:var(--panel2);font-size:14px}
+.box .lst small{color:var(--mute);margin-left:auto;font-size:12px}
+:root{--o-efeitos:#E0679A}
 .selBar{flex:none;display:none;align-items:center;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:var(--panel);border-top:1px solid var(--line)}
 body.sel .selBar{display:flex}
 .selBar span{flex:1;min-width:40px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -185,6 +211,7 @@ body.sel #toast{bottom:calc(72px + env(safe-area-inset-bottom,0px))}
   <button class="addBtn" id="addBtn"></button>
 </header>
 <nav class="filters" id="filters" aria-label="De onde veio"></nav>
+<nav class="pastas" id="pastas" aria-label="Pastas"></nav>
 <div class="bar">
   <label class="search"><span id="icSearch"></span><input id="q" type="search" placeholder="Buscar" aria-label="Buscar pelo nome ou pela fala" autocomplete="off"></label>
   <button class="ib" id="typeBtn" aria-label="Mostrar: tudo"></button>
@@ -196,6 +223,7 @@ body.sel #toast{bottom:calc(72px + env(safe-area-inset-bottom,0px))}
   <button id="sX" class="x" aria-label="Sair da seleção"></button>
   <span id="selN">0</span>
   <button id="sEdit"></button>
+  <button id="sPasta"></button>
   <button id="sDown"></button>
   <button id="sDel" class="del"></button>
 </div>
@@ -274,11 +302,14 @@ const I={
   wand:'<path d="M4 20L16 8M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM19 11l.7 1.3 1.3.7-1.3.7-.7 1.3-.7-1.3-1.3-.7 1.3-.7z"/>',
   main:'<rect x="2" y="9" width="20" height="8" rx="1.5"/><path d="M8 9v8M14 9v8"/><path d="M19 5v3M17.5 6.5h3"/>',
   layer:'<rect x="2" y="12" width="20" height="7" rx="1.5"/><rect x="7" y="4" width="10" height="6" rx="1.5"/>',
-  tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>'
+  tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+  folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  doc:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+  zip:'<path d="M6 3h8l4 4v14H6z"/><path d="M11 3v2M11 7v2M11 11v2M10 15h2v3h-2z"/>'
 };
 const svg=(k,extra='')=>`<svg viewBox="0 0 24 24" ${P} aria-hidden="true" ${extra}>${I[k]}</svg>`;
-const ORIG={palco:'Palco',atriz:'Atriz',voz:'Voz',editor:'Editor',emulador:'Emulador',outro:'Outros'};
-const ORIG_ORDER=['palco','atriz','voz','editor','emulador','outro'];
+const ORIG={palco:'Palco',atriz:'Atriz',voz:'Voz',editor:'Editor',efeitos:'Efeitos',emulador:'Emulador',outro:'Outros'};
+const ORIG_ORDER=['palco','atriz','voz','editor','efeitos','emulador','outro'];
 const oc=o=>`var(--o-${ORIG[o]?o:'outro'})`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtDur=t=>{if(!isFinite(t)||t<=0)return '';t=Math.round(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s).padStart(2,'0');};
@@ -312,7 +343,7 @@ const saveVista=()=>{try{localStorage.setItem('tamaki-bib-vista',JSON.stringify(
 
 function visiveis(){
   const q=V.q.trim().toLowerCase();
-  let L=V.items.filter(it=>(V.org==='tudo'||it.origem===V.org||(V.org==='outro'&&!ORIG[it.origem]))&&(V.tipo==='tudo'||it.tipo===V.tipo)&&(!q||(it.nome||'').toLowerCase().includes(q)||(it.texto||'').toLowerCase().includes(q)));
+  let L=V.items.filter(it=>(!V.pasta||it.pasta===V.pasta)&&(V.org==='tudo'||it.origem===V.org||(V.org==='outro'&&!ORIG[it.origem]))&&(V.tipo==='tudo'||it.tipo===V.tipo)&&(!q||(it.nome||'').toLowerCase().includes(q)||(it.texto||'').toLowerCase().includes(q)));
   if(V.sort==='novo')L.sort((a,b)=>b.criado-a.criado);
   else if(V.sort==='velho')L.sort((a,b)=>a.criado-b.criado);
   else L.sort((a,b)=>b.tamanho-a.tamanho);
@@ -350,12 +381,12 @@ function cardH(it){
   </button>`;
 }
 function render(){
-  renderFilters();
+  renderFilters();renderPastas();
   const L=visiveis(),el=$('#list');
   if(!V.items.length){
     el.innerHTML=`<div class="empty"><h2>Nada gravado ainda</h2><p>Tudo o que você gravar no Palco, na Atriz e no Editor aparece aqui sozinho, junto com as falas baixadas na aba Voz.</p><p style="margin-top:8px">Gravações do Emulador e outros arquivos do tablet entram pelo botão Adicionar.</p><button class="addBtn" data-act="add">${svg('plus')}Adicionar arquivos</button></div>`;
   }else if(!L.length){
-    el.innerHTML=`<div class="empty"><h2>Nada por aqui</h2><p>${V.q?'Nenhuma gravação com esse nome.':V.org==='emulador'?'As gravações do Emulador entram pelo botão Adicionar: escolha o vídeo na galeria e marque Emulador.':'Nenhuma gravação neste filtro.'}</p>${V.org==='emulador'?`<button class="addBtn" data-act="add">${svg('plus')}Adicionar do Emulador</button>`:''}</div>`;
+    el.innerHTML=pastaHead()+`<div class="empty"><h2>Nada por aqui</h2><p>${V.q?'Nenhuma gravação com esse nome.':V.org==='emulador'?'As gravações do Emulador entram pelo botão Adicionar: escolha o vídeo na galeria e marque Emulador.':'Nenhuma gravação neste filtro.'}</p>${V.org==='emulador'?`<button class="addBtn" data-act="add">${svg('plus')}Adicionar do Emulador</button>`:''}</div>`;
   }else{
     let h='',dia='',open=false;
     for(const it of L){
@@ -363,7 +394,7 @@ function render(){
       if(d!==dia||!open){if(open)h+='</div>';h+=d?`<p class="day">${esc(d[0].toUpperCase()+d.slice(1))}</p>`:'';h+='<div class="grid">';dia=d;open=true;}
       h+=cardH(it);
     }
-    el.innerHTML=h+'</div>'+storeH();
+    el.innerHTML=pastaHead()+h+'</div>'+storeH();
     updStore();
   }
   updSel();
@@ -475,7 +506,7 @@ function setSelMode(on){V.selMode=on;if(!on)V.sel.clear();document.body.classLis
 function toggleSel(id){V.sel.has(id)?V.sel.delete(id):V.sel.add(id);const c=document.querySelector(`.card[data-id="${id}"]`);if(c)c.classList.toggle('on',V.sel.has(id));updSel();}
 function updSel(){
   const n=V.sel.size;$('#selN').textContent=n===1?'1 item':`${n} itens`;
-  $('#sEdit').disabled=!n;$('#sDown').disabled=!n;$('#sDel').disabled=!n;
+  $('#sEdit').disabled=!n;$('#sPasta').disabled=!n;$('#sDown').disabled=!n;$('#sDel').disabled=!n;
 }
 const selItems=()=>[...V.sel].map(id=>V.items.find(x=>x.id===id)).filter(Boolean);
 
@@ -575,7 +606,7 @@ $('#fIn').addEventListener('change',async e=>{
   if(!o)return;
   toast('Guardando…');let ok=0;
   for(const f of files){
-    try{await TamakiBib.salvar(f,{origem:o,nome:f.name.replace(/\.[^.]+$/,'')});ok++;}
+    try{const id=await TamakiBib.salvar(f,{origem:o,nome:f.name.replace(/\.[^.]+$/,'')});if(V.pasta){const it=await TamakiBib.ler(id);it.pasta=V.pasta;await dbPut(it);}ok++;}
     catch(err){toast(`Não deu para guardar “${f.name}”. O espaço pode ter acabado.`);}
   }
   if(ok){toast(ok===1?'Arquivo guardado':`${ok} arquivos guardados`);if(V.org!=='tudo'&&V.org!==o)V.org='tudo';await load();}
@@ -703,11 +734,100 @@ $('#fCapa').addEventListener('change',async e=>{
   finally{URL.revokeObjectURL(u);}
 });
 
+
+/* ================= pastas: juntar vídeos, áudios e roteiros de um vídeo específico ================= */
+let PASTAS=[];try{PASTAS=JSON.parse(localStorage.getItem('tamaki-bib-pastas')||'[]');}catch(_){}
+const salvaPastas=()=>{try{localStorage.setItem('tamaki-bib-pastas',JSON.stringify(PASTAS));}catch(_){}};
+V.pasta=null;
+const pastaAtual=()=>PASTAS.find(p=>p.id===V.pasta)||null;
+// roteiros e notas da aba Escrita (mesmo endereço = mesmos dados)
+function notasEscrita(){let D={};try{D=JSON.parse(localStorage.getItem('kurogane:data')||'{}')||{};}catch(_){}
+  const L=[],add=(arr,nomeP,tit,html)=>(D[arr]||[]).forEach(o=>L.push({id:o.id,pasta:nomeP(o),titulo:tit(o)||'Sem título',html:html(o)||''}));
+  const bl=o=>(o.blocks||[]).filter(b=>b.type==='texto').map(b=>b.content||'').join('<p></p>'),pn=o=>((D.pastas||[]).find(p=>p.id===o.pasta)||{}).nome||(o.pasta==='roteiros'?'Roteiros da Tamaki':'Notas');
+  add('chapters',()=>'Capítulos',o=>o.title,o=>o.content);add('personagens',()=>'Personagens',o=>o.nome,bl);add('cenarios',()=>'Cenários',o=>o.nome,bl);add('mundo',()=>'Mundo',o=>o.titulo,o=>o.content);add('notas',pn,o=>o.titulo,o=>o.html);
+  return L.filter(n=>n.id);}
+const htmlTexto=h=>{const d=document.createElement('div');d.innerHTML=(h||'').replace(/<(br|\/p|\/div|\/li|\/h\d)>/gi,'\n$&');return d.textContent.replace(/\n{3,}/g,'\n\n').trim();};
+function renderPastas(){
+  const n=id=>V.items.filter(it=>it.pasta===id).length;
+  $('#pastas').innerHTML=PASTAS.map(p=>`<button class="pch${V.pasta===p.id?' on':''}" data-p="${p.id}">${svg('folder')}${esc(p.nome)}<b>${n(p.id)+(p.rot||[]).length}</b></button>`).join('')+`<button class="pch nova" data-p="+">${svg('plus')}Pasta</button>`;
+}
+function pastaHead(){
+  const p=pastaAtual();if(!p)return '';const its=V.items.filter(it=>it.pasta===p.id),notas=notasEscrita(),rots=(p.rot||[]).map(id=>notas.find(n=>n.id===id)).filter(Boolean);
+  const c=t=>its.filter(it=>it.tipo===t).length;
+  return `<div class="pHead"><h2>${svg('folder')}${esc(p.nome)}</h2><p>${c('video')} vídeos · ${c('audio')} áudios · ${c('imagem')} imagens · ${rots.length} roteiros</p>
+    <div class="acts"><button class="pri" data-pa="zip">${svg('zip')}Baixar .zip</button><button data-pa="add">${svg('plus')}Arquivos</button><button data-pa="rot">${svg('doc')}Roteiros</button><button data-pa="nome">${svg('edit')}Renomear</button><button class="danger" data-pa="del">${svg('trash')}Apagar pasta</button></div>
+    ${rots.length?`<div class="rots">${rots.map(r=>`<div class="rot">${svg('doc')}<span>${esc(r.titulo)} · <small>${esc(r.pasta)}</small></span><button data-tira="${esc(r.id)}" aria-label="Tirar da pasta">✕</button></div>`).join('')}</div>`:''}</div>`;
+}
+function pergunta(titulo,texto,valor,botao){return new Promise(ok=>{
+  $('#dlgBox').innerHTML=`<h2>${esc(titulo)}</h2><p>${texto}</p><input type="text" id="dlgIn" value="${esc(valor||'')}" maxlength="80"><div class="acts"><button data-r="0">Cancelar</button><button class="pri" data-r="1">${esc(botao)}</button></div>`;
+  $('#dlg').classList.add('on');const i=$('#dlgIn');setTimeout(()=>{i.focus();i.select();},50);
+  const fim=v=>{$('#dlg').classList.remove('on');ok(v);};i.onkeydown=e=>{if(e.key==='Enter')fim(i.value.trim()||null);};
+  $('#dlgBox').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>fim(b.dataset.r==='1'?(i.value.trim()||null):null));});}
+async function novaPasta(){const n=await pergunta('Nova pasta','Uma pasta para juntar os vídeos, áudios e roteiros de um vídeo.','','Criar');if(!n)return null;
+  const p={id:'p'+Date.now().toString(36),nome:n,criado:Date.now(),rot:[]};PASTAS.push(p);salvaPastas();return p;}
+async function moverParaPasta(its){
+  if(!its.length)return;
+  $('#dlgBox').innerHTML=`<h2>Pôr em qual pasta?</h2><p>${its.length===1?'1 item':its.length+' itens'}</p><div class="chips">${PASTAS.map(p=>`<button data-pp="${p.id}">${esc(p.nome)}</button>`).join('')}<button data-pp="+">＋ Nova pasta</button>${its.some(it=>it.pasta)?'<button data-pp="-">Tirar da pasta</button>':''}</div><div class="acts"><button data-r="0">Cancelar</button></div>`;
+  $('#dlg').classList.add('on');
+  const alvo=await new Promise(ok=>{$('#dlgBox').querySelectorAll('[data-pp],[data-r]').forEach(b=>b.onclick=()=>{$('#dlg').classList.remove('on');ok(b.dataset.pp||null);});});
+  if(!alvo)return;let id=alvo==='-'?null:alvo;if(alvo==='+'){const p=await novaPasta();if(!p)return;id=p.id;}
+  for(const it of its){it.pasta=id;await dbPut(it);}
+  toast(id?`${its.length===1?'Item':its.length+' itens'} em “${PASTAS.find(p=>p.id===id).nome}”`:'Tirado da pasta');if(V.selMode)setSelMode(false);aviso();render();
+}
+async function escolherRoteiros(p){
+  const notas=notasEscrita();if(!notas.length)return toast('Nenhuma nota na aba Escrita ainda');
+  $('#dlgBox').innerHTML=`<h2>Roteiros desta pasta</h2><p>Escolha as notas da aba Escrita que fazem parte deste vídeo.</p><div class="lst">${notas.map(n=>`<label><input type="checkbox" value="${esc(n.id)}" ${(p.rot||[]).includes(n.id)?'checked':''}>${esc(n.titulo)}<small>${esc(n.pasta)}</small></label>`).join('')}</div><div class="acts"><button data-r="0">Cancelar</button><button class="pri" data-r="1">Salvar</button></div>`;
+  $('#dlg').classList.add('on');
+  $('#dlgBox').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{if(b.dataset.r==='1'){p.rot=[...$('#dlgBox').querySelectorAll('input:checked')].map(i=>i.value);salvaPastas();render();}$('#dlg').classList.remove('on');});
+}
+/* .zip sem compressão (vídeo e áudio já vêm comprimidos), com nomes em UTF-8 */
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+async function crc32(blob,prog){let c=~0;const P=8<<20;for(let o=0;o<blob.size;o+=P){const u=new Uint8Array(await blob.slice(o,o+P).arrayBuffer());for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);prog&&prog(Math.min(blob.size,o+P));}return (~c)>>>0;}
+async function montarZip(arqs,prog){
+  const enc=new TextEncoder(),partes=[],cent=[],d0=new Date(),hora=d0.getHours()<<11|d0.getMinutes()<<5|d0.getSeconds()>>1,dia=(d0.getFullYear()-1980)<<9|(d0.getMonth()+1)<<5|d0.getDate();
+  const total=arqs.reduce((s,a)=>s+a.blob.size,0);let off=0,feito=0;
+  for(const a of arqs){const nb=enc.encode(a.nome),tam=a.blob.size,c=await crc32(a.blob,x=>prog&&prog((feito+x)/total)),h=new DataView(new ArrayBuffer(30)),ce=new DataView(new ArrayBuffer(46));feito+=tam;
+    if(off+tam>4294967295)throw new Error('a pasta passou de 4 GB');
+    [[0,0x04034b50,4],[4,20,2],[6,0x0800,2],[10,hora,2],[12,dia,2],[14,c,4],[18,tam,4],[22,tam,4],[26,nb.length,2]].forEach(([o,v,t])=>t===4?h.setUint32(o,v,true):h.setUint16(o,v,true));
+    [[0,0x02014b50,4],[4,20,2],[6,20,2],[8,0x0800,2],[12,hora,2],[14,dia,2],[16,c,4],[20,tam,4],[24,tam,4],[28,nb.length,2],[42,off,4]].forEach(([o,v,t])=>t===4?ce.setUint32(o,v,true):ce.setUint16(o,v,true));
+    partes.push(h,nb,a.blob);cent.push(ce,nb);off+=30+nb.length+tam;}
+  const tc=cent.reduce((s,x)=>s+x.byteLength,0),fim=new DataView(new ArrayBuffer(22));fim.setUint32(0,0x06054b50,true);fim.setUint16(8,arqs.length,true);fim.setUint16(10,arqs.length,true);fim.setUint32(12,tc,true);fim.setUint32(16,off,true);
+  return new Blob([...partes,...cent,fim],{type:'application/zip'});
+}
+const limpaNome=n=>(n||'').replace(/[\\/:*?"<>|]+/g,'-').trim()||'sem-nome';
+async function baixarPasta(p){
+  const its=V.items.filter(it=>it.pasta===p.id),notas=notasEscrita(),rots=(p.rot||[]).map(id=>notas.find(n=>n.id===id)).filter(Boolean);
+  if(!its.length&&!rots.length)return toast('A pasta está vazia');
+  const nome=await pergunta('Baixar a pasta','Escolha o nome do arquivo .zip. Dentro dele vão as pastas Vídeos, Áudios, Imagens e Roteiros.',p.nome,'Baixar .zip');if(!nome)return;
+  const usados=new Set(),unico=n=>{let x=n,k=2;while(usados.has(x.toLowerCase()))x=n.replace(/(\.[^.]+)?$/,` (${k++})$1`);usados.add(x.toLowerCase());return x;};
+  const sub={video:'Vídeos',audio:'Áudios',imagem:'Imagens'},arqs=[];
+  for(const it of its)arqs.push({nome:unico(`${sub[it.tipo]||'Outros'}/${limpaNome(it.nome)}.${((it.mime||'').split('/')[1]||'bin').replace('mpeg','mp3').replace('x-matroska','mkv')}`),blob:it.blob});
+  for(const r of rots)arqs.push({nome:unico(`Roteiros/${limpaNome(r.titulo)}.txt`),blob:new Blob([r.titulo+'\r\n\r\n'+htmlTexto(r.html).replace(/\n/g,'\r\n')],{type:'text/plain;charset=utf-8'})});
+  // onde salvar: o navegador deixa escolher a pasta quando consegue; no tablet, vai para Downloads
+  let alvo=null;if(window.showSaveFilePicker){try{alvo=await showSaveFilePicker({suggestedName:limpaNome(nome)+'.zip',types:[{description:'Arquivo .zip',accept:{'application/zip':['.zip']}}]});}catch(e){if(e.name==='AbortError')return;}}
+  toast('Montando o .zip…');
+  try{const z=await montarZip(arqs,f=>{$('#toast').textContent=`Montando o .zip… ${Math.round(f*100)}%`;});
+    if(alvo){const w=await alvo.createWritable();await w.write(z);await w.close();toast('Salvo: '+alvo.name);}
+    else{const a=document.createElement('a');a.href=URL.createObjectURL(z);a.download=limpaNome(nome)+'.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),60000);toast(`Baixando “${limpaNome(nome)}.zip” (${fmtSize(z.size)})`);}
+  }catch(e){toast('Não consegui montar o .zip: '+e.message);}
+}
+$('#pastas').addEventListener('click',async e=>{const b=e.target.closest('[data-p]');if(!b)return;
+  if(b.dataset.p==='+'){const p=await novaPasta();if(p){V.pasta=p.id;render();}return;}
+  V.pasta=V.pasta===b.dataset.p?null:b.dataset.p;render();$('#list').scrollTop=0;});
+$('#list').addEventListener('click',async e=>{const p=pastaAtual();if(!p)return;
+  const t=e.target.closest('[data-tira]');if(t){p.rot=(p.rot||[]).filter(x=>x!==t.dataset.tira);salvaPastas();return render();}
+  const b=e.target.closest('[data-pa]');if(!b)return;const a=b.dataset.pa;
+  if(a==='zip')baixarPasta(p);else if(a==='add')$('#fIn').click();else if(a==='rot')escolherRoteiros(p);
+  else if(a==='nome'){const n=await pergunta('Renomear pasta','',p.nome,'Salvar');if(n){p.nome=n;salvaPastas();render();}}
+  else if(a==='del'){if(!await confirmar('Apagar a pasta?','Os vídeos e áudios continuam na Biblioteca; só a pasta some.','Apagar pasta'))return;
+    for(const it of V.items.filter(x=>x.pasta===p.id)){it.pasta=null;await dbPut(it);}PASTAS=PASTAS.filter(x=>x!==p);salvaPastas();V.pasta=null;render();}
+});
+
 /* ================= eventos ================= */
 $('#addBtn').innerHTML=svg('plus')+'Adicionar';$('#addBtn').onclick=()=>$('#fIn').click();
 $('#icSearch').innerHTML=svg('search');
 $('#selBtn').innerHTML=svg('select');
-$('#sEdit').innerHTML=svg('scissors')+'Editor';$('#sDown').innerHTML=svg('down')+'Baixar';$('#sDel').innerHTML=svg('trash')+'Apagar';$('#sX').innerHTML=svg('x');
+$('#sEdit').innerHTML=svg('scissors')+'Editor';$('#sPasta').innerHTML=svg('folder')+'Pasta';$('#sPasta').onclick=()=>moverParaPasta(selItems());$('#sDown').innerHTML=svg('down')+'Baixar';$('#sDel').innerHTML=svg('trash')+'Apagar';$('#sX').innerHTML=svg('x');
 $('#filters').addEventListener('click',e=>{const b=e.target.closest('[data-o]');if(!b)return;V.org=b.dataset.o;saveVista();render();$('#list').scrollTop=0;});
 $('#typeBtn').onclick=()=>{const i=TIPOS.findIndex(x=>x[0]===V.tipo);V.tipo=TIPOS[(i+1)%TIPOS.length][0];saveVista();render();toast('Mostrando '+TIPOS.find(x=>x[0]===V.tipo)[2]);};
 $('#sortBtn').onclick=()=>{const i=SORTS.findIndex(x=>x[0]===V.sort);V.sort=SORTS[(i+1)%SORTS.length][0];saveVista();render();toast('Ordem: '+SORTS.find(x=>x[0]===V.sort)[2]);};

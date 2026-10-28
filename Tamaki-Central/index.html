@@ -48,6 +48,12 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
 .tuto b{color:var(--am)}.tuto ol{margin:6px 0 0;padding-left:20px;color:var(--mut);line-height:1.5}.tuto ol b{color:var(--tx)}
 .campo{display:grid;gap:4px;margin-bottom:10px;font-size:.85rem;color:var(--mut)}
 .campo input,.campo select{background:#0d0d0d;color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:10px;font:inherit}
+#recPill{flex:none;display:flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:20px;background:#c62828;color:#fff;font-weight:700;font-variant-numeric:tabular-nums}
+#recPill i{width:10px;height:10px;border-radius:50%;background:#fff;animation:pisca 1s infinite}
+@keyframes pisca{50%{opacity:.25}}
+.op{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.op label{display:flex;gap:10px;align-items:center;background:#1b1b1b;border:1px solid var(--ln);border-radius:12px;padding:10px;cursor:pointer}
+.op label small{color:var(--mut);display:block}
 .ord{list-style:none;margin:0 0 10px;padding:0;max-height:55vh;overflow:auto}
 .ord li{display:flex;align-items:center;gap:8px;background:#1b1b1b;border:1px solid var(--ln);border-radius:12px;padding:6px 8px;margin-bottom:6px;touch-action:none}
 .ord li.arr{border-color:var(--am);opacity:.85}
@@ -61,10 +67,12 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
 <header>
   <img class="logo" src="icon-192.png" alt="">
   <nav id="abas" aria-label="Projetos"></nav>
+  <button id="recPill" class="hide" aria-label="Parar a gravação"><i></i><span id="recT">00:00</span>■</button>
   <button id="mais" aria-label="Mais opções" aria-haspopup="true" aria-expanded="false">⋮</button>
   <div id="menu" class="hide" role="menu">
     <a id="sozinho" target="_blank" rel="noopener" role="menuitem">↗ Abrir esta aba sozinha</a>
     <button id="recarregar" role="menuitem">⟳ Recarregar esta aba</button>
+    <button id="gravar" role="menuitem">⏺ Gravar esta aba (jogo)</button>
     <button id="organizar" role="menuitem">↕ Organizar abas</button>
     <button id="editar" role="menuitem" class="hide">✎ Editar esta aba</button>
     <button id="baixarAba" role="menuitem" class="hide">⬇ Baixar o código desta aba</button>
@@ -101,6 +109,25 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
   <div class="row" style="margin-top:10px"><button class="bt pri" id="nSalvar">Salvar aba</button><button class="bt" id="nFechar">Cancelar</button></div>
 </dialog>
 
+<dialog id="dGrav">
+  <h2 style="margin:0 0 6px;font-family:Georgia,serif">Gravar o jogo</h2>
+  <p class="mut">Grava só a tela do jogo e o som dele, direto do emulador: não é gravação de tela, então pesa pouco. Fique nesta aba enquanto grava.</p>
+  <div class="op" id="gQual">
+    <label><input type="radio" name="gq" value="leve" checked><span><b>Leve</b><small>30 quadros por segundo · o mais leve para o tablet</small></span></label>
+    <label><input type="radio" name="gq" value="boa"><span><b>Boa</b><small>30 quadros, mais nítido · arquivo maior</small></span></label>
+    <label><input type="radio" name="gq" value="fluida"><span><b>Fluida</b><small>60 quadros · só se o jogo continuar liso</small></span></label>
+  </div>
+  <label class="mut" style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><input type="checkbox" id="gSom" checked> Gravar o som do jogo</label>
+  <div class="row"><button class="bt pri" id="gIr">⏺ Começar a gravar</button><button class="bt" id="gNao">Cancelar</button></div>
+</dialog>
+<dialog id="dGravOk">
+  <h2 style="margin:0 0 6px;font-family:Georgia,serif">Gravação pronta</h2>
+  <p class="mut" id="gInfo"></p>
+  <video id="gVer" controls playsinline style="width:100%;max-height:40vh;border-radius:12px;background:#000"></video>
+  <label class="campo" style="margin-top:10px">Nome do arquivo<input id="gNome" maxlength="80"></label>
+  <div class="row"><button class="bt pri" id="gBaixar">⬇ Baixar</button><button class="bt" id="gBib">📚 Guardar na Biblioteca</button><button class="bt" id="gEd">🎬 Mandar ao Editor</button><button class="bt" id="gFora">Descartar</button></div>
+</dialog>
+
 <dialog id="dOrdem">
   <h2 style="margin:0 0 6px;font-family:Georgia,serif">Organizar abas</h2>
   <p class="mut" style="margin-bottom:10px">Arraste pelo ☰ ou use as setas. A ordem fica guardada neste aparelho.</p>
@@ -133,6 +160,8 @@ const BASE = {
   motion: {i: "🎬", n: "Motion", src: "motion.html"},
   decupagem: {i: "✂️", n: "Decupagem", src: "decupagem.html"},
   efeitos: {i: "🎧", n: "Efeitos", src: "efeitos.html"},
+  editor: {i: "🎞️", n: "Editor", src: "editor.html"},
+  biblioteca: {i: "📚", n: "Biblioteca", src: "biblioteca.html"},
   escrita: {i: "✍️", n: "Escrita", src: "projetos/biblioteca-escrita/"},
   reuniao: {i: "🤝", n: "Reunião"}
 };
@@ -164,6 +193,7 @@ function frame(k, src){
     const f = document.createElement("iframe");
     f.title = ABAS[k].n; f.className = "hide"; f.allow = "fullscreen; clipboard-write; autoplay";
     prontos[k] = new Promise(ok => f.addEventListener("load", ok, {once: true}));
+    f.addEventListener("load", () => ganchoAudio(f.contentWindow)); // deixa o som da aba pronto para ser gravado
     f.src = src; $("#area").appendChild(f); frames[k] = f;
   }
   return prontos[k];
@@ -215,6 +245,68 @@ $("#editar").onclick = () => { const a = ABAS[atual]; if (a && a.extra) abrirNic
 $("#remover").onclick = async () => { const a = ABAS[atual]; if (!a || !a.extra) return; fecharMenu();
   if (!confirm("Remover a aba " + a.n + "? Os dados que ela guardou continuam no aparelho.")) return;
   extras = extras.filter(x => x != a.extra); localStorage.setItem("central-extras", JSON.stringify(extras)); await cPut("x-" + a.extra.id, null); esqueceFrame(atual); montarAbas(); ir("universo"); };
+
+/* ---------- gravar a aba (jogo): pega os quadros do canvas e o som, sem gravar a tela ---------- */
+function ganchoAudio(w){ // tudo que toca no alto-falante também vai para uma saída que a gravação escuta
+  try { if (!w || w.__tamakiAudio || !w.AudioNode) return; const liga = w.AudioNode.prototype.connect, mapa = new Map(); w.__tamakiAudio = mapa;
+    w.AudioNode.prototype.connect = function(dest, ...r){ const res = liga.call(this, dest, ...r);
+      try { if (dest && dest === this.context.destination) { let d = mapa.get(this.context); if (!d) { d = this.context.createMediaStreamDestination(); mapa.set(this.context, d); } liga.call(this, d); } } catch (e) {} return res; };
+    for (const f of w.document.querySelectorAll("iframe")) { f.addEventListener("load", () => ganchoAudio(f.contentWindow)); ganchoAudio(f.contentWindow); }
+  } catch (e) {}
+}
+function janelas(w, out = []){ try { if (!w || !w.document) return out; out.push(w); for (const f of w.document.querySelectorAll("iframe")) janelas(f.contentWindow, out); } catch (e) {} return out; }
+function acharCanvas(w){ let melhor = null, area = 0; for (const j of janelas(w)) for (const c of j.document.querySelectorAll("canvas")) { const r = c.getBoundingClientRect(), a = r.width * r.height; if (r.width > 60 && a > area) { area = a; melhor = c; } } return melhor; }
+const QUAL = {leve: {fps: 30, br: 2.5e6}, boa: {fps: 30, br: 6e6}, fluida: {fps: 60, br: 8e6}};
+const gdb = () => new Promise((ok, no) => { const r = indexedDB.open("central-gravacao", 1); r.onupgradeneeded = () => r.result.createObjectStore("p"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+async function gop(modo, f){ const d = await gdb(); return new Promise((ok, no) => { const t = d.transaction("p", modo), q = f(t.objectStore("p")); t.oncomplete = () => { ok(q && q.result); d.close(); }; t.onerror = () => no(t.error); }); }
+let grav = null, gravFeita = null;
+const relogio = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+$("#gravar").onclick = () => { fecharMenu(); if (grav) return pararGravacao(); const fr = frames[atual];
+  if (!fr || !acharCanvas(fr.contentWindow)) return alert("Esta aba não tem uma tela de jogo para gravar. Abra o jogo (aba JOGO), comece a jogar e tente de novo.");
+  $("#dGrav").showModal(); };
+$("#gNao").onclick = () => $("#dGrav").close();
+$("#gIr").onclick = async () => {
+  $("#dGrav").close(); const q = QUAL[document.querySelector("[name=gq]:checked").value], fr = frames[atual], w = fr && fr.contentWindow, cvs = w && acharCanvas(w);
+  if (!cvs || !window.MediaRecorder) return alert("Não consegui gravar nesta aba.");
+  const st = cvs.captureStream(q.fps); let comSom = false;
+  if ($("#gSom").checked) { const trilhas = janelas(w).flatMap(j => j.__tamakiAudio ? [...j.__tamakiAudio.values()] : []).flatMap(d => d.stream.getAudioTracks()); if (trilhas.length) { st.addTrack(trilhas[0]); comSom = true; } }
+  const tipos = ["video/mp4;codecs=avc1.42E01F,mp4a.40.2", "video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp8,opus", "video/webm;codecs=vp8", "video/webm"], mime = tipos.find(t => MediaRecorder.isTypeSupported(t)) || "";
+  let rec; try { rec = new MediaRecorder(st, Object.assign({videoBitsPerSecond: q.br, audioBitsPerSecond: 128000}, mime ? {mimeType: mime} : {})); } catch (e) { return alert("Este navegador não conseguiu gravar: " + e.message); }
+  try { await gop("readwrite", s => s.clear()); } catch (e) {}
+  let n = 0, fila = Promise.resolve();
+  rec.ondataavailable = e => { if (!e.data.size) return; const k = n++, b = e.data; fila = fila.then(() => gop("readwrite", s => s.put(b, k))).catch(() => {}); }; // cada pedaço vai para o armazenamento, não para a memória
+  rec.onstop = async () => { await fila; clearInterval(grav.timer); if (grav.lock) grav.lock.release().catch(() => {}); $("#recPill").classList.add("hide");
+    let partes = []; try { partes = (await gop("readonly", s => s.getAll())) || []; } catch (e) {}
+    const tipo = (rec.mimeType || mime || "video/webm").split(";")[0], blob = new Blob(partes, {type: tipo}), dur = (Date.now() - grav.ini) / 1000, aba = ABAS[grav.aba];
+    gravFeita = {blob, ext: tipo.includes("mp4") ? "mp4" : "webm", aba}; grav = null;
+    $("#gInfo").textContent = `${relogio(dur)} · ${(blob.size / 1048576).toFixed(1)} MB · ${gravFeita.ext.toUpperCase()}${comSom ? " com som" : " sem som"}`;
+    $("#gNome").value = ((aba && aba.n) || "jogo").replace(/[^\p{L}\p{N}]+/gu, "-").toLowerCase() + "-" + new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
+    $("#gVer").src = URL.createObjectURL(blob); $("#dGravOk").showModal(); };
+  rec.start(1000);
+  grav = {rec, ini: Date.now(), aba: atual, lock: null, timer: setInterval(() => $("#recT").textContent = relogio((Date.now() - grav.ini) / 1000), 500)};
+  try { grav.lock = await navigator.wakeLock.request("screen"); } catch (e) {} // a tela não apaga durante a gravação
+  $("#recT").textContent = "00:00"; $("#recPill").classList.remove("hide");
+  if ($("#gSom").checked && !comSom) setTimeout(() => alert("Gravando sem som: o jogo já tinha começado antes de a Central preparar o som. Para gravar com som, recarregue a aba (⋮ › Recarregar) e comece o jogo de novo."), 50);
+};
+function pararGravacao(){ if (grav && grav.rec.state != "inactive") grav.rec.stop(); }
+$("#recPill").onclick = pararGravacao;
+const nomeArq = () => ($("#gNome").value.trim() || "gravacao").replace(/[\\/:*?"<>|]+/g, "-") + "." + gravFeita.ext;
+async function fecharGravacao(){ URL.revokeObjectURL($("#gVer").src); $("#gVer").removeAttribute("src"); gravFeita = null; $("#dGravOk").close(); try { await gop("readwrite", s => s.clear()); } catch (e) {} }
+$("#gFora").onclick = () => { if (confirm("Descartar a gravação?")) fecharGravacao(); };
+$("#gBaixar").onclick = async () => { const nome = nomeArq();
+  if (window.showSaveFilePicker) { try { const h = await showSaveFilePicker({suggestedName: nome}); const w = await h.createWritable(); await w.write(gravFeita.blob); await w.close(); return alert("Salvo: " + h.name); } catch (e) { if (e.name == "AbortError") return; } }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(gravFeita.blob); a.download = nome; a.click(); };
+function naBiblioteca(){ return new Promise((ok, no) => { const r = indexedDB.open("tamaki-biblioteca", 1); r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains("itens")) r.result.createObjectStore("itens", {keyPath: "id"}); }; r.onerror = () => no(r.error);
+  r.onsuccess = () => { const db = r.result, id = "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), b = gravFeita.blob, t = db.transaction("itens", "readwrite");
+    t.objectStore("itens").put({id, origem: /jogo|emul/i.test((gravFeita.aba || {}).n || "") ? "emulador" : "outro", tipo: "video", nome: $("#gNome").value.trim() || "Gravação do jogo", texto: "", mime: b.type, tamanho: b.size, criado: Date.now(), blob: b});
+    t.oncomplete = () => { db.close(); try { const c = new BroadcastChannel("tamaki-biblioteca"); c.postMessage({novo: id}); c.close(); } catch (e) {} ok(id); }; t.onerror = () => no(t.error); }; }); }
+$("#gBib").onclick = async () => { try { await naBiblioteca(); alert("Guardado na Biblioteca."); } catch (e) { alert("Não consegui guardar: " + e.message); } };
+$("#gEd").onclick = async () => { let id; try { id = await naBiblioteca(); } catch (e) { return alert("Não consegui guardar: " + e.message); }
+  const n = await new Promise(ok => { let bc; try { bc = new BroadcastChannel("tamaki-editor"); } catch (e) { return ok(0); } const eu = "central" + Date.now(), fim = v => { clearTimeout(t); bc.close(); ok(v); }; let t = setTimeout(() => fim(0), 900);
+    bc.onmessage = e => { const d = e.data || {}; if (d.tipo == "pong" && d.de == eu) { if (d.exportando) return fim(-1); clearTimeout(t); t = setTimeout(() => fim(0), 60000); bc.postMessage({tipo: "add", para: d.id, de: eu, ids: [id], modo: "fim"}); } else if (d.tipo == "ok" && d.para == eu) fim(d.n); };
+    bc.postMessage({tipo: "ping", de: eu}); });
+  alert(n > 0 ? "Pronto! A gravação está no fim do vídeo, no Editor." : "Guardei na Biblioteca. Abra a aba do Editor e mande de lá (o Editor não estava aberto)."); };
+
 /* ---------- organizar abas ---------- */
 let ordem = [];
 function listaOrdem(){ $("#ordLista").innerHTML = ordem.map((k, i) => `<li data-k="${k}"><span class="al" aria-hidden="true">☰</span><span>${esc(ABAS[k].i)}</span><span class="nm">${esc(ABAS[k].n)}</span><button data-mv="-1" aria-label="Subir" ${i ? "" : "disabled"}>▲</button><button data-mv="1" aria-label="Descer" ${i < ordem.length - 1 ? "" : "disabled"}>▼</button></li>`).join(""); }
