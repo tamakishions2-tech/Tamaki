@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b1b1b">
+<meta name="color-scheme" content="dark">
+<title>Efeitos · Tamaki Central</title>
+<style>
+:root{--bg:#121212;--pn:#1b1b1b;--pn2:#242424;--ln:#313131;--tx:#f4f1e8;--mu:#a7a39a;--am:#f2b51d;--ok:#5fd9cf;--er:#ef5350;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--tx);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--am);outline-offset:2px}
+body{display:grid;grid-template-rows:auto auto minmax(0,1fr);grid-template-columns:minmax(0,1fr);height:100dvh}
+header{display:flex;align-items:center;gap:10px;padding:10px 12px 6px;background:var(--pn)}
+header h1{margin:0;font:700 1.05rem Georgia,serif;color:var(--am);letter-spacing:.1em}
+header p{margin:0;color:var(--mu);font-size:.78rem;flex:1}
+nav{display:flex;gap:6px;padding:6px 10px 8px;background:var(--pn);border-bottom:1px solid var(--ln);overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:none;border:0;border-radius:14px;background:var(--pn2);color:var(--mu);font-weight:600;min-height:42px;padding:0 14px}
+nav button.on{background:var(--am);color:#151515}
+nav b{background:var(--er);color:#fff;border-radius:999px;padding:0 6px;font-size:.72rem;margin-left:4px}
+main{min-height:0;overflow:auto}
+.pane{display:none;padding:12px;max-width:1200px;margin:0 auto}
+.pane.on{display:block}
+.mut{color:var(--mu);font-size:.84rem;margin:0 0 10px;line-height:1.45}
+.mut b{color:var(--tx)}
+.bt{background:var(--pn2);border:1px solid var(--ln);border-radius:12px;padding:0 12px;min-height:40px;white-space:nowrap;display:inline-grid;place-items:center}
+.bt.pri{background:var(--am);border-color:var(--am);color:#151515;font-weight:700}
+.bt.mini{min-height:34px;padding:0 9px;border-radius:10px}
+.bt:disabled{opacity:.45}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chips button{border:1px solid var(--ln);background:var(--pn2);border-radius:999px;padding:5px 12px;color:var(--mu)}
+.chips button.on{border-color:var(--am);color:var(--am);font-weight:700}
+.busca{width:100%;background:#0d0d0d;border:1px solid var(--ln);border-radius:12px;padding:10px;margin-bottom:10px}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.card{display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left;background:var(--pn2);border:1px solid var(--ln);border-radius:14px;padding:10px;min-height:86px;position:relative}
+.card .i{font-size:1.5rem;line-height:1.2}
+.card b{font-size:.92rem}
+.card small{color:var(--mu);font-size:.74rem}
+.card.on{border-color:var(--am);box-shadow:inset 0 0 0 1px var(--am)}
+.card .play{position:absolute;right:8px;top:8px;width:32px;height:32px;border-radius:50%;border:0;background:var(--am);color:#151515;font-weight:700}
+.lado{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:12px;align-items:start}
+.det{position:sticky;top:0;background:var(--pn);border:1px solid var(--ln);border-radius:16px;padding:12px}
+.det h2{margin:0 0 4px;font:700 1.1rem Georgia,serif}
+.f{display:grid;gap:3px;font-size:.8rem;color:var(--mu);margin-bottom:8px}
+.f b{display:flex;justify-content:space-between;font-weight:600}
+.f b i{font-style:normal;color:var(--tx)}
+.f input[type=range]{width:100%;accent-color:var(--am)}
+.f select,.f input[type=text]{background:#0d0d0d;border:1px solid var(--ln);border-radius:10px;padding:8px;width:100%}
+.f input[type=color]{width:100%;height:38px;border:1px solid var(--ln);border-radius:10px;background:#0d0d0d;padding:2px}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.chk{display:flex;gap:8px;align-items:center;color:var(--mu);font-size:.85rem;margin-bottom:8px}
+#onda{width:100%;height:56px;display:block;border-radius:10px;background:#0d0d0d;margin:6px 0 10px}
+.palco{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--ln);background:conic-gradient(#2c2c2c 25%,#1f1f1f 0 50%,#2c2c2c 0 75%,#1f1f1f 0) 0 0/24px 24px;display:flex;justify-content:center}
+.palco.verde{background:#00b140}.palco.preto{background:#000}
+#cv{display:block;max-width:100%;max-height:52vh}
+.rec{position:absolute;left:10px;top:10px;background:var(--er);color:#fff;font-weight:700;border-radius:999px;padding:3px 10px;font-size:.8rem;display:none}
+.rec.on{display:block}
+.item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--pn2);border:1px solid var(--ln);border-radius:14px;padding:10px;margin-bottom:8px}
+.item .ic{width:56px;height:56px;border-radius:10px;background:#0d0d0d;display:grid;place-items:center;font-size:1.6rem;overflow:hidden}
+.item .ic img,.item .ic video{width:100%;height:100%;object-fit:cover}
+.item input[type=text]{background:transparent;border:0;border-bottom:1px solid var(--ln);padding:3px 0;width:100%;font-weight:700}
+.item small{color:var(--mu);font-size:.76rem}
+.item .acts{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.vazio{color:var(--mu);text-align:center;padding:24px 12px;border:1px dashed var(--ln);border-radius:14px}
+.selo{display:inline-block;background:#1e3b2a;color:#8fe3a8;border-radius:999px;padding:2px 10px;font-size:.76rem;font-weight:700}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--am);color:#151515;font-weight:700;padding:8px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+@media (max-width:820px){
+  .lado{grid-template-columns:minmax(0,1fr)}
+  .det{position:sticky;top:auto;bottom:0;order:2;border-radius:16px 16px 0 0;box-shadow:0 -10px 30px #000a}
+  .det{max-height:46vh;overflow:auto}
+  #onda{height:40px}
+  .grade{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+  .item{grid-template-columns:auto minmax(0,1fr)}
+  .item .acts{grid-column:1/-1;justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+<header><h1>EFEITOS</h1><p>Sonoplastia e efeitos visuais <span class="selo">✓ livres de direitos</span></p></header>
+<nav>
+  <button data-t="sons" class="on">🔊 Sons</button>
+  <button data-t="visuais">✨ Efeitos visuais</button>
+  <button data-t="meus">📁 Meus arquivos</button>
+  <button data-t="enviados">📤 Enviados <b id="nEnv" hidden></b></button>
+</nav>
+<main>
+  <!-- SONS -->
+  <section class="pane on" id="p-sons">
+    <p class="mut">Todos os sons são <b>criados aqui no aparelho, do zero</b>: não vêm de nenhum banco de sons, então não têm dono e podem ir em vídeo monetizado. Toque num som para ajustar; cada <b>🎲 Variação</b> gera uma versão diferente.</p>
+    <div class="lado">
+      <div><input class="busca" id="buscaSom" placeholder="Procurar som (ex.: pop, chuva, boom)"><div class="chips" id="catSom"></div><div class="grade" id="gradeSom"></div></div>
+      <aside class="det" id="detSom"></aside>
+    </div>
+  </section>
+  <!-- VISUAIS -->
+  <section class="pane" id="p-visuais">
+    <p class="mut">Efeitos no estilo After Effects para pôr por cima do vídeo. Também são desenhados aqui, do zero. Baixe com <b>fundo verde</b> (use Chroma key no editor) ou <b>preto</b> (use o modo de mesclagem "Tela"/"Screen").</p>
+    <div class="lado">
+      <div><div class="palco" id="palco"><canvas id="cv" width="1280" height="720"></canvas><span class="rec" id="recTag">● Gravando</span></div>
+        <div class="chips" id="catVis" style="margin-top:10px"></div><div class="grade" id="gradeVis"></div></div>
+      <aside class="det" id="detVis"></aside>
+    </div>
+  </section>
+  <!-- MEUS -->
+  <section class="pane" id="p-meus">
+    <p class="mut">Seus próprios sons, vídeos e imagens. Ficam guardados só neste aparelho. Use só o que for seu ou livre de direitos.</p>
+    <div class="row"><label class="bt pri" for="fMeus">＋ Adicionar arquivos</label><button class="bt" id="bGravar">🎙 Gravar som (foley)</button><span class="mut" id="gravInfo" style="margin:0"></span></div>
+    <div id="listaMeus"></div>
+    <input type="file" id="fMeus" accept="audio/*,video/*,image/*" multiple hidden>
+  </section>
+  <!-- ENVIADOS -->
+  <section class="pane" id="p-enviados">
+    <p class="mut">Tudo o que você manda com <b>📤 Enviar ao editor</b> fica nesta caixa. O <b>Editor de vídeos</b> pega daqui. Também dá para baixar de novo ou tirar da caixa.</p>
+    <div class="row"><button class="bt" id="bLimpar">Esvaziar a caixa</button></div>
+    <div id="listaEnv"></div>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("on"), 2200); }
+const lerLS = (k, p) => { try { return JSON.parse(localStorage.getItem(k)) ?? p; } catch (e) { return p; } };
+const gravarLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+function baixar(blob, nome){ const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+const arquivo = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
+// gerador aleatório com semente: a mesma variação sempre sai igual
+const rnd = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+/* ---------- bancos de dados ---------- */
+function abrir(nome, criar){ return new Promise((ok, no) => { const r = indexedDB.open(nome, 1); r.onupgradeneeded = () => criar(r.result); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); }
+async function op(nome, criar, loja, modo, f){ const d = await abrir(nome, criar); return new Promise((ok, no) => { const t = d.transaction(loja, modo), q = f(t.objectStore(loja)); t.oncomplete = () => { ok(q && q.result); d.close(); }; t.onerror = () => no(t.error); }); }
+// Caixa comum: o Editor de vídeos lê os itens daqui (IndexedDB "tamaki-caixa", loja "itens") e ouve o aviso "tamaki-caixa-aviso".
+const CAIXA = ["tamaki-caixa", d => d.createObjectStore("itens", {keyPath: "id"}), "itens"];
+const caixa = {
+  lista: () => op(...CAIXA, "readonly", s => s.getAll()).then(l => (l || []).sort((a, b) => b.criado - a.criado)),
+  por: item => op(...CAIXA, "readwrite", s => s.put(item)).then(() => { gravarLS("tamaki-caixa-aviso", {t: Date.now(), id: item.id}); contar(); }),
+  tira: id => op(...CAIXA, "readwrite", s => s.delete(id)).then(contar),
+  limpa: () => op(...CAIXA, "readwrite", s => s.clear()).then(contar)
+};
+const MEUS = ["tamaki-efeitos", d => d.createObjectStore("meus", {keyPath: "id"}), "meus"];
+const meus = {
+  lista: () => op(...MEUS, "readonly", s => s.getAll()).then(l => (l || []).sort((a, b) => b.criado - a.criado)),
+  por: item => op(...MEUS, "readwrite", s => s.put(item)),
+  tira: id => op(...MEUS, "readwrite", s => s.delete(id))
+};
+async function contar(){ const n = (await caixa.lista()).length, b = $("#nEnv"); b.hidden = !n; b.textContent = n; if (aba == "enviados") listaEnviados(); }
+async function enviar(blob, nome, tipo, extra){
+  const item = Object.assign({id: uid(), nome, tipo, mime: blob.type, blob, criado: Date.now(), origem: "Efeitos"}, extra || {});
+  try { await caixa.por(item); toast("📤 Enviado ao editor: " + nome); } catch (e) { toast("Não consegui enviar (" + e.message + ")"); }
+}
+
+/* ---------- abas ---------- */
+let aba = "sons";
+document.querySelector("nav").onclick = e => { const b = e.target.closest("[data-t]"); if (!b) return; aba = b.dataset.t;
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x == b)); document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.id == "p-" + aba));
+  if (aba == "meus") listaMeus(); if (aba == "enviados") listaEnviados(); if (aba == "visuais") tamanhoCv(); };
+
+/* ============================================================
+   SONS: síntese do zero (Web Audio)
+   ============================================================ */
+function kit(oc, out, R){
+  const sr = oc.sampleRate, nb = oc.createBuffer(1, sr * 2, sr), nd = nb.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = R() * 2 - 1;
+  const g = (v = 1) => { const n = oc.createGain(); n.gain.value = v; return n; };
+  const ramp = (p, pts) => { p.setValueAtTime(Math.max(pts[0][1], 1e-4), pts[0][0]); for (const [t, v, lin] of pts.slice(1)) lin ? p.linearRampToValueAtTime(v, t) : p.exponentialRampToValueAtTime(Math.max(v, 1e-4), t); };
+  const ruido = (t0, t1) => { const s = oc.createBufferSource(); s.buffer = nb; s.loop = true; s.start(t0, R() * 1.5); s.stop(t1); return s; };
+  const osc = (tipo, t0, t1, fpts) => { const o = oc.createOscillator(); o.type = tipo; ramp(o.frequency, typeof fpts == "number" ? [[t0, fpts]] : fpts); o.start(t0); o.stop(t1); return o; };
+  const filtro = (tipo, f, Q = 1) => { const b = oc.createBiquadFilter(); b.type = tipo; b.frequency.value = f; b.Q.value = Q; return b; };
+  const env = (pts, dest = out) => { const n = g(0); ramp(n.gain, pts); n.connect(dest); return n; };
+  const liga = (...ns) => { for (let i = 0; i < ns.length - 1; i++) ns[i].connect(ns[i + 1]); return ns[ns.length - 1]; };
+  const nota = (tipo, f, t, d, v = 1, ataque = .005) => liga(osc(tipo, t, t + d + .05, f), env([[t, 0], [t + ataque, v, 1], [t + d, 0]]));
+  return {oc, out, R, g, ramp, ruido, osc, filtro, env, liga, nota};
+}
+const SONS = [
+  // Transições
+  {id: "whoosh", nome: "Whoosh", i: "💨", cat: "Transições", dur: .8, f(K, k, d){ const bp = K.filtro("bandpass", 500, 1.3); K.ramp(bp.frequency, [[0, 280 * k], [d * .6, 3200 * k], [d, 700 * k]]); K.liga(K.ruido(0, d), bp, K.env([[0, 0], [d * .6, 1, 1], [d, 0]])); }},
+  {id: "swoosh", nome: "Swoosh rápido", i: "🌬️", cat: "Transições", dur: .35, f(K, k, d){ const hp = K.filtro("bandpass", 2000, .9); K.ramp(hp.frequency, [[0, 900 * k], [d * .5, 5000 * k], [d, 1500 * k]]); K.liga(K.ruido(0, d), hp, K.env([[0, 0], [d * .4, 1, 1], [d, 0]])); }},
+  {id: "riser", nome: "Subida (riser)", i: "📈", cat: "Transições", dur: 2.5, f(K, k, d){ const bp = K.filtro("bandpass", 300, 2); K.ramp(bp.frequency, [[0, 200 * k], [d, 7000 * k]]); K.liga(K.ruido(0, d), bp, K.env([[0, 0], [d * .97, 1, 1], [d, 0, 1]]));
+    const lp = K.filtro("lowpass", 2000); K.liga(K.osc("sawtooth", 0, d, [[0, 90 * k], [d, 900 * k]]), lp, K.env([[0, 0], [d * .97, .25, 1], [d, 0, 1]])); }},
+  {id: "downer", nome: "Descida (downer)", i: "📉", cat: "Transições", dur: 1.6, f(K, k, d){ const lp = K.filtro("lowpass", 3000); K.ramp(lp.frequency, [[0, 4000 * k], [d, 150]]); K.liga(K.ruido(0, d), lp, K.env([[0, 1], [d, 0]]));
+    K.liga(K.osc("sine", 0, d, [[0, 500 * k], [d, 35 * k]]), K.env([[0, .6], [d, 0]])); }},
+  {id: "reverso", nome: "Reverso (sucção)", i: "🔄", cat: "Transições", dur: 1.2, f(K, k, d){ const bp = K.filtro("bandpass", 800, 1); K.ramp(bp.frequency, [[0, 400 * k], [d, 2500 * k]]); K.liga(K.ruido(0, d), bp, K.env([[0, 0], [d * .95, 1], [d, 0, 1]])); }},
+  // Impactos
+  {id: "boom", nome: "Boom grave", i: "💥", cat: "Impactos", dur: 1.5, f(K, k, d){ K.liga(K.osc("sine", 0, d, [[0, 130 * k], [d * .5, 34 * k]]), K.env([[0, 1], [d, 0]])); const lp = K.filtro("lowpass", 500 * k); K.liga(K.ruido(0, .4), lp, K.env([[0, .9], [.4, 0]])); }},
+  {id: "explosao", nome: "Explosão", i: "🧨", cat: "Impactos", dur: 2.2, f(K, k, d){ const lp = K.filtro("lowpass", 1500); K.ramp(lp.frequency, [[0, 2200 * k], [d, 120]]); K.liga(K.ruido(0, d), lp, K.env([[0, 0], [.02, 1, 1], [d, 0]])); K.liga(K.osc("sine", 0, d, [[0, 90 * k], [d * .6, 28]]), K.env([[0, 1], [d * .8, 0]])); }},
+  {id: "soco", nome: "Soco", i: "👊", cat: "Impactos", dur: .35, f(K, k, d){ K.liga(K.osc("sine", 0, d, [[0, 190 * k], [.15, 55 * k]]), K.env([[0, 1], [d, 0]])); const bp = K.filtro("bandpass", 1600 * k, 1.5); K.liga(K.ruido(0, .1), bp, K.env([[0, .8], [.09, 0]])); }},
+  {id: "bonk", nome: "Bonk (pancada)", i: "🔨", cat: "Impactos", dur: .3, f(K, k, d){ K.liga(K.osc("triangle", 0, d, [[0, 900 * k], [.08, 380 * k]]), K.env([[0, 1], [d, 0]])); K.liga(K.ruido(0, .02), K.filtro("highpass", 2000), K.env([[0, .6], [.02, 0]])); }},
+  {id: "glitch", nome: "Glitch", i: "📺", cat: "Impactos", dur: .6, f(K, k, d){ let t = 0; while (t < d) { const s = .02 + K.R() * .05; if (K.R() < .75) K.nota(K.R() < .5 ? "square" : "sawtooth", (80 + K.R() * 2000) * k, t, s * .9, .5, .001); else K.liga(K.ruido(t, t + s), K.env([[t, .5], [t + s, 0, 1]])); t += s; } }},
+  {id: "estatica", nome: "Estática de TV", i: "📡", cat: "Impactos", dur: 1.5, f(K, k, d){ K.liga(K.ruido(0, d), K.filtro("highpass", 1200 * k), K.env([[0, 0], [.03, .6, 1], [d - .1, .6, 1], [d, 0, 1]])); }},
+  // Desenho animado
+  {id: "pop", nome: "Pop", i: "🫧", cat: "Desenho", dur: .15, f(K, k, d){ K.liga(K.osc("sine", 0, d, [[0, 320 * k], [.05, 1300 * k]]), K.env([[0, 0], [.004, 1, 1], [d, 0]])); }},
+  {id: "boing", nome: "Boing", i: "🌀", cat: "Desenho", dur: .7, f(K, k, d){ const o = K.osc("sine", 0, d, [[0, 260 * k], [d, 420 * k]]), lfo = K.osc("sine", 0, d, 17), pr = K.g(0); K.ramp(pr.gain, [[0, 90 * k], [d, 2]]); K.liga(lfo, pr); pr.connect(o.frequency); K.liga(o, K.env([[0, 0], [.01, 1, 1], [d, 0]])); }},
+  {id: "apito", nome: "Apito subindo", i: "🎺", cat: "Desenho", dur: .7, f(K, k, d){ const o = K.osc("sine", 0, d, [[0, 480 * k], [d, 1700 * k]]), lfo = K.osc("sine", 0, d, 6), pr = K.g(18 * k); K.liga(lfo, pr); pr.connect(o.frequency); K.liga(o, K.env([[0, 0], [.05, .8, 1], [d * .85, .8, 1], [d, 0, 1]])); }},
+  {id: "queda", nome: "Apito caindo", i: "🪂", cat: "Desenho", dur: 1, f(K, k, d){ const o = K.osc("sine", 0, d, [[0, 1800 * k], [d, 350 * k]]), lfo = K.osc("sine", 0, d, 7), pr = K.g(25 * k); K.liga(lfo, pr); pr.connect(o.frequency); K.liga(o, K.env([[0, 0], [.04, .8, 1], [d * .9, .7, 1], [d, 0, 1]])); }},
+  {id: "pulo", nome: "Pulo (8-bit)", i: "🍄", cat: "Desenho", dur: .2, f(K, k, d){ K.liga(K.osc("square", 0, d, [[0, 190 * k], [d, 780 * k]]), K.env([[0, .5], [d, 0]])); }},
+  {id: "moeda", nome: "Moeda", i: "🪙", cat: "Desenho", dur: .45, f(K, k, d){ K.nota("square", 988 * k, 0, .08, .4); K.nota("square", 1319 * k, .08, d - .08, .4); }},
+  {id: "laser", nome: "Laser", i: "🔫", cat: "Desenho", dur: .3, f(K, k, d){ K.liga(K.osc("square", 0, d, [[0, 1600 * k], [d, 180 * k]]), K.filtro("lowpass", 4000), K.env([[0, .5], [d, 0]])); }},
+  {id: "tchan", nome: "Tchan-tchan-tchaaan", i: "🎭", cat: "Desenho", dur: 1.6, f(K, k, d){ const lp = K.filtro("lowpass", 1800), b = K.g(1); K.liga(b, lp, K.out); const n = (f, t, dd) => K.liga(K.osc("sawtooth", t, t + dd + .05, f), K.env([[t, 0], [t + .01, .5, 1], [t + dd * .7, .4, 1], [t + dd, 0]], b));
+    n(392 * k, 0, .18); n(392 * k, .22, .18); n(311 * k, .44, d - .44); n(155.5 * k, .44, d - .44); }},
+  {id: "tictac", nome: "Tic-tac", i: "⏱️", cat: "Desenho", dur: 2, f(K, k, d){ for (let t = 0, i = 0; t < d - .05; t += .5, i++) K.liga(K.ruido(t, t + .02), K.filtro("bandpass", (i % 2 ? 1500 : 2200) * k, 8), K.env([[t, 1], [t + .02, 0]])); }},
+  // Interface
+  {id: "clique", nome: "Clique", i: "🖱️", cat: "Interface", dur: .06, f(K, k, d){ K.liga(K.ruido(0, .01), K.filtro("highpass", 2500 * k), K.env([[0, .9], [.01, 0]])); K.nota("sine", 3200 * k, 0, .02, .3, .001); }},
+  {id: "notif", nome: "Notificação", i: "🔔", cat: "Interface", dur: .5, f(K, k, d){ K.nota("sine", 880 * k, 0, .14, .5, .01); K.nota("sine", 1320 * k, .13, .35, .5, .01); }},
+  {id: "plim", nome: "Plim (ding)", i: "✨", cat: "Interface", dur: 1.2, f(K, k, d){ [[1320, 1], [2640, .3], [3960, .12]].forEach(([f, v]) => K.nota("sine", f * k, 0, d, .5 * v, .003)); }},
+  {id: "sucesso", nome: "Sucesso", i: "✅", cat: "Interface", dur: .7, f(K, k, d){ [523, 659, 784, 1047].forEach((f, i) => K.nota("triangle", f * k, i * .09, i == 3 ? .35 : .12, .45)); }},
+  {id: "erro", nome: "Erro (buzzer)", i: "❌", cat: "Interface", dur: .6, f(K, k, d){ for (const t of [0, .3]) { K.nota("sawtooth", 110 * k, t, .22, .35, .005); K.nota("sawtooth", 117 * k, t, .22, .35, .005); } }},
+  {id: "teclado", nome: "Teclado digitando", i: "⌨️", cat: "Interface", dur: 1.6, f(K, k, d){ let t = 0; while (t < d - .05) { K.liga(K.ruido(t, t + .015), K.filtro("bandpass", (2400 + K.R() * 1800) * k, 3), K.env([[t, .4 + K.R() * .5], [t + .015, 0]])); t += .06 + K.R() * .11; } }},
+  {id: "camera", nome: "Foto (câmera)", i: "📸", cat: "Interface", dur: .3, f(K, k, d){ for (const t of [0, .09]) K.liga(K.ruido(t, t + .04), K.filtro("bandpass", 3000 * k, 1.5), K.env([[t, 1], [t + .04, 0]])); }},
+  // Ambiente e sonoplastia
+  {id: "chuva", nome: "Chuva", i: "🌧️", cat: "Ambiente", dur: 5, f(K, k, d){ K.liga(K.ruido(0, d), K.filtro("lowpass", 3500 * k), K.filtro("highpass", 400), K.env([[0, 0], [.6, .55, 1], [d - .6, .55, 1], [d, 0, 1]]));
+    for (let i = 0; i < d * 25; i++) { const t = .3 + K.R() * (d - .6); K.liga(K.ruido(t, t + .01), K.filtro("bandpass", (2500 + K.R() * 3000) * k, 4), K.env([[t, .25 * K.R()], [t + .01, 0]])); } }},
+  {id: "vento", nome: "Vento", i: "🍃", cat: "Ambiente", dur: 5, f(K, k, d){ const bp = K.filtro("bandpass", 600 * k, 2.5), lfo = K.osc("sine", 0, d, .25 + K.R() * .2), pr = K.g(350 * k); K.liga(lfo, pr); pr.connect(bp.frequency);
+    K.liga(K.ruido(0, d), bp, K.env([[0, 0], [1, .9, 1], [d * .5, .6, 1], [d - .8, .9, 1], [d, 0, 1]])); }},
+  {id: "coracao", nome: "Batimento cardíaco", i: "❤️", cat: "Ambiente", dur: 3.3, f(K, k, d){ for (let t = 0; t < d - .3; t += 1.1) for (const [o, v] of [[0, 1], [.22, .7]]) K.liga(K.osc("sine", t + o, t + o + .2, [[t + o, 65 * k], [t + o + .15, 38 * k]]), K.env([[t + o, 0], [t + o + .01, v, 1], [t + o + .18, 0]])); }},
+  {id: "aplausos", nome: "Aplausos", i: "👏", cat: "Ambiente", dur: 3, f(K, k, d){ for (let i = 0; i < d * 90; i++) { const t = K.R() * (d - .3), v = Math.min(1, t * 2, (d - t) * 1.5) * (.3 + K.R() * .5); K.liga(K.ruido(t, t + .03), K.filtro("bandpass", (900 + K.R() * 1600) * k, 1.4), K.env([[t, v], [t + .03, 0]])); } }},
+  {id: "fogo", nome: "Fogueira", i: "🔥", cat: "Ambiente", dur: 5, f(K, k, d){ K.liga(K.ruido(0, d), K.filtro("lowpass", 700 * k), K.env([[0, 0], [.5, .5, 1], [d - .5, .5, 1], [d, 0, 1]]));
+    for (let i = 0; i < d * 14; i++) { const t = .2 + K.R() * (d - .4); K.liga(K.ruido(t, t + .006), K.filtro("highpass", 1500 * k), K.env([[t, .5 * K.R() + .2], [t + .006, 0]])); } }},
+  {id: "passos", nome: "Passos", i: "👣", cat: "Ambiente", dur: 3, f(K, k, d){ for (let t = 0, i = 0; t < d - .2; t += .48 + K.R() * .05, i++) { K.liga(K.ruido(t, t + .07), K.filtro("lowpass", (500 + K.R() * 200) * k), K.env([[t, 0], [t + .005, .9, 1], [t + .07, 0]])); K.liga(K.osc("sine", t, t + .08, [[t, 120 * k], [t + .07, 60 * k]]), K.env([[t, .5], [t + .08, 0]])); } }},
+  {id: "suspense", nome: "Suspense (drone)", i: "🕯️", cat: "Ambiente", dur: 6, f(K, k, d){ const lp = K.filtro("lowpass", 700), b = K.g(1); K.liga(b, lp, K.out); for (const [f, v] of [[55, .5], [55 * 1.5, .25], [55 * 2.01, .2], [58.3, .3]]) K.liga(K.osc("sawtooth", 0, d, f * k), K.env([[0, 0], [1.5, v * .5, 1], [d - 1, v * .5, 1], [d, 0, 1]], b)); }}
+];
+const CATS_SOM = ["Todos", ...new Set(SONS.map(s => s.cat))];
+let catSom = "Todos", buscaSom = "", somSel = SONS[0].id;
+const ajustes = lerLS("efeitos-sons", {}); // ajustes guardados por som
+const aj = id => ajustes[id] || (ajustes[id] = {dur: 1, tom: 0, vol: .9, sem: 1});
+async function renderSom(s, a){
+  const sr = 44100, d = s.dur * a.dur, cauda = .25, oc = new OfflineAudioContext(1, Math.ceil(sr * (d + cauda)), sr);
+  const out = oc.createGain(), comp = oc.createDynamicsCompressor(); out.gain.value = a.vol; out.connect(comp); comp.connect(oc.destination);
+  s.f(kit(oc, out, rnd(a.sem * 7919 + s.id.length)), Math.pow(2, a.tom / 12), d);
+  return oc.startRendering();
+}
+let ac = null, tocando = null;
+const actx = () => { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state == "suspended") ac.resume(); return ac; };
+function tocarBuf(buf){ const c = actx(); if (tocando) try { tocando.stop(); } catch (e) {} const s = c.createBufferSource(); s.buffer = buf; s.connect(c.destination); s.start(); tocando = s; return s; }
+function wav(buf){ // 16 bits, mono ou estéreo
+  const ch = buf.numberOfChannels, n = buf.length, sr = buf.sampleRate, dv = new DataView(new ArrayBuffer(44 + n * ch * 2)), w = (o, s) => [...s].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); dv.setUint32(4, 36 + n * ch * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, ch, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr * ch * 2, true); dv.setUint16(32, ch * 2, true); dv.setUint16(34, 16, true); w(36, "data"); dv.setUint32(40, n * ch * 2, true);
+  const dados = [...Array(ch)].map((_, c) => buf.getChannelData(c)); let o = 44; for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) { const v = Math.max(-1, Math.min(1, dados[c][i])); dv.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true); o += 2; }
+  return new Blob([dv], {type: "audio/wav"});
+}
+function desenharOnda(buf){ const c = $("#onda"); if (!c) return; const r = c.getBoundingClientRect(), dpr = devicePixelRatio || 1; c.width = r.width * dpr; c.height = r.height * dpr; const x = c.getContext("2d"), d = buf.getChannelData(0), W = c.width, H = c.height, passo = Math.ceil(d.length / W);
+  x.clearRect(0, 0, W, H); x.fillStyle = "#f2b51d"; for (let i = 0; i < W; i++) { let m = 0; for (let j = i * passo; j < (i + 1) * passo && j < d.length; j++) m = Math.max(m, Math.abs(d[j])); const h = Math.max(1, m * H * .9); x.fillRect(i, (H - h) / 2, 1, h); } }
+const nomeSom = (s, a) => s.nome + (a.sem > 1 ? " (variação " + a.sem + ")" : "");
+function gradeSons(){
+  $("#catSom").innerHTML = CATS_SOM.map(c => `<button data-cat="${esc(c)}" class="${c == catSom ? "on" : ""}">${esc(c)}</button>`).join("");
+  const q = buscaSom.trim().toLowerCase(), L = SONS.filter(s => (catSom == "Todos" || s.cat == catSom) && (!q || (s.nome + " " + s.cat).toLowerCase().includes(q)));
+  $("#gradeSom").innerHTML = L.map(s => `<div class="card${s.id == somSel ? " on" : ""}" data-som="${s.id}" role="button" tabindex="0"><span class="i">${s.i}</span><b>${esc(s.nome)}</b><small>${esc(s.cat)} · ${(s.dur * aj(s.id).dur).toFixed(1)} s</small><button class="play" data-toca="${s.id}" aria-label="Ouvir ${esc(s.nome)}">▶</button></div>`).join("") || '<p class="vazio">Nenhum som com esse nome.</p>';
+}
+const rg = (k, rot, min, max, st, v, at = "a") => `<label class="f"><b>${rot}<i>${v}</i></b><input type="range" data-${at}="${k}" min="${min}" max="${max}" step="${st}" value="${v}"></label>`;
+function detalheSom(){
+  const s = SONS.find(x => x.id == somSel), a = aj(s.id);
+  $("#detSom").innerHTML = `<h2>${s.i} ${esc(s.nome)}</h2><p class="mut" style="margin:0">${esc(s.cat)}${a.sem > 1 ? " · variação " + a.sem : ""}</p><canvas id="onda"></canvas>
+    <div class="duas">${rg("dur", "Duração (×)", .3, 3, .05, a.dur)}${rg("tom", "Tom (semitons)", -12, 12, 1, a.tom)}</div>${rg("vol", "Volume", .1, 1.5, .05, a.vol)}
+    <div class="row"><button class="bt pri" data-acao="ouvir">▶ Ouvir</button><button class="bt" data-acao="variar">🎲 Variação</button><button class="bt" data-acao="zerar">↺</button></div>
+    <div class="row" style="margin:0"><button class="bt" data-acao="wav">⬇ Baixar .wav</button><button class="bt pri" data-acao="enviar">📤 Enviar ao editor</button><button class="bt" data-acao="guardar">📁 Guardar</button></div>`;
+  renderSom(s, a).then(desenharOnda);
+}
+async function acaoSom(acao){
+  const s = SONS.find(x => x.id == somSel), a = aj(s.id);
+  if (acao == "variar") { a.sem = (a.sem || 1) + 1; gravarLS("efeitos-sons", ajustes); detalheSom(); acao = "ouvir"; }
+  if (acao == "zerar") { ajustes[s.id] = {dur: 1, tom: 0, vol: .9, sem: 1}; gravarLS("efeitos-sons", ajustes); gradeSons(); return detalheSom(); }
+  const buf = await renderSom(s, a);
+  if (acao == "ouvir") { tocarBuf(buf); desenharOnda(buf); }
+  else if (acao == "wav") baixar(wav(buf), arquivo(nomeSom(s, a)) + ".wav");
+  else if (acao == "enviar") enviar(wav(buf), nomeSom(s, a), "audio", {dur: buf.duration, categoria: s.cat});
+  else if (acao == "guardar") { await meus.por({id: uid(), nome: nomeSom(s, a), tipo: "audio", mime: "audio/wav", blob: wav(buf), dur: buf.duration, criado: Date.now(), origem: "Efeitos"}); toast("Guardado em Meus arquivos"); }
+}
+$("#p-sons").addEventListener("click", async e => {
+  let b;
+  if ((b = e.target.closest("[data-cat]")) && b.closest("#catSom")) { catSom = b.dataset.cat; return gradeSons(); }
+  if ((b = e.target.closest("[data-toca]"))) { e.stopPropagation(); const s = SONS.find(x => x.id == b.dataset.toca); tocarBuf(await renderSom(s, aj(s.id))); return; }
+  if ((b = e.target.closest("[data-som]"))) { somSel = b.dataset.som; gradeSons(); return detalheSom(); }
+  if ((b = e.target.closest("[data-acao]"))) return acaoSom(b.dataset.acao);
+});
+$("#p-sons").addEventListener("input", e => {
+  if (e.target.id == "buscaSom") { buscaSom = e.target.value; return gradeSons(); }
+  const k = e.target.dataset.a; if (!k) return; const a = aj(somSel); a[k] = parseFloat(e.target.value); e.target.closest(".f").querySelector("i").textContent = a[k]; gravarLS("efeitos-sons", ajustes);
+});
+$("#p-sons").addEventListener("change", e => { if (e.target.dataset.a) { gradeSons(); renderSom(SONS.find(x => x.id == somSel), aj(somSel)).then(b => { tocarBuf(b); desenharOnda(b); }); } });
+
+/* ============================================================
+   EFEITOS VISUAIS: desenhados do zero no canvas
+   ============================================================ */
+const cv = $("#cv"), g = cv.getContext("2d");
+const eOut = p => 1 - Math.pow(1 - p, 3), eIO = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2, cl = v => Math.max(0, Math.min(1, v));
+const back = p => 1 + 2.70158 * Math.pow(p - 1, 3) + 1.70158 * Math.pow(p - 1, 2);
+const fade = (t, d, a = .15, b = .25) => Math.min(cl(t / a), cl((d - t) / b));
+function estrela(x, y, r, pontas, dentro){ g.beginPath(); for (let i = 0; i < pontas * 2; i++) { const a = i * Math.PI / pontas - Math.PI / 2, rr = i % 2 ? r * dentro : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); }
+function coracao(x, y, s){ g.beginPath(); g.moveTo(x, y + s * .3); g.bezierCurveTo(x, y, x - s * .5, y - s * .1, x - s * .5, y + s * .3); g.bezierCurveTo(x - s * .5, y + s * .65, x, y + s * .8, x, y + s); g.bezierCurveTo(x, y + s * .8, x + s * .5, y + s * .65, x + s * .5, y + s * .3); g.bezierCurveTo(x + s * .5, y - s * .1, x, y, x, y + s * .3); g.fill(); }
+const VIS = [
+  {id: "flash", nome: "Flash", i: "⚡", cat: "Transições", dur: .6, cor: "#ffffff", som: "swoosh", draw(t, d, p, W, H){ const a = t < .07 ? t / .07 : 1 - eOut((t - .07) / (d - .07)); g.globalAlpha = cl(a) * Math.min(1, p.int); g.fillStyle = p.cor; g.fillRect(0, 0, W, H); }},
+  {id: "swipe", nome: "Cortina (swipe)", i: "🟨", cat: "Transições", dur: .9, cor: "#f2b51d", som: "whoosh", draw(t, d, p, W, H){ const q = t / d, a = q < .5 ? 0 : eIO((q - .5) * 2), b = q < .5 ? eIO(q * 2) : 1, sk = H * .35;
+    g.fillStyle = p.cor; g.beginPath(); g.moveTo(-sk + (W + sk * 2) * a, 0); g.lineTo(-sk + (W + sk * 2) * b, 0); g.lineTo(-sk * 2 + (W + sk * 2) * b, H); g.lineTo(-sk * 2 + (W + sk * 2) * a, H); g.fill(); }},
+  {id: "iris", nome: "Círculo (íris)", i: "⚫", cat: "Transições", dur: 1.2, cor: "#000000", som: "reverso", draw(t, d, p, W, H){ const q = t / d, R = Math.hypot(W, H) / 2, r = q < .5 ? R * (1 - eIO(q * 2)) : R * eIO((q - .5) * 2);
+    g.fillStyle = p.cor; g.fillRect(0, 0, W, H); g.globalCompositeOperation = "destination-out"; g.beginPath(); g.arc(W / 2, H / 2, Math.max(0, r), 0, 7); g.fill(); g.globalCompositeOperation = "source-over"; }},
+  {id: "glitch", nome: "Glitch RGB", i: "📺", cat: "Transições", dur: .8, cor: "#ffffff", som: "glitch", draw(t, d, p, W, H){ const R = rnd(Math.floor(t * 24) + 1), f = Math.sin(Math.PI * cl(t / d)), n = Math.round((6 + 12 * p.int) * f);
+    for (let i = 0; i < n; i++) { g.globalAlpha = .55 + R() * .4; g.fillStyle = [p.cor, "#ff2a6d", "#05d9e8", "#39ff88"][Math.floor(R() * 4)]; g.fillRect(R() * W, R() * H, W * (.05 + R() * .55), H * (.008 + R() * .07)); }
+    g.globalAlpha = .25 * f; g.fillStyle = "#000"; for (let y = 0; y < H; y += 6) g.fillRect(0, y, W, 2); }},
+  {id: "velocidade", nome: "Linhas de velocidade", i: "💨", cat: "Anime", dur: 1.4, cor: "#ffffff", som: "whoosh", draw(t, d, p, W, H){ const R = rnd(Math.floor(t * 20) + 7), n = Math.round(70 * p.int), m = Math.min(W, H), cx = W / 2, cy = H / 2, ro = Math.hypot(W, H) * .6;
+    g.globalAlpha = fade(t, d); g.fillStyle = p.cor; for (let i = 0; i < n; i++) { const a = R() * Math.PI * 2, w = .004 + R() * .012, ri = m * (.32 + R() * .25); g.beginPath(); g.moveTo(cx + Math.cos(a - w) * ro, cy + Math.sin(a - w) * ro); g.lineTo(cx + Math.cos(a + w) * ro, cy + Math.sin(a + w) * ro); g.lineTo(cx + Math.cos(a) * ri, cy + Math.sin(a) * ri); g.fill(); } }},
+  {id: "impacto", nome: "Impacto mangá", i: "💥", cat: "Anime", dur: .7, cor: "#ffe14d", som: "soco", draw(t, d, p, W, H){ const q = t / d, m = Math.min(W, H), r = m * .42 * eOut(cl(q / .35)) * p.int, R = rnd(Math.floor(t * 30) + 3);
+    g.globalAlpha = q < .7 ? 1 : 1 - (q - .7) / .3; g.lineJoin = "round"; g.strokeStyle = "#111"; g.lineWidth = m * .012;
+    g.save(); g.translate(W / 2, H / 2); g.rotate(R() * .2); estrela(0, 0, r, 16, .58); g.fillStyle = p.cor; g.fill(); g.stroke(); estrela(0, 0, r * .55, 12, .6); g.fillStyle = "#fff"; g.fill(); g.restore(); }},
+  {id: "choque", nome: "Onda de choque", i: "🔘", cat: "Anime", dur: .9, cor: "#ffffff", som: "boom", draw(t, d, p, W, H){ const R = Math.hypot(W, H) * .6; for (const [atr, k] of [[0, 1], [.12, .6]]) { const q = cl((t - atr) / (d - atr)); if (q <= 0) continue; g.globalAlpha = 1 - q; g.strokeStyle = p.cor; g.lineWidth = Math.max(1, (1 - q) * 70 * p.int * k); g.beginPath(); g.arc(W / 2, H / 2, R * eOut(q), 0, 7); g.stroke(); } }},
+  {id: "susto", nome: "Susto (!!)", i: "❗", cat: "Anime", dur: 1, cor: "#ff3b3b", som: "boing", draw(t, d, p, W, H){ const m = Math.min(W, H), k = back(cl(t / .25)) * p.int, x = W * .62 + Math.sin(t * 60) * m * .004 * (1 - cl(t / .5)), y = H * .3;
+    g.globalAlpha = cl((d - t) / .2); g.strokeStyle = p.cor; g.lineCap = "round"; g.lineWidth = m * .014; for (const a of [-.9, -.35, .2]) { g.beginPath(); g.moveTo(x + Math.cos(a - 1.57) * m * .05 * k, y + Math.sin(a - 1.57) * m * .05 * k); g.lineTo(x + Math.cos(a - 1.57) * m * .13 * k, y + Math.sin(a - 1.57) * m * .13 * k); g.stroke(); } }},
+  {id: "brilhos", nome: "Brilhinhos", i: "✨", cat: "Partículas", dur: 1.8, cor: "#fff3a6", som: "plim", init(p, W, H, R){ return [...Array(Math.round(26 * p.int))].map(() => ({x: R() * W, y: R() * H, t0: R() * 1.3, s: (.015 + R() * .035) * Math.min(W, H)})); },
+    draw(t, d, p, W, H, E){ g.fillStyle = p.cor; g.shadowColor = p.cor; g.shadowBlur = 18; for (const s of E) { const v = (t - s.t0) / .5; if (v <= 0 || v >= 1) continue; const k = Math.sin(v * Math.PI) * s.s; g.globalAlpha = 1; estrela(s.x, s.y, k, 4, .22); g.fill(); } g.shadowBlur = 0; }},
+  {id: "confete", nome: "Confete", i: "🎉", cat: "Partículas", dur: 3.5, cor: "#f2b51d", som: "aplausos", init(p, W, H, R){ const cores = [p.cor, "#ff5d8f", "#5fd9cf", "#8f8cff", "#7bd65a", "#ffffff"]; return [...Array(Math.round(140 * p.int))].map(() => ({x: R() * W, y: -R() * H * .9 - 20, v: H * (.18 + R() * .25), f: R() * 6, rot: R() * 6, vr: 2 + R() * 6, c: cores[Math.floor(R() * cores.length)], w: 8 + R() * 10})); },
+    draw(t, d, p, W, H, E){ g.globalAlpha = cl((d - t) / .5); for (const c of E) { const y = c.y + c.v * t + 40 * t * t, x = c.x + Math.sin(t * 2.2 + c.f) * 30; if (y > H + 20) continue; g.save(); g.translate(x, y); g.rotate(c.rot + c.vr * t); g.scale(1, Math.cos(t * c.vr + c.f)); g.fillStyle = c.c; g.fillRect(-c.w / 2, -c.w * .3, c.w, c.w * .6); g.restore(); } }},
+  {id: "coracoes", nome: "Corações", i: "💗", cat: "Partículas", dur: 2.8, cor: "#ff5d8f", som: "pop", init(p, W, H, R){ return [...Array(Math.round(28 * p.int))].map(() => ({x: W * (.1 + R() * .8), t0: R() * 1.6, v: H * (.25 + R() * .25), s: (.03 + R() * .04) * Math.min(W, H), f: R() * 6})); },
+    draw(t, d, p, W, H, E){ g.fillStyle = p.cor; for (const c of E) { const v = t - c.t0; if (v < 0) continue; const y = H + c.s - c.v * v, k = Math.min(1, back(cl(v / .3))); g.globalAlpha = cl(1 - v / 1.6); coracao(c.x + Math.sin(v * 3 + c.f) * 18, y, c.s * k); } }},
+  {id: "chuva", nome: "Chuva", i: "🌧️", cat: "Clima", dur: 4, cor: "#cfe2ff", som: "chuva", init(p, W, H, R){ return [...Array(Math.round(220 * p.int))].map(() => ({x: R() * W * 1.3, y: R() * H, v: H * (1.3 + R()), l: 12 + R() * 22})); },
+    draw(t, d, p, W, H, E){ g.globalAlpha = .55 * fade(t, d, .4, .5); g.strokeStyle = p.cor; g.lineWidth = 1.6; g.beginPath(); for (const c of E) { const y = (c.y + c.v * t) % (H + 40) - 20, x = c.x - (y * .25); g.moveTo(x, y); g.lineTo(x - c.l * .25, y + c.l); } g.stroke(); }},
+  {id: "neve", nome: "Neve", i: "❄️", cat: "Clima", dur: 5, cor: "#ffffff", som: "vento", init(p, W, H, R){ return [...Array(Math.round(160 * p.int))].map(() => ({x: R() * W, y: R() * H, v: 30 + R() * 60, r: 1.5 + R() * 3.5, f: R() * 6})); },
+    draw(t, d, p, W, H, E){ g.globalAlpha = fade(t, d, .5, .6); g.fillStyle = p.cor; for (const c of E) { const y = (c.y + c.v * t) % (H + 10), x = c.x + Math.sin(t + c.f) * 15; g.beginPath(); g.arc(x, y, c.r, 0, 7); g.fill(); } }},
+  {id: "luz", nome: "Vazamento de luz", i: "🌅", cat: "Clima", dur: 4, cor: "#ff8a3d", som: "suspense", draw(t, d, p, W, H){ g.globalCompositeOperation = "lighter"; const a = .55 * fade(t, d, .8, .8) * p.int;
+    for (const [fx, fy, rr, cor, vel] of [[.15, .2, .7, p.cor, .4], [.85, .3, .55, "#ff4f8b", -.3], [.5, .9, .6, "#ffd36b", .25]]) { const x = W * (fx + .12 * Math.sin(t * vel + fx * 9)), y = H * (fy + .08 * Math.cos(t * vel * 1.3)), r = Math.max(W, H) * rr, gr = g.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, cor); gr.addColorStop(1, "transparent"); g.globalAlpha = a; g.fillStyle = gr; g.fillRect(0, 0, W, H); } g.globalCompositeOperation = "source-over"; }},
+  {id: "vhs", nome: "VHS", i: "📼", cat: "Retrô", dur: 3, cor: "#ffffff", som: "estatica", draw(t, d, p, W, H){ const R = rnd(Math.floor(t * 30) + 11), m = Math.min(W, H);
+    g.globalAlpha = .16 * p.int; g.fillStyle = "#000"; for (let y = 0; y < H; y += 4) g.fillRect(0, y, W, 2);
+    g.globalAlpha = .5 * p.int; for (let i = 0; i < 900 * p.int; i++) { g.fillStyle = R() < .5 ? "#fff" : "#000"; g.fillRect(R() * W, R() * H, 2, 2); }
+    const by = ((t * .35) % 1) * H * 1.2 - H * .1; g.globalAlpha = .35 * p.int; g.fillStyle = "#fff"; for (let i = 0; i < 60; i++) g.fillRect(R() * W, by + R() * m * .05, 20 + R() * 120, 2);
+    g.globalAlpha = 1; g.fillStyle = p.cor; g.font = `700 ${Math.round(m * .055)}px ui-monospace, Menlo, monospace`; g.textBaseline = "top"; g.fillText("PLAY ▶", m * .06, m * .06);
+    const s = Math.floor(t); g.textAlign = "right"; g.fillText(`00:00:${String(s).padStart(2, "0")}`, W - m * .06, H - m * .12); g.textAlign = "left"; }},
+  {id: "filme", nome: "Filme antigo", i: "🎞️", cat: "Retrô", dur: 3, cor: "#2b1d0e", som: "estatica", draw(t, d, p, W, H){ const R = rnd(Math.floor(t * 18) + 5), gr = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .35, W / 2, H / 2, Math.hypot(W, H) * .55);
+    gr.addColorStop(0, "transparent"); gr.addColorStop(1, p.cor); g.globalAlpha = .85 * p.int; g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.globalAlpha = .35 * p.int; g.fillStyle = "#000"; for (let i = 0; i < 500 * p.int; i++) g.fillRect(R() * W, R() * H, 1.5, 1.5);
+    g.strokeStyle = "#000"; g.lineWidth = 1.2; for (let i = 0; i < 2; i++) if (R() < .6) { const x = R() * W; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + (R() - .5) * 30, H); g.stroke(); } }}
+];
+const CATS_VIS = ["Todos", ...new Set(VIS.map(v => v.cat))];
+let catVis = "Todos", visSel = VIS[0].id, vt0 = performance.now(), estado = null, gravando = false;
+const ajV = lerLS("efeitos-visuais", {}), av = v => ajV[v.id] || (ajV[v.id] = {cor: v.cor, int: 1, dur: 1, fundo: "verde", fmt: "16:9", som: v.som, comSom: 1, sem: 1});
+function prepara(){ const v = VIS.find(x => x.id == visSel), a = av(v); estado = v.init ? v.init(a, cv.width, cv.height, rnd(a.sem * 131)) : null; vt0 = performance.now(); }
+function tamanhoCv(){ const a = av(VIS.find(x => x.id == visSel)), alto = a.fmt == "9:16"; if (cv.width != (alto ? 720 : 1280)) { cv.width = alto ? 720 : 1280; cv.height = alto ? 1280 : 720; prepara(); } $("#palco").className = "palco" + (a.fundo == "verde" ? " verde" : a.fundo == "preto" ? " preto" : ""); }
+function quadro(t, fundo){
+  const v = VIS.find(x => x.id == visSel), a = av(v), d = v.dur * a.dur, W = cv.width, H = cv.height;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = "source-over"; g.shadowBlur = 0; g.clearRect(0, 0, W, H);
+  if (fundo == "verde" || fundo == "preto") { g.fillStyle = fundo == "verde" ? "#00b140" : "#000"; g.fillRect(0, 0, W, H); }
+  g.save(); try { if (t <= d) v.draw(t, d, a, W, H, estado); } catch (e) {} g.restore();
+}
+function laco(now){ requestAnimationFrame(laco); if (aba != "visuais" || gravando) return; const v = VIS.find(x => x.id == visSel), d = v.dur * av(v).dur, t = ((now - vt0) / 1000) % (d + .6); quadro(t, "nenhum"); }
+requestAnimationFrame(laco);
+function gradeVis(){
+  $("#catVis").innerHTML = CATS_VIS.map(c => `<button data-catv="${esc(c)}" class="${c == catVis ? "on" : ""}">${esc(c)}</button>`).join("");
+  $("#gradeVis").innerHTML = VIS.filter(v => catVis == "Todos" || v.cat == catVis).map(v => `<div class="card${v.id == visSel ? " on" : ""}" data-vis="${v.id}" role="button" tabindex="0"><span class="i">${v.i}</span><b>${esc(v.nome)}</b><small>${esc(v.cat)} · ${(v.dur * av(v).dur).toFixed(1)} s</small></div>`).join("");
+}
+function detalheVis(){
+  const v = VIS.find(x => x.id == visSel), a = av(v);
+  $("#detVis").innerHTML = `<h2>${v.i} ${esc(v.nome)}</h2><p class="mut" style="margin:0 0 8px">${esc(v.cat)}</p>
+    <div class="duas"><label class="f"><b>Cor</b><input type="color" data-v="cor" value="${esc(a.cor)}"></label>${rg("int", "Intensidade", .2, 2, .05, a.int, "v")}</div>
+    <div class="duas">${rg("dur", "Duração (×)", .4, 3, .05, a.dur, "v")}<label class="f"><b>Formato</b><select data-v="fmt"><option${a.fmt == "16:9" ? " selected" : ""}>16:9</option><option${a.fmt == "9:16" ? " selected" : ""}>9:16</option></select></label></div>
+    <label class="f"><b>Fundo do vídeo</b><select data-v="fundo"><option value="verde"${a.fundo == "verde" ? " selected" : ""}>Verde (chroma key)</option><option value="preto"${a.fundo == "preto" ? " selected" : ""}>Preto (modo Tela/Screen)</option><option value="transp"${a.fundo == "transp" ? " selected" : ""}>Transparente (experimental)</option></select></label>
+    <label class="chk"><input type="checkbox" data-v="comSom" ${a.comSom ? "checked" : ""}> Com som</label>
+    ${a.comSom ? `<label class="f"><b>Som junto</b><select data-v="som">${SONS.map(s => `<option value="${s.id}"${s.id == a.som ? " selected" : ""}>${s.i} ${esc(s.nome)}</option>`).join("")}</select></label>` : ""}
+    <div class="row"><button class="bt" data-acaov="repetir">▶ Ver de novo</button><button class="bt" data-acaov="variar">🎲 Variação</button></div>
+    <div class="row" style="margin:0"><button class="bt" data-acaov="baixar">⬇ Baixar vídeo</button><button class="bt pri" data-acaov="enviar">📤 Enviar ao editor</button></div>
+    <p class="mut" id="visInfo" style="margin:8px 0 0"></p>`;
+}
+async function gravarVis(){
+  if (!window.MediaRecorder || !cv.captureStream) { toast("Este navegador não grava vídeo. Use o Chrome."); return null; }
+  const v = VIS.find(x => x.id == visSel), a = av(v), d = v.dur * a.dur, c = actx(), dest = c.createMediaStreamDestination();
+  const st = cv.captureStream(30); let fonte = null;
+  if (a.comSom) { const s = SONS.find(x => x.id == a.som); if (s) { const b = await renderSom(s, aj(s.id)); fonte = c.createBufferSource(); fonte.buffer = b; fonte.connect(dest); fonte.connect(c.destination); dest.stream.getAudioTracks().forEach(tr => st.addTrack(tr)); } }
+  const tipos = a.fundo == "transp" ? ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"] : ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/mp4", "video/webm"];
+  const tipo = tipos.find(m => MediaRecorder.isTypeSupported(m)) || "", partes = [];
+  const rec = new MediaRecorder(st, tipo ? {mimeType: tipo, videoBitsPerSecond: 8e6} : {}); rec.ondataavailable = e => e.data.size && partes.push(e.data);
+  gravando = true; $("#recTag").classList.add("on"); prepara(); const fundo = a.fundo == "transp" ? "nenhum" : a.fundo, ini = performance.now();
+  const pronto = new Promise(ok => rec.onstop = ok); rec.start(200); if (fonte) fonte.start();
+  await new Promise(ok => { const passo = () => { const t = (performance.now() - ini) / 1000; quadro(Math.min(t, d), fundo); if (t < d + .15) requestAnimationFrame(passo); else ok(); }; passo(); });
+  rec.stop(); await pronto; gravando = false; $("#recTag").classList.remove("on"); prepara();
+  const mime = (rec.mimeType || "video/webm").split(";")[0];
+  return {blob: new Blob(partes, {type: mime}), d, ext: mime.includes("mp4") ? "mp4" : "webm", v, a};
+}
+$("#p-visuais").addEventListener("click", async e => {
+  let b;
+  if ((b = e.target.closest("[data-catv]"))) { catVis = b.dataset.catv; return gradeVis(); }
+  if ((b = e.target.closest("[data-vis]"))) { visSel = b.dataset.vis; tamanhoCv(); prepara(); gradeVis(); return detalheVis(); }
+  if (!(b = e.target.closest("[data-acaov]")) || gravando) return;
+  const acao = b.dataset.acaov, v = VIS.find(x => x.id == visSel), a = av(v);
+  if (acao == "repetir") { prepara(); if (a.comSom) { const s = SONS.find(x => x.id == a.som); if (s) tocarBuf(await renderSom(s, aj(s.id))); } return; }
+  if (acao == "variar") { a.sem = (a.sem || 1) + 1; gravarLS("efeitos-visuais", ajV); return prepara(); }
+  $("#visInfo").textContent = "Gravando o efeito… (" + (v.dur * a.dur).toFixed(1) + " s)";
+  const r = await gravarVis(); if (!r) return; $("#visInfo").textContent = "";
+  if (!r.blob.size) { $("#visInfo").textContent = "A gravação saiu vazia. Deixe esta aba aberta na tela enquanto grava e tente de novo."; return; }
+  const nome = v.nome + " · fundo " + {verde: "verde", preto: "preto", transp: "transparente"}[a.fundo];
+  if (acao == "baixar") baixar(r.blob, arquivo(nome) + "." + r.ext);
+  else enviar(r.blob, nome, "video", {dur: r.d, fundo: a.fundo, mesclar: a.fundo == "preto" ? "tela" : a.fundo == "verde" ? "chroma" : "normal", categoria: v.cat});
+});
+$("#p-visuais").addEventListener("input", e => {
+  const k = e.target.dataset.v; if (!k) return; const v = VIS.find(x => x.id == visSel), a = av(v);
+  a[k] = e.target.type == "checkbox" ? (e.target.checked ? 1 : 0) : e.target.type == "range" ? parseFloat(e.target.value) : e.target.value;
+  const l = e.target.closest(".f") && e.target.closest(".f").querySelector("b i"); if (l) l.textContent = a[k];
+  gravarLS("efeitos-visuais", ajV); if (k == "int" || k == "dur") prepara(); if (k == "fmt" || k == "fundo") tamanhoCv();
+});
+$("#p-visuais").addEventListener("change", e => { const k = e.target.dataset.v; if (k == "comSom" || k == "dur") { detalheVis(); gradeVis(); } });
+
+/* ============================================================
+   MEUS ARQUIVOS: o que você mesmo adiciona ou grava
+   ============================================================ */
+const tipoDe = m => /^audio/.test(m) ? "audio" : /^video/.test(m) ? "video" : /^image/.test(m) ? "imagem" : "";
+const ICON = {audio: "🔊", video: "🎬", imagem: "🖼️"};
+const urls = {}; const urlDe = it => urls[it.id] || (urls[it.id] = URL.createObjectURL(it.blob));
+async function listaMeus(){
+  const L = await meus.lista();
+  $("#listaMeus").innerHTML = L.length ? L.map(it => `<div class="item" data-meu="${it.id}"><div class="ic">${it.tipo == "imagem" ? `<img src="${urlDe(it)}" alt="">` : it.tipo == "video" ? `<video src="${urlDe(it)}" muted playsinline></video>` : ICON.audio}</div>
+    <div><input type="text" value="${esc(it.nome)}" data-renomear aria-label="Nome"><small>${ICON[it.tipo] || ""} ${it.tipo}${it.dur ? " · " + it.dur.toFixed(1) + " s" : ""} · ${it.origem || "seu arquivo"}</small></div>
+    <div class="acts">${it.tipo != "imagem" ? '<button class="bt mini" data-m="ouvir">▶</button>' : ""}<button class="bt mini" data-m="baixar">⬇</button><button class="bt mini pri" data-m="enviar">📤 Enviar</button><button class="bt mini" data-m="apagar">🗑</button></div></div>`).join("")
+    : '<p class="vazio">Nada aqui ainda. Adicione seus sons, vídeos e imagens, ou grave um som com o microfone (foley: passos, porta, papel amassando…).</p>';
+}
+$("#fMeus").onchange = async e => { const fs = [...e.target.files]; e.target.value = ""; let n = 0;
+  for (const f of fs) { const tipo = tipoDe(f.type); if (!tipo) continue; let dur = 0; if (tipo != "imagem") dur = await duracao(f); await meus.por({id: uid(), nome: f.name.replace(/\.[^.]+$/, ""), tipo, mime: f.type, blob: f, dur, criado: Date.now(), origem: "seu arquivo"}); n++; }
+  toast(n + (n == 1 ? " arquivo adicionado" : " arquivos adicionados")); listaMeus(); };
+const duracao = f => new Promise(ok => { const m = document.createElement(/^video/.test(f.type) ? "video" : "audio"); m.preload = "metadata"; m.onloadedmetadata = () => { ok(isFinite(m.duration) ? m.duration : 0); URL.revokeObjectURL(m.src); }; m.onerror = () => ok(0); m.src = URL.createObjectURL(f); });
+let midia = null;
+$("#listaMeus").addEventListener("click", async e => {
+  const b = e.target.closest("[data-m]"), row = e.target.closest("[data-meu]"); if (!b || !row) return;
+  const it = (await meus.lista()).find(x => x.id == row.dataset.meu); if (!it) return;
+  const a = b.dataset.m;
+  if (a == "ouvir") { if (midia) midia.pause(); if (it.tipo == "video") { const v = row.querySelector("video"); v.muted = false; v.currentTime = 0; v.play(); midia = v; } else { midia = new Audio(urlDe(it)); midia.play(); } }
+  else if (a == "baixar") baixar(it.blob, arquivo(it.nome) + "." + ((it.mime.split("/")[1] || "bin").split(";")[0].replace("mpeg", "mp3")));
+  else if (a == "enviar") enviar(it.blob, it.nome, it.tipo, {dur: it.dur});
+  else if (a == "apagar") { if (!b.dataset.s) { b.dataset.s = 1; b.textContent = "Apagar?"; return; } await meus.tira(it.id); listaMeus(); }
+});
+$("#listaMeus").addEventListener("change", async e => { if (!e.target.matches("[data-renomear]")) return; const row = e.target.closest("[data-meu]"), it = (await meus.lista()).find(x => x.id == row.dataset.meu); if (it) { it.nome = e.target.value.trim() || it.nome; await meus.por(it); } });
+let gravador = null;
+$("#bGravar").onclick = async () => {
+  if (gravador) { gravador.stop(); return; }
+  try { const st = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false}}), partes = [];
+    gravador = new MediaRecorder(st); gravador.ondataavailable = e => e.data.size && partes.push(e.data); const ini = Date.now();
+    gravador.onstop = async () => { st.getTracks().forEach(t => t.stop()); const blob = new Blob(partes, {type: gravador.mimeType || "audio/webm"}); gravador = null; $("#bGravar").textContent = "🎙 Gravar som (foley)"; $("#gravInfo").textContent = "";
+      await meus.por({id: uid(), nome: "Som gravado " + new Date().toLocaleTimeString("pt-BR").slice(0, 5), tipo: "audio", mime: blob.type, blob, dur: (Date.now() - ini) / 1000, criado: Date.now(), origem: "gravado no microfone"}); listaMeus(); toast("Som gravado e guardado"); };
+    gravador.start(); $("#bGravar").textContent = "■ Parar gravação"; $("#gravInfo").textContent = "Gravando… faça o som perto do microfone.";
+  } catch (e) { toast("Não consegui usar o microfone: libere o acesso no navegador."); }
+};
+
+/* ============================================================
+   ENVIADOS: a caixa que o editor lê
+   ============================================================ */
+async function listaEnviados(){
+  const L = await caixa.lista();
+  $("#listaEnv").innerHTML = L.length ? L.map(it => `<div class="item" data-env="${it.id}"><div class="ic">${it.tipo == "imagem" ? `<img src="${urlDe(it)}" alt="">` : it.tipo == "video" ? `<video src="${urlDe(it)}" muted playsinline></video>` : ICON.audio}</div>
+    <div><b>${esc(it.nome)}</b><br><small>${ICON[it.tipo] || ""} ${it.tipo}${it.dur ? " · " + it.dur.toFixed(1) + " s" : ""}${it.fundo ? " · fundo " + it.fundo : ""} · ${new Date(it.criado).toLocaleString("pt-BR")}</small></div>
+    <div class="acts">${it.tipo != "imagem" ? '<button class="bt mini" data-e="ouvir">▶</button>' : ""}<button class="bt mini" data-e="baixar">⬇</button><button class="bt mini" data-e="tirar">Tirar da caixa</button></div></div>`).join("")
+    : '<p class="vazio">A caixa está vazia. Use 📤 Enviar ao editor nos sons, efeitos ou nos seus arquivos.</p>';
+}
+$("#listaEnv").addEventListener("click", async e => {
+  const b = e.target.closest("[data-e]"), row = e.target.closest("[data-env]"); if (!b || !row) return;
+  const it = (await caixa.lista()).find(x => x.id == row.dataset.env); if (!it) return;
+  if (b.dataset.e == "ouvir") { if (midia) midia.pause(); if (it.tipo == "video") { const v = row.querySelector("video"); v.muted = false; v.currentTime = 0; v.play(); midia = v; } else { midia = new Audio(urlDe(it)); midia.play(); } }
+  else if (b.dataset.e == "baixar") baixar(it.blob, arquivo(it.nome) + "." + ((it.mime || "").split("/")[1] || "bin").split(";")[0]);
+  else { await caixa.tira(it.id); listaEnviados(); }
+});
+$("#bLimpar").onclick = async () => { const b = $("#bLimpar"); if (!b.dataset.s) { b.dataset.s = 1; b.textContent = "Tem certeza? Toque de novo"; setTimeout(() => { b.dataset.s = ""; b.textContent = "Esvaziar a caixa"; }, 3000); return; } await caixa.limpa(); b.dataset.s = ""; b.textContent = "Esvaziar a caixa"; listaEnviados(); };
+addEventListener("storage", e => { if (e.key == "tamaki-caixa-aviso") contar(); });
+
+/* ---------- início ---------- */
+gradeSons(); detalheSom(); gradeVis(); detalheVis(); tamanhoCv(); prepara(); contar();
+})();
+</script>
+</body>
+</html>
