@@ -101,6 +101,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .dlg .bt.pri{background:var(--ac);color:var(--ac-tx)}
 .dlg .bt:disabled{opacity:.45}
 .dlg label{font-size:.82rem;color:var(--mu);display:block;margin:10px 0 4px}
+.carr{background:var(--sel);border-radius:14px;padding:10px 12px;margin:6px 0;font-weight:600}
 .vzl h4{margin:12px 0 6px;font-size:.78rem;letter-spacing:.06em;color:var(--mu)}
 .vzl .hm{width:100%;margin-bottom:6px}
 .vzl .hm:disabled{opacity:.5}
@@ -218,19 +219,21 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div class="lin"><button class="bt pri" id="vzOuvir">▶ Ouvir</button><button class="bt" id="vzFechar">Cancelar</button></div>
 </dialog>
 <dialog id="dAudio" class="dlg" aria-label="Áudio com os humores">
-  <h3>🎧 Áudio com os humores</h3>
+  <h3 id="auTit">🎧 Áudio com os humores</h3>
   <p class="mut" id="auVoz">Procurando o Estúdio de voz…</p>
   <label for="auVozSel">Voz</label><select id="auVozSel" style="width:100%;background:var(--bg);border:1px solid var(--ln);border-radius:12px;padding:10px;color:var(--tx);font:inherit;margin-bottom:6px"></select>
+  <label class="opc" id="auCapOp"><input type="radio" name="auQual" value="cap"> <span id="auCapNome">Capítulo</span></label>
   <label class="opc"><input type="radio" name="auQual" value="tudo" checked> Texto todo</label>
   <label class="opc" id="auSelOp"><input type="radio" name="auQual" value="sel"> Só o trecho selecionado</label>
   <p class="mut" id="auInfo"></p>
   <div class="barra"><b id="auBarra"></b></div>
+  <p class="carr" id="auCarr" hidden>⏳ Carregando… estou gerando todas as falas antes de tocar, para não travar no meio.</p>
   <p class="mut" id="auMsg"></p>
   <div class="lin"><button class="bt pri" id="auGerar">▶ Gerar o áudio</button><button class="bt" id="auParar" disabled>■ Parar</button></div>
   <div id="auPronto" hidden>
     <audio id="auAudio" controls style="width:100%"></audio>
     <label for="auNome">Nome do áudio</label><input type="text" id="auNome" maxlength="80">
-    <div class="lin"><button class="bt pri" id="auBib">📚 Mandar à Biblioteca</button><button class="bt" id="auBaixar">⬇ Baixar (.wav)</button></div>
+    <div class="lin"><button class="bt pri" id="auBib">📚 Salvar na Biblioteca</button><button class="bt" id="auBaixar">⬇ Baixar (.wav)</button><button class="bt" id="auProx" hidden>▶ Próximo capítulo</button></div>
   </div>
   <div class="lin"><button class="bt" id="auFechar">Fechar</button></div>
 </dialog>
@@ -628,22 +631,45 @@ function wavDe(partes, sr){ const n = partes.reduce((s, p) => s + p.length, 0), 
   w(0, "RIFF"); h.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); h.setUint32(16, 16, true); h.setUint16(20, 1, true); h.setUint16(22, 1, true); h.setUint32(24, sr, true); h.setUint32(28, sr * 2, true); h.setUint16(32, 2, true); h.setUint16(34, 16, true); w(36, "data"); h.setUint32(40, n * 2, true);
   return new Blob([h, ...partes], {type: "audio/wav"}); }
 const AU = {range: null, parar: false, rodando: false, blob: null, salvo: true};
-$("#fAudio").onclick = async () => {
-  const s = getSelection(), raiz = $("#corpo"), r = s.rangeCount && raiz.contains(s.anchorNode) && !s.isCollapsed ? s.getRangeAt(0).cloneRange() : null;
-  AU.range = r; $("#auSelOp").hidden = !r; document.querySelector(`[name=auQual][value=${r ? "sel" : "tudo"}]`).checked = true;
-  infoAudio(); $("#auMsg").textContent = ""; $("#auBarra").style.width = "0"; $("#auNome").value = $("#titulo").value.trim() || "Áudio da nota";
+/* capítulos: cada título (texto com formatação diferente: maior, negrito ou título) começa um capítulo */
+const blocosNota = () => [...$("#corpo").children];
+function ehTitulo(el){
+  if (/^H[1-6]$/.test(el.tagName)) return true;
+  const t = el.textContent.trim(); if (!t || t.length > 140 || el.querySelector("img")) return false;
+  const base = parseFloat(getComputedStyle($("#corpo")).fontSize), w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n, tem = false;
+  while ((n = w.nextNode())) { if (!n.nodeValue.trim()) continue; tem = true; const cs = getComputedStyle(n.parentElement); if (!(parseFloat(cs.fontSize) > base * 1.12 || +cs.fontWeight >= 600)) return false; }
+  return tem;
+}
+function capitulos(){ const bl = blocosNota(), tit = bl.map(ehTitulo), caps = []; let ini = 0;
+  bl.forEach((b, i) => { if (tit[i] && i > ini) { caps.push([ini, i]); ini = i; } }); if (bl.length > ini) caps.push([ini, bl.length]);
+  return caps.map(([a, b], k) => ({a, b, k, nome: tit[a] ? bl[a].textContent.trim().slice(0, 60) : (caps.length > 1 ? "Começo" : "Texto todo"), total: caps.length})); }
+function capituloDe(no){ const bl = blocosNota(), cs = capitulos(); let i = no ? bl.findIndex(b => b === no || b.contains(no)) : 0; if (i < 0) i = 0; return cs.find(c => i >= c.a && i < c.b) || cs[0] || null; }
+function rangeCap(c){ const bl = blocosNota(), r = document.createRange(); r.setStartBefore(bl[c.a]); r.setEndAfter(bl[c.b - 1]); return r; }
+const qualRange = () => { const v = (document.querySelector("[name=auQual]:checked") || {}).value; return v == "sel" ? AU.range : v == "cap" && AU.cap ? rangeCap(AU.cap) : null; };
+function marcarCap(c){ AU.cap = c; $("#auCapOp").hidden = !c || c.total < 2; if (c) $("#auCapNome").textContent = `Capítulo ${c.k + 1} de ${c.total}: ${c.nome}`; }
+$("#fAudio").onclick = () => abrirAudio({});
+async function abrirAudio(o){
+  const s = getSelection(), raiz = $("#corpo"), r = o.range !== undefined ? o.range : (s.rangeCount && raiz.contains(s.anchorNode) && !s.isCollapsed ? s.getRangeAt(0).cloneRange() : null);
+  const cursor = o.cursor !== undefined ? o.cursor : (s.rangeCount && raiz.contains(s.anchorNode) ? s.anchorNode : null);
+  AU.range = r; AU.ouvir = !!o.ouvir; $("#auSelOp").hidden = !r; marcarCap(capituloDe(cursor));
+  document.querySelector(`[name=auQual][value=${r ? "sel" : AU.cap && AU.cap.total > 1 ? "cap" : "tudo"}]`).checked = true;
+  $("#auTit").textContent = AU.ouvir ? "🔊 Ouvir com as emoções" : "🎧 Áudio com os humores";
+  infoAudio(); $("#auMsg").textContent = ""; $("#auBarra").style.width = "0"; $("#auPronto").hidden = true; $("#auCarr").hidden = !AU.ouvir; nomeAudio();
   $("#dAudio").showModal(); $("#auGerar").disabled = true; const st = await estadoEst($("#auVoz")); $("#auGerar").disabled = !st;
-  const vs = await vozesEstudio(), pref = prefVoz().startsWith("est:") ? prefVoz().slice(4) : (st && st.ativa);
+  const vs = await vozesEstudio(), pref = o.voz || (prefVoz().startsWith("est:") ? prefVoz().slice(4) : (st && st.ativa));
   $("#auVozSel").innerHTML = vs.length ? vs.map(v => `<option value="${esc(v.id)}"${v.id == pref ? " selected" : ""}>${esc(v.nome)}${v.emocoes ? " · 🎭 " + v.emocoes : ""}${v.noKaggle ? " (só no aparelho)" : ""}</option>`).join("") : '<option value="">Nenhuma voz do Estúdio</option>';
-};
-function infoAudio(){ const sel = document.querySelector("[name=auQual]:checked").value == "sel", tr = trechosHumor(sel ? AU.range : null), t = tr.map(x => x.texto).join(" "), p = (t.match(/\S+/g) || []).length, h = tr.filter(x => x.emo).length;
+  if (AU.ouvir && st) $("#auGerar").click();
+}
+const nomeAudio = () => { const v = (document.querySelector("[name=auQual]:checked") || {}).value, doc = $("#titulo").value.trim() || "Nota";
+  $("#auNome").value = doc + (v == "cap" && AU.cap ? " · " + AU.cap.nome : v == "sel" ? " · trecho" : ""); };
+function infoAudio(){ const tr = trechosHumor(qualRange()), t = tr.map(x => x.texto).join(" "), p = (t.match(/\S+/g) || []).length, h = tr.filter(x => x.emo).length;
   $("#auInfo").textContent = `${p} palavras · ${h} ${h == 1 ? "trecho" : "trechos"} com humor` + (p > 1500 ? ` · leva uns ${Math.round(p / 120)} min ou mais` : ""); return p; }
-document.querySelectorAll("[name=auQual]").forEach(r => r.onchange = infoAudio);
+document.querySelectorAll("[name=auQual]").forEach(r => r.onchange = () => { infoAudio(); nomeAudio(); });
 $("#auGerar").onclick = async () => {
-  const sel = document.querySelector("[name=auQual]:checked").value == "sel", ped = pedidosAudio(trechosHumor(sel ? AU.range : null)), palavras = infoAudio();
+  const ped = pedidosAudio(trechosHumor(qualRange())), palavras = infoAudio();
   if (!ped.length) return $("#auMsg").textContent = "Não tem texto para falar.";
   if (palavras > 3000 && !confirm(`São ${palavras} palavras: pode levar mais de ${Math.round(palavras / 120)} minutos e gasta tempo do Kaggle. Gerar mesmo? (Dica: selecione só um trecho.)`)) return;
-  Object.assign(AU, {parar: false, rodando: true, blob: null}); $("#auGerar").disabled = true; $("#auParar").disabled = false; $("#auPronto").hidden = true;
+  Object.assign(AU, {parar: false, rodando: true, blob: null}); $("#auGerar").disabled = true; $("#auParar").disabled = false; $("#auPronto").hidden = true; $("#auCarr").hidden = false; $("#auBarra").style.width = "0";
   const vozId = $("#auVozSel").value;
   if (vozId) { try { guardarPref("est:" + vozId); await usarVozEst(vozId, t => $("#auMsg").textContent = t); } catch (er) { $("#auMsg").textContent = "Não troquei a voz: " + er.message; AU.rodando = false; $("#auGerar").disabled = false; $("#auParar").disabled = true; return; } }
   let trava = null; try { trava = await navigator.wakeLock.request("screen"); } catch (e) {}
@@ -661,20 +687,27 @@ $("#auGerar").onclick = async () => {
       $("#auBarra").style.width = (100 * (i + 1) / ped.length) + "%";
     }
   } catch (er) { $("#auMsg").textContent = "Parou com erro: " + er.message + (partes.length ? ". O que já ficou pronto está aqui embaixo." : ""); }
-  finally { AU.rodando = false; $("#auGerar").disabled = false; $("#auParar").disabled = true; if (trava) trava.release().catch(() => {}); ctx.close().catch(() => {}); }
+  finally { AU.rodando = false; $("#auCarr").hidden = true; $("#auGerar").disabled = false; $("#auParar").disabled = true; if (trava) trava.release().catch(() => {}); ctx.close().catch(() => {}); }
   if (!partes.length) return;
   AU.blob = wavDe(partes.slice(0, -1), SR); AU.salvo = false;
   $("#auAudio").src = URL.createObjectURL(AU.blob); $("#auPronto").hidden = false;
-  if (!/erro/.test($("#auMsg").textContent)) $("#auMsg").textContent = (AU.parar ? "Parado: guardei o que já tinha ficado pronto." : "Pronto! Ouça e mande para a Biblioteca.")
+  const cs = capitulos(), prox = (document.querySelector("[name=auQual]:checked") || {}).value == "cap" && AU.cap ? cs[AU.cap.k + 1] : null;
+  $("#auProx").hidden = !prox; if (prox) $("#auProx").textContent = "▶ Próximo: " + prox.nome;
+  if (AU.ouvir && !AU.parar) $("#auAudio").play().catch(() => {});
+  if (!/erro/.test($("#auMsg").textContent)) $("#auMsg").textContent = (AU.parar ? "Parado: guardei o que já tinha ficado pronto." : AU.ouvir ? "Tocando. No fim, dá para salvar na Biblioteca ou baixar." : "Pronto! Ouça e mande para a Biblioteca.")
     + (faltou.size ? " Ainda sem treino (saiu com a voz normal): " + [...faltou].map(id => (listaHumores().find(x => x.id == id) || {nome: id}).nome).join(", ") + "." : "");
 };
+$("#auProx").onclick = () => { const cs = capitulos(), prox = AU.cap && cs[AU.cap.k + 1]; if (!prox) return;
+  if (AU.blob && !AU.salvo && !confirm("Você ainda não salvou o áudio deste capítulo. Ir para o próximo mesmo assim?")) return;
+  $("#auAudio").pause(); marcarCap(prox); document.querySelector("[name=auQual][value=cap]").checked = true; infoAudio(); nomeAudio(); $("#auGerar").click(); };
 $("#auParar").onclick = () => { AU.parar = true; $("#auMsg").textContent = "Parando depois deste pedaço…"; };
 $("#auBaixar").onclick = () => { if (!AU.blob) return; baixar(AU.blob, ($("#auNome").value.trim() || "audio").replace(/[\\/:*?"<>|]+/g, "-") + ".wav"); AU.salvo = true; };
 $("#auBib").onclick = () => { if (!AU.blob) return; const nome = $("#auNome").value.trim() || "Áudio da nota", b = AU.blob;
   const r = indexedDB.open("tamaki-biblioteca", 1); r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains("itens")) r.result.createObjectStore("itens", {keyPath: "id"}); };
   r.onerror = () => toast("Não consegui abrir a Biblioteca");
   r.onsuccess = () => { const db = r.result, id = "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), t = db.transaction("itens", "readwrite");
-    t.objectStore("itens").put({id, origem: "voz", tipo: "audio", nome, texto: ($("#titulo").value.trim() ? $("#titulo").value.trim() + " · " : "") + "áudio com humores", mime: "audio/wav", tamanho: b.size, criado: Date.now(), blob: b});
+    const doc = $("#titulo").value.trim() || "Nota";
+    t.objectStore("itens").put({id, origem: "escrita", tipo: "audio", nome, texto: doc + " · áudio com humores", tags: ["áudio", doc], mime: "audio/wav", tamanho: b.size, criado: Date.now(), blob: b});
     t.oncomplete = () => { db.close(); AU.salvo = true; try { const c = new BroadcastChannel("tamaki-biblioteca"); c.postMessage({novo: id}); c.close(); } catch (e) {} toast("“" + nome + "” foi para a Biblioteca 📚"); };
     t.onerror = () => toast("Sem espaço para guardar na Biblioteca"); }; };
 $("#auFechar").onclick = () => { if (AU.rodando && !confirm("O áudio ainda está sendo gerado. Parar e fechar?")) return; AU.parar = true;
@@ -707,9 +740,10 @@ const VZ = {range: null, escolha: ""};
 const NOMES_MOTOR = {termux: "Kokoro (Termux)", azure: "Azure", eleven: "ElevenLabs", browser: "voz do aparelho"};
 async function abrirOuvir(){
   const s = getSelection(), raiz = $("#corpo"); VZ.range = s.rangeCount && raiz.contains(s.anchorNode) && !s.isCollapsed ? s.getRangeAt(0).cloneRange() : null;
-  const tr = trechosHumor(VZ.range), p = (tr.map(x => x.texto).join(" ").match(/\S+/g) || []).length, h = tr.filter(x => x.emo).length;
+  VZ.cursor = s.rangeCount && raiz.contains(s.anchorNode) ? s.anchorNode : null; VZ.cap = VZ.range ? null : capituloDe(VZ.cursor);
+  const tr = trechosHumor(VZ.range || (VZ.cap && VZ.cap.total > 1 ? rangeCap(VZ.cap) : null)), p = (tr.map(x => x.texto).join(" ").match(/\S+/g) || []).length, h = tr.filter(x => x.emo).length;
   if (!p) return toast("Não tem texto para ouvir");
-  $("#vzO").textContent = (VZ.range ? "Vai ler o trecho selecionado" : "Vai ler a nota toda") + ` · ${p} palavras · ${h} ${h == 1 ? "trecho" : "trechos"} com humor`;
+  $("#vzO").textContent = (VZ.range ? "Vai ler o trecho selecionado" : VZ.cap && VZ.cap.total > 1 ? `Vai ler até o fim do capítulo “${VZ.cap.nome}”` : "Vai ler a nota toda") + ` · ${p} palavras · ${h} ${h == 1 ? "trecho" : "trechos"} com humor`;
   VZ.escolha = prefVoz() || "aparelho"; $("#vzMsg").textContent = "Procurando o Estúdio de voz…"; desenharVozes([]); $("#dVoz").showModal();
   const st = await estadoEst($("#vzMsg")); desenharVozes(await vozesEstudio(), !!st);
 };
@@ -724,12 +758,12 @@ $("#vzLista").onclick = e => { const b = e.target.closest(".hm"); if (!b || b.di
 $("#vzFechar").onclick = () => $("#dVoz").close();
 $("#vzOuvir").onclick = async () => {
   const v = VZ.escolha; guardarPref(v);
-  if (v == "palco") { $("#dVoz").close(); const t = trechosHumor(VZ.range).map(x => x.texto).join(" "); return ouvir(t, $("#fOuvir")); }
-  const ped = pedidosAudio(trechosHumor(VZ.range), 260);
-  if (v.startsWith("est:")) { const b = $("#vzOuvir"); b.disabled = true;
-    try { await usarVozEst(v.slice(4), t => $("#vzMsg").textContent = t); } catch (er) { $("#vzMsg").textContent = "Não troquei a voz: " + er.message; b.disabled = false; return; }
-    b.disabled = false; }
-  $("#dVoz").close(); lerPedidos(ped, v.startsWith("est:"));
+  const alvo = VZ.range || (VZ.cap && VZ.cap.total > 1 ? rangeCap(VZ.cap) : null), fim = VZ.cap && VZ.cap.total > 1 ? VZ.cap.nome : "";
+  $("#dVoz").close();
+  if (v.startsWith("est:")) return abrirAudio({ouvir: true, voz: v.slice(4), range: VZ.range, cursor: VZ.cursor}); // gera tudo antes de tocar: não trava no meio
+  if (v == "palco") { await ouvir(trechosHumor(alvo).map(x => x.texto).join(" "), $("#fOuvir")); }
+  else await lerPedidos(pedidosAudio(trechosHumor(alvo), 260), false);
+  if (fim) toast(`Fim do capítulo “${fim}”. Para baixar ou salvar o áudio, escolha uma voz do Estúdio.`);
 };
 async function lerPedidos(ped, estudio){ // lê em sequência; com o Estúdio, já pede o próximo pedaço enquanto toca o atual
   let parou = false, el = null; const botoes = () => document.querySelectorAll("#fOuvir");

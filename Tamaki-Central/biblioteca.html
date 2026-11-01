@@ -118,7 +118,8 @@ body.sel .chk{display:grid}
 .box .lst{max-height:46vh;overflow:auto;margin-top:12px;display:flex;flex-direction:column;gap:4px}
 .box .lst label{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;background:var(--panel2);font-size:14px}
 .box .lst small{color:var(--mute);margin-left:auto;font-size:12px}
-:root{--o-efeitos:#E0679A}
+:root{--o-efeitos:#E0679A;--o-escrita:#3AA675}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}.tags i{font-style:normal;font-size:11px;padding:1px 6px;border-radius:6px;background:var(--c);color:#fff;opacity:.9;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .selBar{flex:none;display:none;align-items:center;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:var(--panel);border-top:1px solid var(--line)}
 body.sel .selBar{display:flex}
 .selBar span{flex:1;min-width:40px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -308,8 +309,8 @@ const I={
   zip:'<path d="M6 3h8l4 4v14H6z"/><path d="M11 3v2M11 7v2M11 11v2M10 15h2v3h-2z"/>'
 };
 const svg=(k,extra='')=>`<svg viewBox="0 0 24 24" ${P} aria-hidden="true" ${extra}>${I[k]}</svg>`;
-const ORIG={palco:'Palco',atriz:'Atriz',voz:'Voz',editor:'Editor',efeitos:'Efeitos',emulador:'Emulador',outro:'Outros'};
-const ORIG_ORDER=['palco','atriz','voz','editor','efeitos','emulador','outro'];
+const ORIG={palco:'Palco',atriz:'Atriz',voz:'Voz',editor:'Editor',efeitos:'Efeitos',escrita:'Escrita',emulador:'Emulador',outro:'Outros'};
+const ORIG_ORDER=['palco','atriz','voz','editor','efeitos','escrita','emulador','outro'];
 const oc=o=>`var(--o-${ORIG[o]?o:'outro'})`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtDur=t=>{if(!isFinite(t)||t<=0)return '';t=Math.round(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s).padStart(2,'0');};
@@ -343,7 +344,7 @@ const saveVista=()=>{try{localStorage.setItem('tamaki-bib-vista',JSON.stringify(
 
 function visiveis(){
   const q=V.q.trim().toLowerCase();
-  let L=V.items.filter(it=>(!V.pasta||it.pasta===V.pasta)&&(V.org==='tudo'||it.origem===V.org||(V.org==='outro'&&!ORIG[it.origem]))&&(V.tipo==='tudo'||it.tipo===V.tipo)&&(!q||(it.nome||'').toLowerCase().includes(q)||(it.texto||'').toLowerCase().includes(q)));
+  let L=V.items.filter(it=>(!V.pasta||it.pasta===V.pasta)&&(V.org==='tudo'||it.origem===V.org||(V.org==='outro'&&!ORIG[it.origem]))&&(V.tipo==='tudo'||it.tipo===V.tipo)&&(!q||(it.nome||'').toLowerCase().includes(q)||(it.texto||'').toLowerCase().includes(q)||(it.tags||[]).some(t=>String(t).toLowerCase().includes(q.replace(/^#/,'')))));
   if(V.sort==='novo')L.sort((a,b)=>b.criado-a.criado);
   else if(V.sort==='velho')L.sort((a,b)=>a.criado-b.criado);
   else L.sort((a,b)=>b.tamanho-a.tamanho);
@@ -376,7 +377,7 @@ function cardH(it){
       <span class="chk">${svg('check','stroke-width="3"')}</span>
       <span class="send" role="button" tabindex="0" data-send="${it.id}" aria-label="Mandar para o Editor">${svg('send')}Editor</span>
     </span>
-    <span class="nm">${esc(nome)}</span>
+    <span class="nm">${esc(nome)}</span>${(it.tags||[]).length?`<span class="tags">${it.tags.map(t=>`<i>#${esc(t)}</i>`).join('')}</span>`:''}
     <span class="meta">${fmtHora(it.criado)}, ${fmtSize(it.tamanho)}</span>
   </button>`;
 }
