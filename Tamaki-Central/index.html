@@ -10,11 +10,15 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" id="fonteLeit" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <title>Tamaki · Central</title>
 <style>
-:root{--bg:#121212;--bar:#1b1b1b;--pn:#242424;--ln:#313131;--tx:#f4f1e8;--mut:#a7a39a;--am:#f2b51d;color-scheme:dark}
+:root{--fonte:"Lexend",system-ui,sans-serif;--tam:16px;--le:.02em;--pe:.08em;--bg:#121212;--bar:#1b1b1b;--pn:#242424;--ln:#313131;--tx:#f4f1e8;--mut:#a7a39a;--am:#f2b51d;color-scheme:dark}
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:var(--tam)/1.6 var(--fonte);letter-spacing:var(--le);word-spacing:var(--pe);overflow:hidden}
+button,input,select,textarea{letter-spacing:inherit;word-spacing:inherit}
 body{display:grid;grid-template-rows:auto 1fr;grid-template-columns:minmax(0,1fr);height:100dvh}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--am);outline-offset:2px}
@@ -34,7 +38,7 @@ header{position:relative;display:flex;align-items:center;gap:10px;padding:calc(8
 #area iframe{width:100%;height:100%;border:0;background:#000}
 .hide{display:none!important}
 .pn{display:flex;flex-direction:column;gap:10px;padding:16px;max-width:780px;margin:0 auto;height:100%}
-.pn h2{margin:0;font:700 1.3rem Georgia,serif}
+.pn h2{margin:0;font:700 1.3rem var(--fonte)}
 .mut{color:var(--mut);margin:0;font-size:.9rem}
 .row{display:flex;flex-wrap:wrap;gap:8px}
 .bt{background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:10px 14px;min-height:44px}
@@ -60,6 +64,33 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
 .ord li .al{cursor:grab;color:var(--mut);font-size:1.2rem;padding:0 4px}
 .ord li .nm{flex:1}
 .ord li button{background:var(--pn);border:1px solid var(--ln);border-radius:10px;width:38px;height:38px}
+/* tags: cada tag dá uma cor para a aba; cores claras o bastante para texto escuro e calmas no fundo escuro */
+#abas button.tg{background:color-mix(in srgb,var(--c) 20%,var(--pn));color:var(--tx);box-shadow:inset 0 -3px 0 var(--c)}
+#abas button.tg.on{background:var(--c);color:#151515;box-shadow:none}
+#abas button.on{outline:2px solid #fff3;outline-offset:-2px}
+.pts{display:flex;gap:3px}.pts i{width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 1.5px #0006}
+#menu hr{border:0;border-top:1px solid var(--ln);margin:4px 6px}
+.rot{margin:6px 0 6px;font-weight:700}.rot small{display:block;font-weight:400;color:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:20px;border:1.5px solid var(--c,var(--ln));background:#1b1b1b;color:var(--tx)}
+#dLeit .chip{--c:var(--am)}
+.chip.on{background:var(--c);color:#151515;font-weight:700}
+.chip .n{font-size:.8rem;opacity:.75}
+.emo{display:flex;flex-wrap:wrap;gap:4px;margin:-4px 0 10px}
+.emo button{width:40px;height:40px;border:1px solid var(--ln);border-radius:10px;background:#1b1b1b;font-size:1.2rem}
+.lista{list-style:none;margin:0 0 10px;padding:0;max-height:55vh;overflow:auto}
+.lista li{background:#1b1b1b;border:1px solid var(--ln);border-left:6px solid var(--c,var(--ln));border-radius:12px;padding:10px;margin-bottom:8px}
+.lista .lin{display:flex;align-items:center;gap:8px}
+.lista .lin .nm{flex:1;min-width:0}
+.lista input{flex:1;min-width:0;background:#0d0d0d;color:var(--tx);border:1px solid var(--ln);border-radius:10px;padding:9px;font:inherit}
+.cores{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cores button{width:34px;height:34px;border-radius:50%;border:2px solid transparent;background:var(--c)}
+.cores button.on{border-color:#fff;box-shadow:0 0 0 2px #151515 inset}
+.vazio{color:var(--mut);background:#1b1b1b;border:1px dashed var(--ln);border-radius:12px;padding:14px}
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#2b2b2b;border:1px solid var(--ln);border-radius:14px;padding:12px 16px;z-index:50;max-width:90vw;box-shadow:0 10px 30px #000a;display:flex;gap:12px;align-items:center}
+#toast button{background:var(--am);color:#151515;border:0;border-radius:10px;padding:8px 12px;font-weight:700}
+.ord li .tgb{width:6px;align-self:stretch;border-radius:3px;background:var(--c,transparent)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (max-width:700px){#abas button:not(.on) .t{display:none}#abas button{padding:0 12px}}
 </style>
 </head>
@@ -73,10 +104,12 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
     <a id="sozinho" target="_blank" rel="noopener" role="menuitem">↗ Abrir esta aba sozinha</a>
     <button id="recarregar" role="menuitem">⟳ Recarregar esta aba</button>
     <button id="gravar" role="menuitem">⏺ Gravar esta aba (jogo)</button>
+    <hr>
+    <button id="editar" role="menuitem">✏️ Editar esta aba (nome, ícone, tags)</button>
     <button id="organizar" role="menuitem">↕ Organizar abas</button>
-    <button id="editar" role="menuitem" class="hide">✎ Editar esta aba</button>
-    <button id="baixarAba" role="menuitem" class="hide">⬇ Baixar o código desta aba</button>
-    <button id="remover" role="menuitem" class="hide">🗑 Remover esta aba</button>
+    <button id="verArq" role="menuitem">🗄 Abas arquivadas</button>
+    <button id="verTags" role="menuitem">🎨 Tags e cores</button>
+    <button id="verLeit" role="menuitem">Aa Leitura e letra</button>
   </div>
 </header>
 <main id="area">
@@ -99,7 +132,7 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
 </main>
 
 <dialog id="dNicho">
-  <h2 style="margin:0 0 10px;font-family:Georgia,serif" id="nichoTit">Adicionar nicho</h2>
+  <h2 style="margin:0 0 10px;font-family:var(--fonte)" id="nichoTit">Adicionar nicho</h2>
   <div class="row" style="gap:10px"><label class="campo" style="flex:1">Nome<input id="nNome" maxlength="24" placeholder="Ex.: Agenda"></label><label class="campo" style="width:90px">Ícone<input id="nIco" maxlength="4" placeholder="📅"></label></div>
   <label class="campo">Como vai entrar<select id="nTipo"><option value="html">Colar o código que o Claude mandou</option><option value="arquivo">Arquivo .html do aparelho</option><option value="url">Endereço (link ou pasta do repositório)</option></select></label>
   <textarea id="nCod" placeholder="Cole aqui o código HTML completo"></textarea>
@@ -109,8 +142,53 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
   <div class="row" style="margin-top:10px"><button class="bt pri" id="nSalvar">Salvar aba</button><button class="bt" id="nFechar">Cancelar</button></div>
 </dialog>
 
+<dialog id="dAba">
+  <h2 style="margin:0 0 4px;font-family:var(--fonte)" id="abaTit">Editar aba</h2>
+  <p class="mut" style="margin-bottom:10px">Dica: segure o dedo numa aba para abrir esta janela.</p>
+  <div class="row" style="gap:10px"><label class="campo" style="flex:1">Nome<input id="aNome" maxlength="24"></label><label class="campo" style="width:90px">Ícone<input id="aIco" maxlength="4"></label></div>
+  <div class="emo" id="aEmo" aria-label="Ícones rápidos"></div>
+  <p class="rot">Tags<small>Toque para ligar ou desligar. A primeira tag ligada dá a cor da aba.</small></p>
+  <div class="chips" id="aTags"></div>
+  <div class="row"><button class="bt" id="aNova">＋ Nova tag</button><button class="bt" id="aGer">🎨 Mudar tags e cores</button></div>
+  <div class="row hide" id="aExtra" style="margin-top:10px"><button class="bt" id="aCod">✎ Trocar o código</button><button class="bt" id="baixarAba">⬇ Baixar o código</button><button class="bt" id="remover">🗑 Apagar de vez</button></div>
+  <div class="row" style="margin-top:14px"><button class="bt pri" id="aSalvar">✓ Salvar</button><button class="bt" id="aArq">🗄 Arquivar</button><button class="bt" id="aPadrao">↺ Nome original</button><button class="bt" id="aFechar">Cancelar</button></div>
+</dialog>
+
+<dialog id="dArq">
+  <h2 style="margin:0 0 6px;font-family:var(--fonte)">Abas arquivadas</h2>
+  <p class="mut" style="margin-bottom:10px">Arquivar só tira a aba da barra. Nada é apagado: os dados dela continuam guardados.</p>
+  <ul class="lista" id="arqLista"></ul>
+  <div class="row"><button class="bt pri" id="arqOk">Pronto</button></div>
+</dialog>
+
+<dialog id="dTags">
+  <h2 style="margin:0 0 6px;font-family:var(--fonte)">Tags e cores</h2>
+  <p class="mut" style="margin-bottom:10px">Mude o nome e a cor de cada tag. Tudo muda na hora, em todas as abas.</p>
+  <ul class="lista" id="tagLista"></ul>
+  <div class="row"><button class="bt pri" id="tagOk">Pronto</button><button class="bt" id="tagNova">＋ Nova tag</button></div>
+</dialog>
+
+<dialog id="dLeit">
+  <h2 style="margin:0 0 6px;font-family:var(--fonte)">Leitura e letra</h2>
+  <p class="mut" style="margin-bottom:6px">Feito para ler com menos esforço. Teste e fique com o que for mais confortável.</p>
+  <p class="rot">Letra</p>
+  <div class="op" id="lFonte">
+    <label><input type="radio" name="lf" value="lexend"><span><b style="font-family:Lexend">Lexend</b><small>Recomendada: letras largas e bem separadas</small></span></label>
+    <label><input type="radio" name="lf" value="atkinson"><span><b style="font-family:'Atkinson Hyperlegible'">Atkinson Hyperlegible</b><small>Letras parecidas (b d p q, I l 1) ficam bem diferentes</small></span></label>
+    <label><input type="radio" name="lf" value="sistema"><span><b style="font-family:system-ui">Letra do aparelho</b><small>A de sempre</small></span></label>
+  </div>
+  <p class="rot">Tamanho</p>
+  <div class="chips" id="lTam"><button class="chip" data-v="15">Normal</button><button class="chip" data-v="17">Grande</button><button class="chip" data-v="19">Bem grande</button></div>
+  <p class="rot">Espaço entre letras e palavras</p>
+  <div class="chips" id="lEsp"><button class="chip" data-v="normal">Normal</button><button class="chip" data-v="amplo">Amplo</button><button class="chip" data-v="extra">Bem amplo</button></div>
+  <label class="mut" style="display:flex;gap:8px;align-items:center;margin:4px 0 12px"><input type="checkbox" id="lAbas"> Usar a mesma letra dentro de todas as abas (Universo, Palco, Editor…)</label>
+  <div class="row"><button class="bt pri" id="lOk">Pronto</button></div>
+</dialog>
+
+<div id="toast" class="hide" role="status"><span id="toastT"></span><button id="toastB" class="hide">Desfazer</button></div>
+
 <dialog id="dGrav">
-  <h2 style="margin:0 0 6px;font-family:Georgia,serif">Gravar o jogo</h2>
+  <h2 style="margin:0 0 6px;font-family:var(--fonte)">Gravar o jogo</h2>
   <p class="mut">Grava só a tela do jogo e o som dele, direto do emulador: não é gravação de tela, então pesa pouco. Fique nesta aba enquanto grava.</p>
   <div class="op" id="gQual">
     <label><input type="radio" name="gq" value="leve" checked><span><b>Leve</b><small>30 quadros por segundo · o mais leve para o tablet</small></span></label>
@@ -121,7 +199,7 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
   <div class="row"><button class="bt pri" id="gIr">⏺ Começar a gravar</button><button class="bt" id="gNao">Cancelar</button></div>
 </dialog>
 <dialog id="dGravOk">
-  <h2 style="margin:0 0 6px;font-family:Georgia,serif">Gravação pronta</h2>
+  <h2 style="margin:0 0 6px;font-family:var(--fonte)">Gravação pronta</h2>
   <p class="mut" id="gInfo"></p>
   <video id="gVer" controls playsinline style="width:100%;max-height:40vh;border-radius:12px;background:#000"></video>
   <label class="campo" style="margin-top:10px">Nome do arquivo<input id="gNome" maxlength="80"></label>
@@ -129,14 +207,14 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
 </dialog>
 
 <dialog id="dOrdem">
-  <h2 style="margin:0 0 6px;font-family:Georgia,serif">Organizar abas</h2>
+  <h2 style="margin:0 0 6px;font-family:var(--fonte)">Organizar abas</h2>
   <p class="mut" style="margin-bottom:10px">Arraste pelo ☰ ou use as setas. A ordem fica guardada neste aparelho.</p>
   <ul class="ord" id="ordLista"></ul>
   <div class="row"><button class="bt pri" id="ordOk">Pronto</button><button class="bt" id="ordPadrao">Ordem original</button></div>
 </dialog>
 
 <dialog id="dCola">
-  <h2 style="margin:0 0 8px;font-family:Georgia,serif">Colar resposta do Claude</h2>
+  <h2 style="margin:0 0 8px;font-family:var(--fonte)">Colar resposta do Claude</h2>
   <p class="mut">O bloco JSON é aplicado no Universo, que mostra o que vai mudar antes de confirmar. Texto comum vira uma nota nova.</p>
   <textarea id="cola" placeholder="Cole aqui a resposta"></textarea>
   <div class="row" style="margin-top:10px"><button class="bt pri" id="aplicar">Aplicar no Universo</button><button class="bt" id="fechar">Cancelar</button></div>
@@ -174,15 +252,29 @@ async function cGet(k){ const d = await cdb(); return new Promise(ok => { const 
 // Ordem das abas escolhida pela pessoa (guardada neste aparelho)
 const lerOrdem = () => { try { return JSON.parse(localStorage.getItem("central-ordem")) || []; } catch (e) { return []; } };
 function montarAbas(){
-  ABAS = {}; const {reuniao, ...resto} = BASE; Object.assign(ABAS, resto);
+  ABAS = {}; const {reuniao, ...resto} = BASE; for (const k in resto) ABAS[k] = {...resto[k]};
   for (const x of extras) ABAS["x-" + x.id] = {i: x.i || "⭐", n: x.n, src: x.tipo == "url" ? x.src : null, extra: x};
-  ABAS.reuniao = reuniao;
+  ABAS.reuniao = {...reuniao};
   const ord = lerOrdem(), pos = k => { const i = ord.indexOf(k); return i < 0 ? 1e3 + Object.keys(ABAS).indexOf(k) : i; };
   ABAS = Object.fromEntries(Object.entries(ABAS).sort((a, b) => pos(a[0]) - pos(b[0])));
-  $("#abas").innerHTML = Object.entries(ABAS).map(([k, a]) => `<button data-k="${k}" aria-label="${esc(a.n)}" title="${esc(a.n)}"><span class="i" aria-hidden="true">${esc(a.i)}</span><span class="t">${esc(a.n)}</span></button>`).join("")
+  for (const [k, a] of Object.entries(ABAS)) { const c = CFG[k] || {}; if (!a.extra) { a.n0 = a.n; a.i0 = a.i; if (c.n) a.n = c.n; if (c.i) a.i = c.i; } a.tags = tagsDe(k); a.arq = !!c.arq; }
+  $("#abas").innerHTML = Object.entries(ABAS).filter(([k, a]) => !a.arq).map(([k, a]) => { const t = a.tags, nomes = t.length ? " · " + t.map(x => x.n).join(", ") : "";
+    return `<button data-k="${k}"${t.length ? ` class="tg" style="--c:${t[0].c}"` : ""} aria-label="${esc(a.n + nomes)}" title="${esc(a.n + nomes)}"><span class="i" aria-hidden="true">${esc(a.i)}</span><span class="t">${esc(a.n)}</span>${t.length > 1 ? `<span class="pts" aria-hidden="true">${t.slice(1).map(x => `<i style="background:${x.c}"></i>`).join("")}</span>` : ""}</button>`; }).join("")
     + '<button class="add" id="addAba" aria-label="Adicionar nicho" title="Adicionar nicho"><span class="i" aria-hidden="true">＋</span><span class="t">Adicionar</span></button>';
   if (atual) document.querySelectorAll("#abas [data-k]").forEach(b => b.classList.toggle("on", b.dataset.k == atual));
 }
+const lerJ = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
+const gravaJ = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const CORES = [["Âmbar", "#f2b51d"], ["Coral", "#ff8a73"], ["Rosa", "#f59ac0"], ["Lilás", "#b9a2f0"], ["Azul", "#7db8ff"], ["Turquesa", "#5fd4c8"], ["Verde", "#93d67f"], ["Limão", "#d8e46a"], ["Laranja", "#ffb067"], ["Areia", "#cbbfa6"]];
+// Primeira vez: algumas tags de exemplo já ligadas, para as cores aparecerem. Tudo pode ser mudado.
+let TAGS = lerJ("central-tags", null), CFG = lerJ("central-abacfg", null);
+if (!TAGS) { TAGS = [{id: "t1", n: "Tamaki", c: "#f2b51d"}, {id: "t2", n: "Vídeo", c: "#7db8ff"}, {id: "t3", n: "Escrever", c: "#93d67f"}, {id: "t4", n: "Som", c: "#b9a2f0"}, {id: "t5", n: "Criar", c: "#f59ac0"}]; gravaJ("central-tags", TAGS); }
+if (!CFG) { CFG = {}; const ex = {universo: ["t1"], tamaki: ["t1"], palco: ["t1", "t2"], palcoanim: ["t1", "t5"], motion: ["t2", "t5"], decupagem: ["t2"], efeitos: ["t4", "t2"], editor: ["t2"], biblioteca: ["t3"], escrita: ["t3"]};
+  for (const k in ex) CFG[k] = {tags: ex[k]}; gravaJ("central-abacfg", CFG); }
+const tagsDe = k => ((CFG[k] || {}).tags || []).map(id => TAGS.find(t => t.id == id)).filter(Boolean);
+const cfgDe = k => CFG[k] || (CFG[k] = {});
+const salvaCfg = () => { gravaJ("central-abacfg", CFG); montarAbas(); };
+const visiveis = () => Object.keys(ABAS).filter(k => !ABAS[k].arq);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 async function srcDe(k){ const a = ABAS[k]; if (a.src) return a.src; const h = await cGet("x-" + a.extra.id); return URL.createObjectURL(new Blob([h || "<p style='font-family:sans-serif;color:#fff'>Código desta aba não encontrado neste aparelho.</p>"], {type: "text/html"})); }
 const frames = {}, prontos = {};
@@ -194,19 +286,19 @@ function frame(k, src){
     f.title = ABAS[k].n; f.className = "hide"; f.allow = "fullscreen; clipboard-write; autoplay";
     prontos[k] = new Promise(ok => f.addEventListener("load", ok, {once: true}));
     f.addEventListener("load", () => ganchoAudio(f.contentWindow)); // deixa o som da aba pronto para ser gravado
+    f.addEventListener("load", () => { leituraEm(f.contentWindow); setTimeout(() => leituraEm(f.contentWindow), 1500); }); // letra de leitura também dentro da aba
     f.src = src; $("#area").appendChild(f); frames[k] = f;
   }
   return prontos[k];
 }
 function fecharMenu(){ $("#menu").classList.add("hide"); $("#mais").setAttribute("aria-expanded", "false"); }
 async function ir(k){
-  if (!ABAS[k]) k = "universo";
+  if (!ABAS[k] || ABAS[k].arq) k = visiveis()[0] || "reuniao";
   atual = k;
   document.querySelectorAll("#area>*").forEach(e => e.classList.add("hide"));
   document.querySelectorAll("#abas [data-k]").forEach(b => b.classList.toggle("on", b.dataset.k == k));
   const a = ABAS[k];
   $("#sozinho").classList.toggle("hide", !a.src); if (a.src) $("#sozinho").href = a.src;
-  $("#editar").classList.toggle("hide", !a.extra); $("#remover").classList.toggle("hide", !a.extra); $("#baixarAba").classList.toggle("hide", !a.extra || a.extra.tipo != "html");
   if (k == "reuniao") { $("#v-reuniao").classList.remove("hide"); montar(); }
   else { if (!frames[k]) frame(k, await srcDe(k)); if (atual == k) frames[k].classList.remove("hide"); }
   const b = $(`#abas [data-k="${k}"]`), nv = $("#abas"); if (b) nv.scrollLeft = b.offsetLeft - (nv.clientWidth - b.offsetWidth) / 2;
@@ -214,7 +306,15 @@ async function ir(k){
   try { localStorage.setItem("central_aba", k); } catch (e) {}
 }
 montarAbas();
-$("#abas").onclick = e => { if (e.target.closest("#addAba")) return abrirNicho(null); const b = e.target.closest("[data-k]"); if (b) ir(b.dataset.k); };
+$("#abas").onclick = e => { if (Date.now() - segurou < 800) return; if (e.target.closest("#addAba")) return abrirNicho(null); const b = e.target.closest("[data-k]"); if (b) ir(b.dataset.k); };
+// segurar o dedo numa aba (ou botão direito) abre a edição dela
+let segura = null, segurou = 0;
+$("#abas").addEventListener("pointerdown", e => { segurou = 0; const b = e.target.closest("[data-k]"); if (!b) return; const x = e.clientX, y = e.clientY;
+  segura = {x, y, t: setTimeout(() => { segura = null; segurou = Date.now(); abrirAba(b.dataset.k); }, 550)}; });
+const soltaSegura = e => { if (!segura) return; if (e.type == "pointermove" && Math.hypot(e.clientX - segura.x, e.clientY - segura.y) < 10) return; clearTimeout(segura.t); segura = null; };
+["pointermove", "pointerup", "pointercancel", "pointerleave"].forEach(t => $("#abas").addEventListener(t, soltaSegura));
+$("#abas").addEventListener("scroll", () => soltaSegura({type: "scroll"}), {passive: true});
+$("#abas").addEventListener("contextmenu", e => { const b = e.target.closest("[data-k]"); if (!b) return; e.preventDefault(); if (segura) { clearTimeout(segura.t); segura = null; } segurou = 0; abrirAba(b.dataset.k); });
 let editando = null;
 function tipoNicho(){ const t = $("#nTipo").value; $("#nCod").classList.toggle("hide", t != "html"); $("#nUrlBox").classList.toggle("hide", t != "url"); if (t == "arquivo") $("#nArq").click(); }
 $("#nTipo").onchange = tipoNicho;
@@ -236,15 +336,100 @@ $("#nSalvar").onclick = async () => {
   esqueceFrame("x-" + x.id); montarAbas(); $("#dNicho").close(); ir("x-" + x.id);
 };
 // Baixa (ou compartilha) o código de uma aba colada, para mandar ao Claude ou guardar no repositório.
-$("#baixarAba").onclick = async () => { const a = ABAS[atual]; if (!a || !a.extra) return; fecharMenu();
+$("#baixarAba").onclick = async () => { const a = ABAS[editK]; if (!a || !a.extra) return;
   const h = await cGet("x-" + a.extra.id); if (!h) return alert("Código desta aba não encontrado neste aparelho.");
   const nome = a.n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() + ".html", f = new File([h], nome, {type: "text/html"});
   try { if (navigator.canShare && navigator.canShare({files: [f]})) return await navigator.share({files: [f], title: a.n}); } catch (e) { return; }
   const l = document.createElement("a"); l.href = URL.createObjectURL(f); l.download = nome; l.click(); };
-$("#editar").onclick = () => { const a = ABAS[atual]; if (a && a.extra) abrirNicho(a.extra); };
-$("#remover").onclick = async () => { const a = ABAS[atual]; if (!a || !a.extra) return; fecharMenu();
-  if (!confirm("Remover a aba " + a.n + "? Os dados que ela guardou continuam no aparelho.")) return;
-  extras = extras.filter(x => x != a.extra); localStorage.setItem("central-extras", JSON.stringify(extras)); await cPut("x-" + a.extra.id, null); esqueceFrame(atual); montarAbas(); ir("universo"); };
+$("#remover").onclick = () => apagarExtra(editK, () => $("#dAba").close());
+async function apagarExtra(k, depois){ const a = ABAS[k]; if (!a || !a.extra) return;
+  if (!confirm("Apagar de vez a aba " + a.n + "? O código dela sai deste aparelho. (Os dados que ela guardou continuam.)")) return;
+  extras = extras.filter(x => x != a.extra); localStorage.setItem("central-extras", JSON.stringify(extras)); await cPut("x-" + a.extra.id, null); delete CFG[k]; gravaJ("central-abacfg", CFG);
+  esqueceFrame(k); montarAbas(); if (depois) depois(); if (k == atual) ir(visiveis()[0]); }
+
+/* ---------- editar a aba: nome, ícone, tags, arquivar ---------- */
+let editK = null, selTags = [];
+const EMOS = ["⭐", "🌸", "🎨", "🎬", "🎧", "🎮", "📚", "✍️", "🌙", "💜", "🔥", "🧸", "🦊", "🍓", "☁️", "🪄", "📅", "💡"];
+$("#aEmo").innerHTML = EMOS.map(e => `<button type="button" data-e="${e}" aria-label="Usar ${e}">${e}</button>`).join("");
+$("#aEmo").onclick = e => { const b = e.target.closest("[data-e]"); if (b) $("#aIco").value = b.dataset.e; };
+function chipsAba(){ $("#aTags").innerHTML = TAGS.length ? TAGS.map(t => { const i = selTags.indexOf(t.id); return `<button type="button" class="chip${i >= 0 ? " on" : ""}" style="--c:${t.c}" data-t="${t.id}" aria-pressed="${i >= 0}">${i >= 0 ? "✓ " : ""}${esc(t.n)}${i == 0 ? ' <span class="n">(cor)</span>' : ""}</button>`; }).join("") : '<span class="mut">Nenhuma tag ainda. Crie uma em ＋ Nova tag.</span>'; }
+$("#aTags").onclick = e => { const b = e.target.closest("[data-t]"); if (!b) return; const id = b.dataset.t, i = selTags.indexOf(id); i >= 0 ? selTags.splice(i, 1) : selTags.push(id); chipsAba(); };
+function abrirAba(k){ const a = ABAS[k]; if (!a) return; fecharMenu(); editK = k;
+  $("#abaTit").textContent = "Editar aba: " + a.n; $("#aNome").value = a.n; $("#aIco").value = a.i; selTags = ((CFG[k] || {}).tags || []).filter(id => TAGS.some(t => t.id == id)); chipsAba();
+  $("#aExtra").classList.toggle("hide", !a.extra); $("#baixarAba").classList.toggle("hide", !a.extra || a.extra.tipo != "html"); $("#aPadrao").classList.toggle("hide", !!a.extra);
+  $("#aArq").textContent = a.arq ? "📤 Tirar do arquivo" : "🗄 Arquivar"; $("#dAba").showModal(); }
+function guardarAba(){ const k = editK, a = ABAS[k], n = $("#aNome").value.trim() || a.n, i = $("#aIco").value.trim() || a.i, c = cfgDe(k);
+  if (a.extra) { a.extra.n = n; a.extra.i = i; localStorage.setItem("central-extras", JSON.stringify(extras)); }
+  else { if (n != a.n0) c.n = n; else delete c.n; if (i != a.i0) c.i = i; else delete c.i; }
+  c.tags = selTags.slice(); if (frames[k]) frames[k].title = n; }
+$("#editar").onclick = () => abrirAba(atual);
+$("#aFechar").onclick = () => $("#dAba").close();
+$("#aSalvar").onclick = () => { guardarAba(); salvaCfg(); $("#dAba").close(); aviso("Aba salva."); };
+$("#aPadrao").onclick = () => { const a = ABAS[editK]; $("#aNome").value = a.n0; $("#aIco").value = a.i0; };
+$("#aCod").onclick = () => { guardarAba(); salvaCfg(); $("#dAba").close(); abrirNicho(ABAS[editK].extra); };
+$("#aArq").onclick = () => { guardarAba(); const k = editK; $("#dAba").close(); ABAS[k].arq ? desarquivar(k) : arquivar(k); };
+function arquivar(k){ if (visiveis().length <= 1) return aviso("Deixe pelo menos uma aba na barra.");
+  const n = ABAS[k].n; cfgDe(k).arq = true; salvaCfg(); esqueceFrame(k); if (k == atual) ir(visiveis()[0]);
+  aviso(`“${n}” foi para o arquivo (⋮ › Abas arquivadas).`, () => desarquivar(k)); }
+function desarquivar(k){ delete cfgDe(k).arq; salvaCfg(); ir(k); aviso(`“${ABAS[k].n}” voltou para a barra.`); }
+
+/* abas arquivadas */
+function listaArq(){ const ks = Object.keys(ABAS).filter(k => ABAS[k].arq);
+  $("#arqLista").innerHTML = ks.length ? ks.map(k => { const a = ABAS[k], t = a.tags; return `<li data-k="${k}"${t.length ? ` style="--c:${t[0].c}"` : ""}><div class="lin"><span style="font-size:1.3rem">${esc(a.i)}</span><span class="nm"><b>${esc(a.n)}</b>${t.length ? `<br><small class="mut">${esc(t.map(x => x.n).join(" · "))}</small>` : ""}</span></div>
+    <div class="row" style="margin-top:8px"><button class="bt pri" data-a="volta">📤 Tirar do arquivo</button>${a.extra ? '<button class="bt" data-a="apaga">🗑 Apagar de vez</button>' : ""}</div></li>`; }).join("")
+    : '<li class="vazio">Nenhuma aba arquivada.<br>Para arquivar: segure o dedo numa aba e toque em 🗄 Arquivar.</li>'; }
+$("#verArq").onclick = () => { fecharMenu(); listaArq(); $("#dArq").showModal(); };
+$("#arqLista").onclick = e => { const b = e.target.closest("[data-a]"); if (!b) return; const k = b.closest("li").dataset.k;
+  if (b.dataset.a == "volta") { delete cfgDe(k).arq; salvaCfg(); listaArq(); aviso(`“${ABAS[k].n}” voltou para a barra.`); } else apagarExtra(k, listaArq); };
+$("#arqOk").onclick = () => $("#dArq").close();
+
+/* tags e cores */
+function novaTag(){ const usadas = TAGS.map(t => t.c), c = (CORES.find(x => !usadas.includes(x[1])) || CORES[TAGS.length % CORES.length])[1], t = {id: "t" + Date.now().toString(36), n: "Nova tag", c};
+  TAGS.push(t); gravaJ("central-tags", TAGS); return t; }
+function listaTags(){ $("#tagLista").innerHTML = TAGS.length ? TAGS.map(t => `<li data-t="${t.id}" style="--c:${t.c}"><div class="lin"><input value="${esc(t.n)}" maxlength="20" aria-label="Nome da tag"><button class="bt" data-a="apaga" aria-label="Apagar a tag ${esc(t.n)}">🗑</button></div>
+  <div class="cores">${CORES.map(([n, c]) => `<button type="button" style="--c:${c}" data-c="${c}" class="${c == t.c ? "on" : ""}" aria-label="${n}" title="${n}"></button>`).join("")}</div></li>`).join("") : '<li class="vazio">Nenhuma tag. Toque em ＋ Nova tag.</li>'; }
+const tagDoLi = el => TAGS.find(t => t.id == el.closest("li").dataset.t);
+$("#tagLista").addEventListener("input", e => { if (e.target.tagName != "INPUT") return; tagDoLi(e.target).n = e.target.value.trim() || "Sem nome"; gravaJ("central-tags", TAGS); montarAbas(); });
+$("#tagLista").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const t = tagDoLi(b);
+  if (b.dataset.c) { t.c = b.dataset.c; b.closest("li").style.setProperty("--c", t.c); b.parentNode.querySelectorAll("button").forEach(x => x.classList.toggle("on", x == b)); }
+  else if (b.dataset.a == "apaga") { if (!confirm(`Apagar a tag “${t.n}”? As abas continuam, só perdem essa tag.`)) return; TAGS = TAGS.filter(x => x != t); for (const k in CFG) if (CFG[k].tags) CFG[k].tags = CFG[k].tags.filter(id => id != t.id); selTags = selTags.filter(id => id != t.id); gravaJ("central-abacfg", CFG); listaTags(); }
+  gravaJ("central-tags", TAGS); montarAbas(); if ($("#dAba").open) chipsAba(); });
+$("#verTags").onclick = () => { fecharMenu(); listaTags(); $("#dTags").showModal(); };
+$("#aGer").onclick = () => { listaTags(); $("#dTags").showModal(); };
+$("#tagNova").onclick = () => { novaTag(); listaTags(); const i = $("#tagLista li:last-child input"); i.focus(); i.select(); montarAbas(); };
+$("#aNova").onclick = () => { const n = prompt("Nome da nova tag:", ""); if (!n || !n.trim()) return; const t = novaTag(); t.n = n.trim().slice(0, 20); gravaJ("central-tags", TAGS); selTags.push(t.id); chipsAba(); };
+$("#tagOk").onclick = () => { $("#dTags").close(); if ($("#dAba").open) chipsAba(); };
+
+/* aviso curto na tela, com desfazer */
+let avisoT = 0;
+function aviso(txt, desfazer){ $("#toastT").textContent = txt; $("#toastB").classList.toggle("hide", !desfazer); $("#toastB").onclick = () => { $("#toast").classList.add("hide"); desfazer(); };
+  $("#toast").classList.remove("hide"); clearTimeout(avisoT); avisoT = setTimeout(() => $("#toast").classList.add("hide"), desfazer ? 7000 : 3000); }
+
+/* ---------- leitura: letra e espaços pensados para dislexia, também dentro das abas ---------- */
+const FONTES = {lexend: {css: "Lexend:wght@400;600;700", f: '"Lexend",system-ui,sans-serif'}, atkinson: {css: "Atkinson+Hyperlegible:wght@400;700", f: '"Atkinson Hyperlegible",system-ui,sans-serif'}, sistema: {css: "", f: 'system-ui,-apple-system,"Segoe UI",sans-serif'}};
+const ESP = {normal: [".01em", ".02em"], amplo: [".03em", ".1em"], extra: [".06em", ".18em"]};
+let LEIT = Object.assign({f: "lexend", t: 16, e: "amplo", abas: true}, lerJ("tamaki-leitura", {}));
+const urlFonte = () => FONTES[LEIT.f].css ? "https://fonts.googleapis.com/css2?family=" + FONTES[LEIT.f].css + "&display=swap" : "";
+function leituraEm(w){ for (const j of janelas(w)) { try { const d = j.document; if (!d || !d.head) continue;
+  let st = d.getElementById("tamaki-leitura"), ln = d.getElementById("tamaki-fonte");
+  if (!LEIT.abas) { if (st) st.remove(); if (ln) ln.remove(); continue; }
+  if (!ln) { ln = d.createElement("link"); ln.id = "tamaki-fonte"; ln.rel = "stylesheet"; d.head.appendChild(ln); } if (ln.getAttribute("href") != urlFonte()) ln.href = urlFonte();
+  if (!st) { st = d.createElement("style"); st.id = "tamaki-leitura"; d.head.appendChild(st); }
+  const [le, pe] = ESP[LEIT.e]; // não troca a letra de ícones nem de código
+  st.textContent = `body,body :not(code,pre,kbd,samp,i,[class*=icon],[class*=material],[class*=symbol],[class^=fa]){font-family:${FONTES[LEIT.f].f}!important}body{letter-spacing:${le};word-spacing:${pe}}`;
+  } catch (e) {} } }
+function aplicarLeitura(){ const r = document.documentElement.style, [le, pe] = ESP[LEIT.e];
+  r.setProperty("--fonte", FONTES[LEIT.f].f); r.setProperty("--tam", LEIT.t + "px"); r.setProperty("--le", le); r.setProperty("--pe", pe);
+  for (const k in frames) leituraEm(frames[k].contentWindow); }
+function marcarLeitura(){ document.querySelectorAll("[name=lf]").forEach(r => r.checked = r.value == LEIT.f);
+  document.querySelectorAll("#lTam .chip").forEach(b => b.classList.toggle("on", +b.dataset.v == LEIT.t)); document.querySelectorAll("#lEsp .chip").forEach(b => b.classList.toggle("on", b.dataset.v == LEIT.e)); $("#lAbas").checked = LEIT.abas; }
+const mudaLeitura = o => { Object.assign(LEIT, o); gravaJ("tamaki-leitura", LEIT); aplicarLeitura(); marcarLeitura(); };
+$("#lFonte").onchange = e => mudaLeitura({f: e.target.value});
+$("#lTam").onclick = e => { const b = e.target.closest("[data-v]"); if (b) mudaLeitura({t: +b.dataset.v}); };
+$("#lEsp").onclick = e => { const b = e.target.closest("[data-v]"); if (b) mudaLeitura({e: b.dataset.v}); };
+$("#lAbas").onchange = e => mudaLeitura({abas: e.target.checked});
+$("#verLeit").onclick = () => { fecharMenu(); marcarLeitura(); $("#dLeit").showModal(); };
+$("#lOk").onclick = () => $("#dLeit").close();
 
 /* ---------- gravar a aba (jogo): pega os quadros do canvas e o som, sem gravar a tela ---------- */
 function ganchoAudio(w){ // tudo que toca no alto-falante também vai para uma saída que a gravação escuta
@@ -309,10 +494,12 @@ $("#gEd").onclick = async () => { let id; try { id = await naBiblioteca(); } cat
 
 /* ---------- organizar abas ---------- */
 let ordem = [];
-function listaOrdem(){ $("#ordLista").innerHTML = ordem.map((k, i) => `<li data-k="${k}"><span class="al" aria-hidden="true">☰</span><span>${esc(ABAS[k].i)}</span><span class="nm">${esc(ABAS[k].n)}</span><button data-mv="-1" aria-label="Subir" ${i ? "" : "disabled"}>▲</button><button data-mv="1" aria-label="Descer" ${i < ordem.length - 1 ? "" : "disabled"}>▼</button></li>`).join(""); }
-function guardarOrdem(){ try { localStorage.setItem("central-ordem", JSON.stringify(ordem)); } catch (e) {} montarAbas(); }
-$("#organizar").onclick = () => { fecharMenu(); ordem = Object.keys(ABAS); listaOrdem(); $("#dOrdem").showModal(); };
-$("#ordLista").addEventListener("click", e => { const b = e.target.closest("[data-mv]"); if (!b) return; const i = ordem.indexOf(b.closest("li").dataset.k), j = i + +b.dataset.mv; [ordem[i], ordem[j]] = [ordem[j], ordem[i]]; listaOrdem(); guardarOrdem(); });
+function listaOrdem(){ $("#ordLista").innerHTML = ordem.map((k, i) => `<li data-k="${k}"${ABAS[k].tags.length ? ` style="--c:${ABAS[k].tags[0].c}"` : ""}><span class="tgb"></span><span class="al" aria-hidden="true">☰</span><span>${esc(ABAS[k].i)}</span><span class="nm">${esc(ABAS[k].n)}</span><button data-ed aria-label="Editar ${esc(ABAS[k].n)}">✏️</button><button data-ar aria-label="Arquivar ${esc(ABAS[k].n)}">🗄</button><button data-mv="-1" aria-label="Subir" ${i ? "" : "disabled"}>▲</button><button data-mv="1" aria-label="Descer" ${i < ordem.length - 1 ? "" : "disabled"}>▼</button></li>`).join(""); }
+function guardarOrdem(){ const arq = Object.keys(ABAS).filter(k => ABAS[k].arq); try { localStorage.setItem("central-ordem", JSON.stringify(ordem.concat(arq))); } catch (e) {} montarAbas(); }
+$("#organizar").onclick = () => { fecharMenu(); ordem = visiveis(); listaOrdem(); $("#dOrdem").showModal(); };
+$("#ordLista").addEventListener("click", e => { const k = (e.target.closest("li") || {}).dataset?.k;
+  if (e.target.closest("[data-ar]")) { arquivar(k); ordem = visiveis(); return listaOrdem(); } if (e.target.closest("[data-ed]")) { $("#dOrdem").close(); return abrirAba(k); }
+  const b = e.target.closest("[data-mv]"); if (!b) return; const i = ordem.indexOf(b.closest("li").dataset.k), j = i + +b.dataset.mv; [ordem[i], ordem[j]] = [ordem[j], ordem[i]]; listaOrdem(); guardarOrdem(); });
 let arrasto = null;
 $("#ordLista").addEventListener("pointerdown", e => { const al = e.target.closest(".al"); if (!al) return; const li = al.closest("li"); arrasto = {li, k: li.dataset.k}; li.classList.add("arr"); li.setPointerCapture(e.pointerId); });
 $("#ordLista").addEventListener("pointermove", e => { if (!arrasto) return; const irmaos = [...$("#ordLista").children], i = ordem.indexOf(arrasto.k);
@@ -321,7 +508,7 @@ $("#ordLista").addEventListener("pointermove", e => { if (!arrasto) return; cons
 const soltaOrdem = () => { if (!arrasto) return; arrasto = null; listaOrdem(); guardarOrdem(); };
 $("#ordLista").addEventListener("pointerup", soltaOrdem); $("#ordLista").addEventListener("pointercancel", soltaOrdem);
 $("#ordOk").onclick = () => $("#dOrdem").close();
-$("#ordPadrao").onclick = () => { try { localStorage.removeItem("central-ordem"); } catch (e) {} montarAbas(); ordem = Object.keys(ABAS); listaOrdem(); };
+$("#ordPadrao").onclick = () => { try { localStorage.removeItem("central-ordem"); } catch (e) {} montarAbas(); ordem = visiveis(); listaOrdem(); };
 
 /* ---------- baixar tudo: um .zip com uma pasta para cada aba ---------- */
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -496,6 +683,7 @@ $("#aplicar").onclick = async () => {
   catch (e) { alert("Não consegui falar com o Universo. Abra a aba Universo e use Reunião > Colar resposta do Claude."); }
 };
 
+aplicarLeitura();
 const salvo = localStorage.getItem("central_aba");
 ir(salvo || "universo");
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
