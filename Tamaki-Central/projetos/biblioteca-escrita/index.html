@@ -130,6 +130,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <input id="busca" type="search" placeholder="Pesquisar" aria-label="Pesquisar notas">
       <button class="ic" id="bVista" aria-label="Mudar visualização" title="Grade ou lista">▦</button>
       <button class="ic" id="bOrdem" aria-label="Ordenar" title="Ordenar">⇅</button>
+      <button class="ic" id="bWord" aria-label="Adicionar documento Word" title="Adicionar documento Word (.docx)">📘</button>
     </div>
     <div id="notas"></div>
   </section>
@@ -188,6 +189,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div class="lin"><button class="bt pri" id="tkNovo">💾 Salvar como roteiro</button><button class="bt" id="tkTrocar">↔ Trocar o trecho na nota</button><button class="bt" id="tkOuvir">🔊 Ouvir</button><button class="bt" id="tkFechar">Fechar</button></div>
 </dialog>
 <input type="file" id="fImg" accept="image/*" class="esc">
+<input type="file" id="fWord" class="esc" multiple accept=".docx,.doc,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain">
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -375,11 +377,13 @@ $("#titulo").addEventListener("keydown", e => { if (e.key == "Enter") { e.preven
 $("#eFav").onclick = () => { atual.fav = !atual.fav; metaEditor(); marcarSujo(); };
 $("#ePasta").onclick = e => pop(e.currentTarget, `<h4>PASTA</h4>${pastas().map(p => `<button class="it" data-p="${p.id}"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${p.cor}"></span> ${esc(p.nome)}${p.id == atual.pasta ? " ✓" : ""}</button>`).join("")}`, b => { atual.pasta = b.dataset.p; metaEditor(); marcarSujo(); });
 $("#eMais").onclick = e => pop(e.currentTarget, `<h4>COR DA PÁGINA</h4><div class="cores">${Object.entries(PAPEIS).map(([k, c]) => `<button data-papel="${k}" aria-label="${k || "padrão"}" style="background:${k ? c : "var(--papel)"}${atual.papel == k ? ";border-color:var(--ac)" : ""}"></button>`).join("")}</div>
-  <button class="it" data-m="txt">⬇ Baixar como texto (.txt)</button><button class="it" data-m="html">⬇ Baixar como página (.html)</button><button class="it" data-m="copiar">📋 Copiar texto</button><button class="it" data-m="apagar">🗑 Excluir nota</button>`, b => {
+  <button class="it" data-m="word">📘 Inserir documento Word aqui</button><button class="it" data-m="txt">⬇ Baixar como texto (.txt)</button><button class="it" data-m="doc">⬇ Baixar como Word (.doc)</button><button class="it" data-m="html">⬇ Baixar como página (.html)</button><button class="it" data-m="copiar">📋 Copiar texto</button><button class="it" data-m="apagar">🗑 Excluir nota</button>`, b => {
   if (b.dataset.papel != null) { atual.papel = b.dataset.papel; metaEditor(); return marcarSujo(); }
   const m = b.dataset.m, nome = ($("#titulo").value.trim() || "nota").replace(/[\\/:*?"<>|]+/g, "-");
   if (m == "txt") baixar(new Blob([$("#titulo").value + "\n\n" + $("#corpo").innerText], {type: "text/plain;charset=utf-8"}), nome + ".txt");
   if (m == "html") baixar(new Blob([`<!DOCTYPE html><meta charset="utf-8"><title>${esc($("#titulo").value)}</title><body style="font:17px/1.6 Georgia,serif;max-width:720px;margin:40px auto;padding:0 20px"><h1>${esc($("#titulo").value)}</h1>${limpar($("#corpo").innerHTML)}</body>`], {type: "text/html"}), nome + ".html");
+  if (m == "word") { wordNaNota = true; $("#fWord").click(); }
+  if (m == "doc") baixar(new Blob(["\ufeff" + `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc($("#titulo").value)}</title></head><body style="font:12pt Calibri,sans-serif"><h1>${esc($("#titulo").value)}</h1>${limpar($("#corpo").innerHTML)}</body></html>`], {type: "application/msword"}), nome + ".doc");
   if (m == "copiar") navigator.clipboard.writeText($("#titulo").value + "\n\n" + $("#corpo").innerText).then(() => toast("Texto copiado"), () => {});
   if (m == "apagar" && confirm("Mandar esta nota para a lixeira?")) { if (!atual.nova) paraLixeira(N.find(x => x.id == atual.id)); guardar(); descartar = true; history.state && history.state.nota ? history.back() : fechar(false); toast("Nota na lixeira"); }
 });
@@ -497,6 +501,39 @@ $("#tkNovo").onclick = () => { const v = $("#tkRes").value.trim(); if (!v) retur
 /* ---------- início ---------- */
 addEventListener("storage", e => { if (e.key == KEY && !atual) { try { D = JSON.parse(e.newValue) || {}; } catch (x) {} carregar(); tudo(); } });
 $("#fab").onclick = () => abrir(null);
+
+/* ---------- documentos Word: cada arquivo vira uma nota (ou entra na nota aberta) ---------- */
+let wordNaNota = false;
+const carregarJs = src => new Promise((ok, no) => { if (document.querySelector(`script[src="${src}"]`)) return ok(); const e = document.createElement("script"); e.src = src; e.onload = ok; e.onerror = () => no(new Error("sem internet para abrir documentos Word")); document.head.appendChild(e); });
+const encolher = (b64, tipo) => new Promise(ok => { const im = new Image(); im.onload = () => { const k = Math.min(1, 1000 / Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+  c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); ok(c.toDataURL("image/jpeg", .8)); }; im.onerror = () => ok(""); im.src = "data:" + tipo + ";base64," + b64; });
+async function lerWord(f){ const ext = (f.name.split(".").pop() || "").toLowerCase();
+  if (ext == "docx") { await carregarJs("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js");
+    const r = await mammoth.convertToHtml({arrayBuffer: await f.arrayBuffer()}, {convertImage: mammoth.images.imgElement(im => im.read("base64").then(b => encolher(b, im.contentType)).then(src => ({src})))});
+    return limpar(r.value.replace(/<img src="">/g, "")); }
+  let t; if (ext == "doc") { // Word antigo (.doc): só o texto, aproximado
+    const u = new Uint8Array(await f.arrayBuffer()), parece = x => (x.match(/\p{L}{3,}/gu) || []).length >= 3 && (x.match(/[a-záàâãéêíóôõúç ,.]/gi) || []).length / x.length > .8;
+    t = [new TextDecoder("utf-16le").decode(u), new TextDecoder("windows-1252").decode(u)].map(x => (x.match(/[A-Za-zÀ-ÿ0-9 .,;:!?()"“”'’\-–—\n\r]{12,}/gu) || []).filter(parece).join("\n")).sort((a, b) => b.length - a.length)[0] || "";
+  } else t = await f.text();
+  return t.split(/\r?\n/).map(l => l.trim() ? `<p>${esc(l)}</p>` : "").join(""); }
+$("#bWord").onclick = () => { wordNaNota = false; $("#fWord").click(); };
+$("#fWord").onchange = async e => { const fs = [...e.target.files]; e.target.value = ""; if (!fs.length) return;
+  if (wordNaNota && atual) { // dentro da nota aberta: entra onde está o cursor
+    try { toast("Abrindo " + fs[0].name + "…"); let h = ""; for (const f of fs) h += await lerWord(f); const c = $("#corpo"), s = getSelection();
+      if (!(s.rangeCount && c.contains(s.anchorNode))) { c.focus(); const r = document.createRange(); r.selectNodeContents(c); r.collapse(false); s.removeAllRanges(); s.addRange(r); }
+      document.execCommand("insertHTML", false, h); marcarSujo(); toast("Documento inserido na nota"); } catch (err) { toast("Não consegui abrir: " + err.message); }
+    return; }
+  const pasta = FIXAS.concat(D.pastas).some(p => p.id == P.pasta) ? P.pasta : "notas", novas = [];
+  for (const f of fs) { toast("Abrindo " + f.name + "…");
+    try { const html = await lerWord(f); if (!texto(html) && !/<img/.test(html)) { toast(f.name + " está vazio ou não deu para ler"); continue; }
+      const n = {id: uid(), pasta, titulo: f.name.replace(/\.[^.]+$/, "").slice(0, 120), html, criado: Date.now(), editado: Date.now(), fav: false, papel: "", ordem: N.length}; N.push(n); novas.push(n);
+    } catch (err) { toast("Não consegui abrir " + f.name + ": " + err.message); } }
+  if (!novas.length) return;
+  let semImg = false;
+  if (!guardar()) { novas.forEach(n => { if (/<img/.test(n.html)) { n.html = n.html.replace(/<img[^>]*>/g, ""); semImg = true; } });
+    if (!semImg || !guardar()) { N = N.filter(n => !novas.includes(n)); guardar(); return toast("Sem espaço no aparelho para este documento."); } }
+  tudo(); toast((novas.length == 1 ? "“" + novas[0].titulo + "” adicionado" : novas.length + " documentos adicionados") + " em " + pastaDe(pasta).nome + (semImg ? " (sem as imagens, por falta de espaço)" : ""));
+  if (novas.length == 1) abrir(novas[0].id); };
 document.addEventListener("keydown", e => { if (atual && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() == "s") { e.preventDefault(); $("#salvar").click(); } if (e.key == "Escape") fecharPop(); });
 tudo();
 })();
