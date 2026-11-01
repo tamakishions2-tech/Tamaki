@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estúdio de voz · Tamaki</title>
+<style>
+html,body{margin:0;height:100%;background:#120f24}
+#app{border:0;width:100%;height:100%;display:block}
+#painel{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:5;
+  font-family:"Atkinson Hyperlegible",system-ui,sans-serif}
+#painel.aberto{display:flex}
+.caixa{background:#1b1736;color:#efe9f7;border:2px solid #2e2a55;border-radius:18px 18px 0 0;width:100%;max-width:640px;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:92vh;overflow:auto;font-size:17px;line-height:1.55}
+.caixa h2{margin:0 0 6px;font-size:1.4em} .caixa h3{margin:20px 0 8px;font-size:1.05em}
+.caixa label{display:block;font-weight:700;margin:12px 0 6px}
+.caixa textarea{width:100%;box-sizing:border-box;min-height:150px;background:#231e45;color:inherit;border:2px solid #2e2a55;border-radius:12px;padding:12px;font:inherit;font-size:.85em}
+.botoes{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.caixa button{min-height:48px;padding:10px 16px;border-radius:12px;border:2px solid #2e2a55;background:#231e45;color:inherit;font:inherit;font-weight:700;cursor:pointer}
+.caixa button.principal{background:#ff9f45;color:#24130a;border-color:#ff9f45;flex:1}
+.caixa button:focus-visible{outline:3px solid #5fd9cf;outline-offset:2px}
+.dica{color:#a49cc9;font-size:.92em} #msg{min-height:1.5em;margin:10px 0 0}
+#atalho{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:4;
+  background:#ff9f45;color:#24130a;border:0;border-radius:999px;padding:8px 16px;font:700 15px system-ui,sans-serif;cursor:pointer;transition:opacity .6s}
+#atalho.some{opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<!-- o painel de verdade fica guardado aqui; as atualizações coladas ficam salvas no aparelho -->
+<textarea id="original" hidden>&lt;!doctype html>
+&lt;html lang="pt-BR" data-tema="noite">
+&lt;head>
+&lt;meta charset="utf-8">
+&lt;meta name="tvz-versao" content="3.0">
+&lt;meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+&lt;title>Estúdio de voz · Tamaki&lt;/title>
+&lt;link rel="preconnect" href="https://fonts.googleapis.com">
+&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+&lt;link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&amp;family=Atkinson+Hyperlegible:wght@400;700&amp;family=Lexend:wght@400;600&amp;display=swap" rel="stylesheet">
+&lt;style>
+:root{--fs:1;--raio:14px;--fonte-corpo:"Atkinson Hyperlegible",system-ui,sans-serif;--fonte-titulo:"Fredoka","Atkinson Hyperlegible",system-ui,sans-serif;color-scheme:dark}
+[data-tema="noite"]{--fundo:#120f24;--sup:#1b1736;--sup2:#231e45;--borda:#2e2a55;--texto:#efe9f7;--suave:#a49cc9;--cor:#ff9f45;--sobre:#24130a;--cor2:#5fd9cf;--ok:#5fd9cf;--perigo:#ff6b6b;--campo:#0b0918}
+[data-tema="tamaki"]{--fundo:#000;--sup:#1c1a14;--sup2:#2a261b;--borda:#4a432c;--texto:#fff6d8;--suave:#c9bd94;--cor:#ffd21f;--sobre:#1a1500;--cor2:#ff9a2e;--ok:#8fe36b;--perigo:#ff6b5e;--campo:#12100a}
+[data-tema="elfa"]{--fundo:#0c1a2b;--sup:#13283f;--sup2:#1b3553;--borda:#2f4f73;--texto:#e8f3fc;--suave:#9fbbd4;--cor:#ff9d3c;--sobre:#2a1300;--cor2:#5cc8f5;--ok:#7be0a6;--perigo:#ff7a6e;--campo:#08131f}
+[data-tema="papel"]{--fundo:#f5f1e6;--sup:#fff;--sup2:#ece6d6;--borda:#cfc6b0;--texto:#1d1b17;--suave:#5e584c;--cor:#2457c5;--sobre:#fff;--cor2:#b8540f;--ok:#2f7d32;--perigo:#b3261e;--campo:#fffdf7;color-scheme:light}
+[data-tema="contraste"]{--fundo:#000;--sup:#000;--sup2:#000;--borda:#fff;--texto:#fff;--suave:#fff;--cor:#ff0;--sobre:#000;--cor2:#0ff;--ok:#0f6;--perigo:#ff5050;--campo:#000}
+[data-dislexia="1"]{--fonte-corpo:"Lexend",system-ui,sans-serif;--fonte-titulo:"Lexend",system-ui,sans-serif}
+[data-dislexia="1"] body{letter-spacing:.05em;word-spacing:.16em;line-height:1.85}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--fundo);color:var(--texto);font-family:var(--fonte-corpo);font-size:calc(16px * var(--fs));line-height:1.5;display:flex;flex-direction:column}
+button,input,textarea,select{font:inherit;color:inherit;letter-spacing:inherit;word-spacing:inherit}
+:focus-visible{outline:3px solid var(--cor2);outline-offset:2px}
+header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--borda)}
+header h1{font-family:var(--fonte-titulo);font-weight:600;font-size:1.2em;margin:0;flex:1;line-height:1.1}
+.selo{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--sup2);border:1px solid var(--borda);font-size:.8em;white-space:nowrap}
+.selo i{width:9px;height:9px;border-radius:50%;background:var(--suave)}
+.selo.ok i{background:var(--ok)} .selo.vai i{background:var(--cor2);animation:pisca 1.2s infinite} .selo.mal i{background:var(--perigo)}
+@keyframes pisca{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.selo.vai i{animation:none}}
+.icone{background:var(--sup2);border:1px solid var(--borda);border-radius:12px;width:44px;height:44px;font-size:1.15em;cursor:pointer}
+main{flex:1;overflow-y:auto;padding:14px 14px 28px}
+section.aba{display:none;max-width:720px;margin:0 auto}
+section.aba.ativa{display:block}
+h2{font-family:var(--fonte-titulo);font-weight:600;font-size:1.4em;margin:0 0 4px;line-height:1.2}
+h3{font-family:var(--fonte-titulo);font-weight:600;font-size:1.05em;margin:0 0 8px}
+p{margin:0 0 10px} .dica{color:var(--suave);font-size:.88em}
+.bloco{background:var(--sup);border:1px solid var(--borda);border-radius:var(--raio);padding:14px;margin:12px 0}
+label.rot{display:block;font-weight:700;margin:12px 0 6px}
+textarea,input[type=text],select{width:100%;background:var(--campo);border:1px solid var(--borda);border-radius:10px;padding:10px;line-height:1.5}
+textarea{min-height:110px;resize:vertical}
+input[type=range]{width:100%;accent-color:var(--cor);height:30px}
+.regua{display:flex;justify-content:space-between;color:var(--suave);font-size:.8em;margin-top:-4px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+.btn{min-height:46px;padding:8px 16px;border-radius:12px;border:1px solid var(--borda);background:var(--sup2);cursor:pointer;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn.pri{background:var(--cor);color:var(--sobre);border-color:var(--cor)}
+.btn.perigo{border-color:var(--perigo);color:var(--perigo);background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.largo{flex:1}
+audio{width:100%;margin-top:8px}
+.barra{height:12px;background:var(--sup2);border:1px solid var(--borda);border-radius:999px;overflow:hidden;margin:10px 0 6px}
+.barra b{display:block;height:100%;background:var(--cor);width:0;transition:width .4s}
+.msg{min-height:1.3em;color:var(--cor2);font-size:.88em;margin-top:8px}
+.msg.erro{color:var(--perigo)}
+.aviso{border-left:5px solid var(--cor2);padding:10px 12px;background:var(--sup2);border-radius:8px;margin:10px 0;font-size:.92em}
+.aviso.ruim{border-color:var(--perigo)}
+details>summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:center}
+
+/* vozes */
+.avatar{width:56px;height:56px;border-radius:50%;flex:none;object-fit:cover;background:var(--sup2);border:2px solid var(--borda);display:grid;place-items:center;font-family:var(--fonte-titulo);font-size:1.4em;color:var(--cor);overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar.g{width:84px;height:84px;font-size:2em}
+.em-uso{display:flex;gap:14px;align-items:center}
+.em-uso .nome{font-family:var(--fonte-titulo);font-size:1.3em;font-weight:600;line-height:1.2}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
+.vcard{background:var(--sup2);border:1px solid var(--borda);border-radius:14px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;text-align:center;min-height:150px}
+.vcard[aria-pressed="true"]{border-color:var(--cor);box-shadow:0 0 0 2px var(--cor) inset}
+.vcard .n{font-weight:700;line-height:1.25;word-break:break-word}
+.etq{font-size:.72em;border:1px solid var(--borda);border-radius:999px;padding:1px 8px;color:var(--suave)}
+.etq.t{color:var(--cor2);border-color:var(--cor2)}
+.etq.ap{color:var(--cor);border-color:var(--cor)}
+
+/* falas */
+.fala{background:var(--sup2);border:1px solid var(--borda);border-radius:12px;padding:10px;margin-top:10px}
+.fala .topo{display:flex;gap:8px;align-items:center}
+.fala .topo input{flex:1;font-weight:700;background:transparent;border-color:transparent;padding:6px}
+.fala .topo input:focus{border-color:var(--borda);background:var(--campo)}
+.fala .texto{color:var(--suave);font-size:.86em;margin:2px 6px 6px}
+.fala canvas{width:100%;height:60px;display:block;background:var(--campo);border-radius:8px}
+.tratar{margin-top:8px;padding-top:8px;border-top:1px dashed var(--borda)}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.f{display:grid;gap:2px;font-size:.84em;color:var(--suave);margin-top:6px}
+.f b{display:flex;justify-content:space-between;font-weight:700}
+.f b i{font-style:normal;color:var(--texto)}
+.check{display:flex;align-items:center;gap:10px;min-height:40px;font-size:.9em}
+.check input{width:22px;height:22px;accent-color:var(--cor)}
+.vazio{color:var(--suave);text-align:center;padding:18px 8px;border:1px dashed var(--borda);border-radius:12px;margin-top:10px}
+.passo{display:flex;gap:12px;align-items:flex-start}
+.passo .num{flex:none;width:32px;height:32px;border-radius:50%;background:var(--cor);color:var(--sobre);font-weight:700;display:grid;place-items:center;font-family:var(--fonte-titulo)}
+.passo>div{flex:1;min-width:0}
+.opcao{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--borda);border-radius:12px;margin-top:8px;cursor:pointer;background:var(--sup2)}
+.opcao input{width:22px;height:22px;accent-color:var(--cor);margin-top:2px}
+.versao{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--borda);border-radius:12px;margin-top:10px;background:var(--sup2)}
+.erro{border:1px solid var(--perigo);border-radius:12px;padding:10px;margin:8px 0;background:var(--sup2)}
+.erro pre{white-space:pre-wrap;word-break:break-word;font-size:.76em;max-height:160px;overflow:auto;margin:6px 0 0}
+
+/* emoções */
+.emo{border:1px solid var(--borda);border-radius:12px;padding:6px 10px;margin-top:8px;background:var(--sup2)}
+.emo .check{font-size:1em;gap:8px;flex-wrap:wrap}
+.emo .emj{font-size:1.4em;line-height:1}
+.emo .lin{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.emo .lin .check{flex:1;min-width:0}
+.emo .btn{min-height:40px;padding:6px 12px}
+.etq.vai{color:var(--cor);border-color:var(--cor)}
+.etq.mal{color:var(--perigo);border-color:var(--perigo)}
+nav{display:flex;border-top:1px solid var(--borda);background:var(--fundo);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;border:0;padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;color:var(--suave);font-size:.76em;min-height:58px}
+nav button span{font-size:1.4em;line-height:1}
+nav button[aria-current="page"]{color:var(--cor);font-weight:700;box-shadow:inset 0 3px 0 var(--cor)}
+
+dialog{border:1px solid var(--borda);border-radius:18px 18px 0 0;background:var(--sup);color:var(--texto);width:100%;max-width:640px;margin:auto auto 0;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:92vh;overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.temas{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.temas button{min-height:58px;border-radius:12px;border:3px solid transparent;cursor:pointer;font-weight:700;text-align:left;padding:8px 10px}
+.temas button[aria-pressed="true"]{border-color:var(--cor2)}
+.t-noite{background:#1b1736;color:#ff9f45} .t-tamaki{background:#000;color:#ffd21f} .t-elfa{background:#13283f;color:#ff9d3c} .t-papel{background:#fff;color:#2457c5} .t-contraste{background:#000;color:#ff0;outline:2px solid #fff}
+.linha{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0}
+.interruptor{width:60px;height:34px;border-radius:999px;border:1px solid var(--borda);background:var(--sup2);position:relative;cursor:pointer;flex:none}
+.interruptor::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:var(--suave);transition:left .2s}
+.interruptor[aria-checked="true"]{background:var(--cor);border-color:var(--cor)}
+.interruptor[aria-checked="true"]::after{left:29px;background:var(--sobre)}
+.foto-linha{display:flex;gap:14px;align-items:center;margin-top:8px}
+#toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--sup2);border:1px solid var(--cor);
+  padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .3s;pointer-events:none;max-width:90vw;text-align:center;z-index:9}
+#toast.on{opacity:1}
+&lt;/style>
+&lt;/head>
+&lt;body>
+&lt;header>
+  &lt;h1>Estúdio de voz&lt;/h1>
+  &lt;span class="selo" id="selo">&lt;i>&lt;/i>&lt;span id="seloTxt">procurando&lt;/span>&lt;/span>
+  &lt;button class="icone" id="abrirAjustes" aria-label="Ajustes de leitura, cores e atualizações">⚙️&lt;/button>
+&lt;/header>
+
+&lt;main>
+  &lt;!-- VOZES -->
+  &lt;section class="aba ativa" id="vozes">
+    &lt;div class="bloco">
+      &lt;div class="em-uso">
+        &lt;div class="avatar g" id="usoFoto">&lt;/div>
+        &lt;div style="flex:1;min-width:0">
+          &lt;div class="dica">Voz em uso&lt;/div>
+          &lt;div class="nome" id="usoNome">—&lt;/div>
+          &lt;div id="usoEtq" class="dica">&lt;/div>
+        &lt;/div>
+      &lt;/div>
+      &lt;div class="btns">
+        &lt;button class="btn" id="usoEditar">✏️ Nome e foto&lt;/button>
+        &lt;button class="btn" id="usoCartao">💳 Baixar cartão&lt;/button>
+        &lt;button class="btn" id="usoOuvir">🎧 Ouvir referência&lt;/button>
+      &lt;/div>
+      &lt;audio id="usoAudio" controls hidden>&lt;/audio>
+      &lt;p class="msg" id="tarefaTxt">&lt;/p>
+    &lt;/div>
+    &lt;h3>Minhas vozes&lt;/h3>
+    &lt;p class="dica">Toque numa voz para usar. As que estão “no aparelho” ficam prontas no Kaggle ao tocar.&lt;/p>
+    &lt;div class="grade" id="grade">&lt;/div>
+    &lt;div class="btns">
+      &lt;button class="btn pri" id="novaAudio">＋ Nova voz com um áudio&lt;/button>
+      &lt;button class="btn" id="irCriar">✨ Criar do nada&lt;/button>
+      &lt;button class="btn" id="abrirCartao">📂 Abrir cartão&lt;/button>
+      &lt;input type="file" id="cartaoArq" accept=".json,.voz,application/json" hidden>
+    &lt;/div>
+  &lt;/section>
+
+  &lt;!-- FALAS -->
+  &lt;section class="aba" id="falas">
+    &lt;div class="bloco">
+      &lt;div class="em-uso" style="gap:10px">&lt;div class="avatar" id="falaFoto">&lt;/div>&lt;div>&lt;div class="dica">Falando com&lt;/div>&lt;b id="falaVoz">—&lt;/b>&lt;/div>&lt;/div>
+      &lt;label class="rot" for="texto">O que ela vai falar &lt;span class="dica">(uma fala por linha)&lt;/span>&lt;/label>
+      &lt;textarea id="texto">Oi, miga! Bicha, nem te conto o que aconteceu comigo hoje.
+Tô até agora sem acreditar, sério mesmo. Gente, que dia!&lt;/textarea>
+      &lt;label class="rot" for="falaEmo">Emoção &lt;span class="dica">(ou escreva no texto: (brava) Que absurdo!)&lt;/span>&lt;/label>
+      &lt;select id="falaEmo">&lt;option value="">Normal&lt;/option>&lt;/select>
+      &lt;details style="margin-top:6px">&lt;summary>Ajustes da voz&lt;/summary>
+        &lt;div class="f">&lt;b>Emoção &lt;i id="vExag">&lt;/i>&lt;/b>&lt;input type="range" id="exag" min="0.25" max="1.5" step="0.05">&lt;/div>
+        &lt;div class="regua">&lt;span>calma&lt;/span>&lt;span>intensa&lt;/span>&lt;/div>
+        &lt;div class="f">&lt;b>Copiar o ritmo da voz original &lt;i id="vCfg">&lt;/i>&lt;/b>&lt;input type="range" id="cfg" min="0" max="1" step="0.05">&lt;/div>
+        &lt;div class="regua">&lt;span>mais solto&lt;/span>&lt;span>mais parecido&lt;/span>&lt;/div>
+        &lt;div class="f">&lt;b>Variação &lt;i id="vTemp">&lt;/i>&lt;/b>&lt;input type="range" id="temp" min="0.4" max="1.2" step="0.05">&lt;/div>
+        &lt;div class="regua">&lt;span>sempre igual&lt;/span>&lt;span>mais solta&lt;/span>&lt;/div>
+        &lt;p class="dica" style="margin-top:8px">No meio costuma soar mais natural.&lt;/p>
+      &lt;/details>
+      &lt;div class="btns">&lt;button class="btn pri largo" id="gerar">▶ Gerar falas&lt;/button>&lt;button class="btn" id="pararGerar">■ Parar&lt;/button>&lt;/div>
+      &lt;p class="msg" id="gerarMsg">&lt;/p>
+    &lt;/div>
+    &lt;div class="btns" id="todasAcoes" hidden>
+      &lt;button class="btn" id="todasBib">📚 Todas para a Biblioteca&lt;/button>
+      &lt;button class="btn" id="juntar">⬇ Juntar num áudio&lt;/button>
+    &lt;/div>
+    &lt;div id="lista">&lt;/div>
+  &lt;/section>
+
+  &lt;!-- CRIAR -->
+  &lt;section class="aba" id="criar">
+    &lt;h2>Criar voz do nada&lt;/h2>
+    &lt;p class="dica">Descreva a voz. Escolha a versão que mais gostar e salve com nome e foto.&lt;/p>
+    &lt;div class="bloco">
+      &lt;label class="rot" for="descricao">Como é a voz&lt;/label>
+      &lt;textarea id="descricao">Young woman in her early twenties. Medium-low pitch, slightly hoarse and raspy voice, warm and relaxed. Fast, expressive, playful and sassy delivery with natural humor, like a chaotic and charismatic VTuber talking to her friends.&lt;/textarea>
+      &lt;p class="dica">Em inglês funciona melhor: idade, tom, rouquidão, jeito de falar.&lt;/p>
+      &lt;label class="rot" for="fraseDesign">Frase que ela vai falar&lt;/label>
+      &lt;textarea id="fraseDesign">Oi, miga! Nem te conto o que aconteceu comigo hoje. Eu tava voltando da padaria, toda distraída, quando o meu celular tocou. Gente, era a minha tia perguntando se eu ia no churrasco de domingo. Tô até agora rindo, sério mesmo.&lt;/textarea>
+      &lt;p class="dica">Uns 15 segundos de fala. Voz curta deixa a fala metálica.&lt;/p>
+      &lt;label class="rot" for="qtdDesign">Quantas versões&lt;/label>
+      &lt;select id="qtdDesign">&lt;option>2&lt;/option>&lt;option selected>4&lt;/option>&lt;option>6&lt;/option>&lt;option>8&lt;/option>&lt;/select>
+      &lt;div class="btns">&lt;button class="btn pri largo" id="criarBtn">Criar versões&lt;/button>&lt;/div>
+      &lt;p class="msg" id="designMsg">&lt;/p>
+    &lt;/div>
+    &lt;div id="versoes">&lt;/div>
+  &lt;/section>
+
+  &lt;!-- TREINAR -->
+  &lt;section class="aba" id="treinar">
+    &lt;div class="bloco em-uso">&lt;div class="avatar" id="trFoto">&lt;/div>&lt;div style="flex:1">&lt;div class="dica">Treinando a voz&lt;/div>&lt;b id="trVoz">—&lt;/b>&lt;/div>&lt;/div>
+    &lt;div class="aviso ruim" id="trSemVoz" hidden>Escolha ou crie uma voz sua na aba Vozes para poder treinar.&lt;/div>
+
+    &lt;div class="bloco passo">&lt;span class="num">1&lt;/span>&lt;div>
+      &lt;h3>Frases de treino&lt;/h3>
+      &lt;p class="dica">A voz em uso fala as frases. As emboladas são descartadas.&lt;/p>
+      &lt;div class="aviso ruim" id="dsOutra" hidden>&lt;/div>
+      &lt;label class="rot" for="qtdFrases">Quantas frases&lt;/label>
+      &lt;select id="qtdFrases">&lt;option>100&lt;/option>&lt;option>200&lt;/option>&lt;option selected>300&lt;/option>&lt;option>500&lt;/option>&lt;/select>
+      &lt;div class="barra">&lt;b id="dsBarra">&lt;/b>&lt;/div>
+      &lt;p id="dsTxt" class="dica" style="white-space:pre-line">0 frases&lt;/p>
+      &lt;div class="btns">
+        &lt;button class="btn pri" id="dsIniciar">Gerar frases&lt;/button>
+        &lt;button class="btn" id="dsParar">Pausar&lt;/button>
+        &lt;button class="btn" id="dsOuvir">Ouvir a última&lt;/button>
+      &lt;/div>
+      &lt;audio id="dsAudio" controls hidden>&lt;/audio>
+      &lt;details style="margin-top:10px">&lt;summary>Mais opções&lt;/summary>
+        &lt;label class="rot" for="dsZip">Enviar suas frases (zip com metadata.csv e pasta wavs)&lt;/label>
+        &lt;input type="file" id="dsZip" accept=".zip">
+        &lt;div class="btns">
+          &lt;button class="btn" id="dsEnviar">Enviar zip&lt;/button>
+          &lt;button class="btn" id="dsBaixar">Baixar frases&lt;/button>
+          &lt;button class="btn perigo" id="dsLimpar">Apagar frases&lt;/button>
+        &lt;/div>
+      &lt;/details>
+    &lt;/div>&lt;/div>
+
+    &lt;div class="bloco passo">&lt;span class="num">2&lt;/span>&lt;div>
+      &lt;h3>Treinar e salvar&lt;/h3>
+      &lt;label class="rot" for="epocas">Voltas no treino&lt;/label>
+      &lt;select id="epocas">&lt;option value="3">3 (rápido)&lt;/option>&lt;option value="5" selected>5 (recomendado)&lt;/option>&lt;option value="8">8 (mais firme)&lt;/option>&lt;/select>
+      &lt;label class="opcao">&lt;input type="radio" name="destino" value="atualizar" checked>&lt;span>&lt;b id="optAtualizar">Atualizar esta voz&lt;/b>&lt;br>&lt;span class="dica">O treino novo entra na mesma voz. O cartão dela continua valendo.&lt;/span>&lt;/span>&lt;/label>
+      &lt;label class="opcao">&lt;input type="radio" name="destino" value="nova">&lt;span>&lt;b>Salvar como voz nova&lt;/b>&lt;br>&lt;span class="dica">Fica uma voz separada, com nome e foto. A atual continua igual.&lt;/span>&lt;/span>&lt;/label>
+      &lt;div id="novaCampos" hidden>
+        &lt;label class="rot" for="trNome">Nome da voz nova&lt;/label>
+        &lt;input type="text" id="trNome" maxlength="60" placeholder="Ex.: Tamaki rouca">
+        &lt;div class="foto-linha">&lt;div class="avatar" id="trNovaFoto">？&lt;/div>
+          &lt;div class="btns" style="margin:0">&lt;button class="btn" id="trEscolherFoto">🖼 Foto&lt;/button>&lt;button class="btn" id="trTirarFoto" hidden>Tirar&lt;/button>&lt;/div>
+          &lt;input type="file" id="trFotoArq" accept="image/*" hidden>&lt;/div>
+      &lt;/div>
+      &lt;div class="barra">&lt;b id="trBarra">&lt;/b>&lt;/div>
+      &lt;p id="trTxt" class="dica">Ainda não treinou.&lt;/p>
+      &lt;div class="btns">
+        &lt;button class="btn pri" id="trIniciar">Treinar&lt;/button>
+        &lt;button class="btn" id="trParar">Parar&lt;/button>
+        &lt;button class="btn" id="trCartao" hidden>💳 Baixar cartão&lt;/button>
+      &lt;/div>
+    &lt;/div>&lt;/div>
+  &lt;/section>
+
+  &lt;!-- EMOÇÕES -->
+  &lt;section class="aba" id="emocoes">
+    &lt;div class="bloco em-uso">&lt;div class="avatar" id="emFoto">&lt;/div>&lt;div style="flex:1">&lt;div class="dica">Emoções da voz&lt;/div>&lt;b id="emVoz">—&lt;/b>&lt;/div>&lt;/div>
+    &lt;div class="aviso ruim" id="emAntigo" hidden>O Kaggle está com o código antigo, sem emoções. Troque a célula pelo &lt;b>tamaki_estudio_voz_kaggle.py&lt;/b> versão 3 e rode de novo (Save &amp;amp; Run All).&lt;/div>
+    &lt;div class="aviso ruim" id="emSemVoz" hidden>Escolha ou crie uma voz sua na aba Vozes para treinar emoções.&lt;/div>
+    &lt;div class="bloco passo">&lt;span class="num">1&lt;/span>&lt;div>
+      &lt;h3>Escolha as emoções&lt;/h3>
+      &lt;p class="dica">Marque quantas quiser. O Kaggle faz uma depois da outra, e cada uma entra na voz (e no cartão) assim que fica pronta.&lt;/p>
+      &lt;div id="emLista">&lt;/div>
+      &lt;details style="margin-top:10px">&lt;summary>＋ Criar uma emoção sua&lt;/summary>
+        &lt;div style="display:grid;grid-template-columns:1fr 80px;gap:8px">
+          &lt;div>&lt;label class="rot" for="emNome">Nome&lt;/label>&lt;input type="text" id="emNome" maxlength="24" placeholder="Ex.: Dengosa">&lt;/div>
+          &lt;div>&lt;label class="rot" for="emEmoji">Ícone&lt;/label>&lt;input type="text" id="emEmoji" maxlength="4" placeholder="🥺">&lt;/div>
+        &lt;/div>
+        &lt;label class="rot" for="emFrase">Uma frase cheia dessa emoção &lt;span class="dica">(uns 10 segundos de fala)&lt;/span>&lt;/label>
+        &lt;textarea id="emFrase" style="min-height:80px" placeholder="Ex.: Ai, deixa eu ir, vai… por favorzinho, eu prometo que volto cedo, tá bom?">&lt;/textarea>
+        &lt;div class="btns">&lt;button class="btn" id="emAdd">Pôr na lista&lt;/button>&lt;/div>
+      &lt;/details>
+      &lt;label class="rot" for="emVersoes">Versões de cada emoção &lt;span class="dica">(ele escolhe a melhor; as outras ficam guardadas)&lt;/span>&lt;/label>
+      &lt;select id="emVersoes">&lt;option value="2">2 (mais rápido)&lt;/option>&lt;option value="3" selected>3 (recomendado)&lt;/option>&lt;option value="4">4 (mais opções)&lt;/option>&lt;/select>
+      &lt;div class="btns">&lt;button class="btn pri largo" id="emTreinar">🎭 Treinar as marcadas&lt;/button>&lt;button class="btn" id="emParar">Parar&lt;/button>&lt;/div>
+      &lt;div class="barra">&lt;b id="emBarra">&lt;/b>&lt;/div>
+      &lt;p class="msg" id="emMsg">&lt;/p>
+    &lt;/div>&lt;/div>
+    &lt;div class="bloco passo">&lt;span class="num">2&lt;/span>&lt;div>
+      &lt;h3>Emoções prontas nesta voz&lt;/h3>
+      &lt;div id="emProntas">&lt;p class="dica">Nenhuma ainda.&lt;/p>&lt;/div>
+    &lt;/div>&lt;/div>
+    &lt;div class="bloco">&lt;h3>Como usar&lt;/h3>
+      &lt;p>Na aba Falas, escreva a emoção entre parênteses: &lt;code>(brava) Que absurdo!&lt;/code>&lt;/p>
+      &lt;p>Ela vale até aparecer outra. &lt;code>(normal)&lt;/code> volta ao jeito de sempre.&lt;/p>
+      &lt;p class="dica">Também entende &lt;code>(raiva)&lt;/code>, &lt;code>(medo)&lt;/code>, &lt;code>(risos)&lt;/code>, &lt;code>(sussurro)&lt;/code>… Emoção que ainda não foi treinada sai com a voz normal.&lt;/p>
+    &lt;/div>
+    &lt;input type="file" id="emArq" accept="audio/*" hidden>
+  &lt;/section>
+
+  &lt;!-- KAGGLE -->
+  &lt;section class="aba" id="kaggle">
+    &lt;h2>Kaggle&lt;/h2>
+    &lt;div class="bloco">
+      &lt;label class="rot" for="codigo">Código de ligação&lt;/label>
+      &lt;input type="text" id="codigo" autocomplete="off" spellcheck="false" placeholder="tamaki-…">
+      &lt;div class="btns">&lt;button class="btn pri" id="procurar">Procurar agora&lt;/button>&lt;/div>
+      &lt;p class="msg" id="ligarMsg">&lt;/p>
+    &lt;/div>
+    &lt;div class="bloco">&lt;h3>Como está&lt;/h3>&lt;p id="motorTxt">Esperando a ligação.&lt;/p>&lt;p class="dica" id="tempoTxt">&lt;/p>&lt;/div>
+    &lt;h3>Erros&lt;/h3>
+    &lt;p class="dica">Se aparecer algum, toque em Copiar e mande no chat.&lt;/p>
+    &lt;div id="erros">&lt;p class="dica">Nenhum erro.&lt;/p>&lt;/div>
+    &lt;div class="btns">&lt;button class="btn" id="limparErros">Limpar erros&lt;/button>&lt;/div>
+  &lt;/section>
+&lt;/main>
+
+&lt;nav aria-label="Seções">
+  &lt;button data-aba="vozes" aria-current="page">&lt;span>🎙️&lt;/span>Vozes&lt;/button>
+  &lt;button data-aba="falas">&lt;span>💬&lt;/span>Falas&lt;/button>
+  &lt;button data-aba="criar">&lt;span>✨&lt;/span>Criar&lt;/button>
+  &lt;button data-aba="treinar">&lt;span>🏋️&lt;/span>Treinar&lt;/button>
+  &lt;button data-aba="emocoes">&lt;span>🎭&lt;/span>Emoções&lt;/button>
+  &lt;button data-aba="kaggle">&lt;span>🔌&lt;/span>Kaggle&lt;/button>
+&lt;/nav>
+
+&lt;!-- folha da voz: nova, salvar versão criada ou editar -->
+&lt;dialog id="folha" aria-labelledby="folhaTitulo">
+  &lt;h2 id="folhaTitulo">Voz&lt;/h2>
+  &lt;div id="folhaAudio">
+    &lt;label class="rot" for="fArq">Áudio da voz (10 a 15 segundos, sem música)&lt;/label>
+    &lt;input type="file" id="fArq" accept="audio/*">
+    &lt;label class="rot" for="fTexto">O que é falado no áudio (opcional)&lt;/label>
+    &lt;textarea id="fTexto" style="min-height:60px">&lt;/textarea>
+  &lt;/div>
+  &lt;label class="rot" for="fNome">Nome&lt;/label>
+  &lt;input type="text" id="fNome" maxlength="60" placeholder="Ex.: Tamaki">
+  &lt;label class="rot">Foto de perfil&lt;/label>
+  &lt;div class="foto-linha">&lt;div class="avatar g" id="fFoto">？&lt;/div>
+    &lt;div class="btns" style="margin:0">&lt;button class="btn" id="fEscolher">🖼 Escolher&lt;/button>&lt;button class="btn" id="fTirar">Tirar&lt;/button>&lt;/div>
+    &lt;input type="file" id="fFotoArq" accept="image/*" hidden>&lt;/div>
+  &lt;p class="msg" id="folhaMsg">&lt;/p>
+  &lt;div class="btns">
+    &lt;button class="btn pri largo" id="fSalvar">Salvar&lt;/button>
+    &lt;button class="btn" id="fCancelar">Cancelar&lt;/button>
+  &lt;/div>
+  &lt;div class="btns" id="fApagarLinha">&lt;button class="btn perigo largo" id="fApagar">🗑 Apagar esta voz&lt;/button>&lt;/div>
+&lt;/dialog>
+
+&lt;dialog id="ajustes" aria-labelledby="ajTitulo">
+  &lt;h2 id="ajTitulo">Leitura e cores&lt;/h2>
+  &lt;div class="temas" role="group" aria-label="Esquema de cores">
+    &lt;button class="t-noite" data-tema="noite">Noite&lt;br>&lt;small>da Central&lt;/small>&lt;/button>
+    &lt;button class="t-tamaki" data-tema="tamaki">Tamaki&lt;br>&lt;small>amarelo e preto&lt;/small>&lt;/button>
+    &lt;button class="t-elfa" data-tema="elfa">Elfa&lt;br>&lt;small>azul e laranja&lt;/small>&lt;/button>
+    &lt;button class="t-papel" data-tema="papel">Papel&lt;br>&lt;small>claro&lt;/small>&lt;/button>
+    &lt;button class="t-contraste" data-tema="contraste">Alto contraste&lt;/button>
+  &lt;/div>
+  &lt;div class="linha">&lt;div>&lt;b>Modo dislexia&lt;/b>&lt;br>&lt;span class="dica">Letra Lexend e mais espaço&lt;/span>&lt;/div>
+    &lt;button class="interruptor" id="dislexia" role="switch" aria-checked="false" aria-label="Modo dislexia">&lt;/button>&lt;/div>
+  &lt;div class="linha">&lt;b>Tamanho da letra&lt;/b>&lt;div class="btns" style="margin:0">&lt;button class="btn" id="menor" aria-label="Diminuir letra">A−&lt;/button>&lt;button class="btn" id="maior" aria-label="Aumentar letra">A+&lt;/button>&lt;/div>&lt;/div>
+  &lt;h3 style="margin-top:16px">Atualizar o painel&lt;/h3>
+  &lt;div class="btns">&lt;button class="btn" id="abrirAtualizar">Abrir atualizações&lt;/button>&lt;/div>
+  &lt;div class="btns">&lt;button class="btn pri largo" id="fecharAjustes">Pronto&lt;/button>&lt;/div>
+&lt;/dialog>
+&lt;div id="toast" role="status">&lt;/div>
+
+&lt;script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&amp;&lt;>"']/g, c => ({"&amp;": "&amp;amp;", "&lt;": "&amp;lt;", ">": "&amp;gt;", '"': "&amp;quot;", "'": "&amp;#39;"}[c]));
+const ler = (k, f) => { try { return localStorage.getItem("tvz_" + k) ?? f; } catch (e) { return f; } };
+const guardar = (k, v) => { try { localStorage.setItem("tvz_" + k, v); } catch (e) {} };
+let tTo; const toast = t => { const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(tTo); tTo = setTimeout(() => e.classList.remove("on"), 2800); };
+const msg = (el, t, ruim) => { el.textContent = t; el.classList.toggle("erro", !!ruim); };
+const slug = s => (s || "voz").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "voz";
+function baixar(blob, nome) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+function avatar(el, v) { el.innerHTML = v &amp;&amp; v.foto ? `&lt;img alt="" src="${esc(v.foto)}">` : esc(((v &amp;&amp; v.nome) || "?").trim().charAt(0).toUpperCase() || "?"); }
+
+/* ---------- leitura e cores ---------- */
+function aparencia() {
+  const h = document.documentElement;
+  h.dataset.tema = ler("tema2", "noite"); h.dataset.dislexia = ler("dislexia", "0"); h.style.setProperty("--fs", ler("fs", "1"));
+  document.querySelectorAll(".temas button").forEach(b => b.setAttribute("aria-pressed", b.dataset.tema === h.dataset.tema));
+  $("#dislexia").setAttribute("aria-checked", h.dataset.dislexia === "1");
+}
+document.querySelectorAll(".temas button").forEach(b => b.onclick = () => { guardar("tema2", b.dataset.tema); aparencia(); });
+$("#dislexia").onclick = () => { guardar("dislexia", ler("dislexia", "0") === "1" ? "0" : "1"); aparencia(); };
+$("#maior").onclick = () => { guardar("fs", Math.min(1.5, +ler("fs", "1") + .1).toFixed(1)); aparencia(); };
+$("#menor").onclick = () => { guardar("fs", Math.max(.8, +ler("fs", "1") - .1).toFixed(1)); aparencia(); };
+$("#abrirAjustes").onclick = () => $("#ajustes").showModal();
+$("#fecharAjustes").onclick = () => $("#ajustes").close();
+$("#abrirAtualizar").onclick = () => { $("#ajustes").close(); if (window.parent !== window) window.parent.postMessage({tvz: "abrir-atualizar"}, "*"); else alert("Abra o arquivo estudio-voz.html completo para usar as atualizações."); };
+aparencia();
+
+/* ---------- abas ---------- */
+function irPara(aba) {
+  document.querySelectorAll("nav button").forEach(x => { if (x.dataset.aba === aba) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current"); });
+  document.querySelectorAll("section.aba").forEach(s => s.classList.toggle("ativa", s.id === aba));
+  $("main").scrollTop = 0;
+}
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => irPara(b.dataset.aba));
+$("#irCriar").onclick = () => irPara("criar");
+
+/* ---------- guardados no aparelho ---------- */
+function banco(nome, loja) {
+  return {
+    abrir() { return new Promise((ok, no) => { const r = indexedDB.open(nome, 1); r.onupgradeneeded = () => r.result.createObjectStore(loja, {keyPath: "id"}); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); },
+    async op(modo, fn) { const db = await this.abrir(); try { return await new Promise((ok, no) => { const t = db.transaction(loja, modo); let r; const q = fn(t.objectStore(loja)); if (q) q.onsuccess = () => { r = q.result; }; t.oncomplete = () => ok(r); t.onerror = () => no(t.error); }); } finally { db.close(); } },
+    todas() { return this.op("readonly", s => s.getAll()); },
+    por(x) { return this.op("readwrite", s => s.put(x)); },
+    tirar(id) { return this.op("readwrite", s => s.delete(id)); }
+  };
+}
+const CARTOES = banco("tamaki-vozes", "cartoes");   // cartões de voz salvos no aparelho
+const FDB = banco("tamaki-falas", "falas");         // falas geradas
+const TamakiBib = {
+  abrir() { return new Promise((ok, no) => { const r = indexedDB.open("tamaki-biblioteca", 1); r.onupgradeneeded = () => { const db = r.result; if (!db.objectStoreNames.contains("itens")) db.createObjectStore("itens", {keyPath: "id"}); }; r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); },
+  async salvar(blob, o = {}) {
+    if (!window.indexedDB || !blob || !blob.size) throw new Error("vazio");
+    const mime = (blob.type || "").split(";")[0];
+    const it = {id: "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), origem: o.origem || "outro", tipo: mime.startsWith("audio/") ? "audio" : mime.startsWith("image/") ? "imagem" : "video", nome: o.nome || "Gravação", texto: o.texto || "", mime, tamanho: blob.size, criado: Date.now(), blob};
+    if (navigator.storage &amp;&amp; navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    const db = await this.abrir();
+    await new Promise((ok, no) => { const tx = db.transaction("itens", "readwrite"); tx.objectStore("itens").put(it); tx.oncomplete = ok; tx.onerror = () => no(tx.error); tx.onabort = () => no(tx.error); });
+    db.close();
+    try { const c = new BroadcastChannel("tamaki-biblioteca"); c.postMessage({novo: it.id}); c.close(); } catch (_) {}
+    return it.id;
+  }
+};
+const naCentral = /tamakishions2-tech\.github\.io$/i.test(location.hostname) || /tamakishions2-tech\.github\.io$/i.test((() => { try { return parent.location.hostname; } catch (e) { return ""; } })());
+
+/* ---------- ligação com o Kaggle ---------- */
+const S = {codigo: ler("codigo", ""), url: null, st: null, procurando: false, falhas: 0, rev: -1, vozes: [], cartoes: {}};
+$("#codigo").value = S.codigo;
+$("#codigo").onchange = () => { S.codigo = $("#codigo").value.trim(); guardar("codigo", S.codigo); S.url = null; procurar(); };
+$("#procurar").onclick = () => { S.url = null; procurar(); };
+const selo = (tipo, t) => { $("#selo").className = "selo " + tipo; $("#seloTxt").textContent = t; };
+async function responde(u) { const c = new AbortController(), tm = setTimeout(() => c.abort(), 7000); try { return (await fetch(u + "/", {signal: c.signal})).ok; } catch (e) { return false; } finally { clearTimeout(tm); } }
+async function procurar() {
+  if (S.procurando) return;
+  if (!S.codigo) { selo("mal", "falta o código"); msg($("#ligarMsg"), "Escreva o código de ligação aqui em cima. Ele está no começo do código do Kaggle, na linha CODIGO = \"tamaki-…\". Só precisa fazer isso uma vez neste aparelho.", 1); return; }
+  S.procurando = true; selo("vai", "procurando");
+  try {
+    const r = await fetch(`https://ntfy.sh/${encodeURIComponent(S.codigo)}/json?poll=1&amp;since=12h`);
+    const ms = (await r.text()).trim().split("\n").filter(Boolean).map(l => { try { const m = JSON.parse(l); return m.event === "message" ? JSON.parse(m.message) : null; } catch (e) { return null; } }).filter(Boolean);
+    const fechados = new Set(ms.filter(m => m.estado === "encerrado").map(m => m.url));
+    const links = [...new Set(ms.filter(m => m.estado === "ligado" &amp;&amp; m.url &amp;&amp; !fechados.has(m.url)).map(m => m.url).reverse())];
+    let achou = null;
+    for (const u of links) if (await responde(u)) { achou = u; break; }
+    if (achou) { S.url = achou; S.falhas = 0; msg($("#ligarMsg"), "Ligado ao Kaggle."); await atualizar(); }
+    else { selo("mal", "Kaggle desligado"); desligado(); msg($("#ligarMsg"), ms.length ? "Nenhuma sessão do Kaggle no ar. Rode o notebook (Save &amp; Run All)." : "Nenhum aviso do Kaggle ainda. Tento de novo sozinho."); }
+  } catch (e) { selo("mal", "sem internet?"); msg($("#ligarMsg"), "Não consegui procurar: " + e.message, 1); }
+  S.procurando = false;
+}
+async function api(rota, o = {}) {
+  if (!S.url) throw new Error("o Kaggle não está ligado");
+  const cab = {"x-codigo": S.codigo}; let corpo = o.body;
+  if (corpo &amp;&amp; !(corpo instanceof FormData)) { corpo = JSON.stringify(corpo); cab["Content-Type"] = "application/json"; }
+  const r = await fetch(S.url + rota, {method: corpo ? "POST" : (o.method || "GET"), headers: cab, body: corpo});
+  if (!r.ok) { let m = r.statusText; try { m = (await r.json()).erro || m; } catch (e) {} throw new Error(m); }
+  if (o.resp) return r;
+  return o.blob ? r.blob() : r.json();
+}
+async function atualizar() {
+  if (!S.url) return;
+  try {
+    const st = await api("/status"); S.st = st; S.falhas = 0;
+    if (!st.versao || st.versao &lt; 2) { selo("mal", "Kaggle antigo"); msg($("#ligarMsg"), "O Kaggle está com o código antigo. Troque a célula pelo tamaki_estudio_voz_kaggle.py novo.", 1); return; }
+    if (st.vozes_rev !== S.rev) { S.rev = st.vozes_rev; await carregarVozes(); }
+    desenhar();
+  } catch (e) { if (++S.falhas >= 3) { S.url = null; selo("mal", "link caiu"); desligado(); procurar(); } }
+}
+
+/* ---------- vozes ---------- */
+async function carregarVozes() {
+  const r = await api("/vozes"); S.vozes = r.vozes;
+  for (const v of S.vozes) {   // guarda o cartão de cada voz no aparelho (só baixa de novo quando muda)
+    if (v.id === "padrao") continue;
+    const c = S.cartoes[v.id];
+    if (!c || c.atualizado !== v.atualizado || c.nome !== v.nome || (c.foto || "") !== (v.foto || "")) {
+      try { const novo = await api(`/vozes/${encodeURIComponent(v.id)}/cartao`); S.cartoes[v.id] = novo; await CARTOES.por(novo); } catch (e) {}
+    }
+  }
+  desenharVozes();
+}
+function vozesTodas() {
+  const lista = S.url &amp;&amp; S.st ? S.vozes.map(v => ({...v, noKaggle: true, emocoes: v.emocoes || Object.keys((S.cartoes[v.id] || {}).emocoes || {})})) : [];
+  const ids = new Set(lista.map(v => v.id));
+  Object.values(S.cartoes).sort((a, b) => a.criado - b.criado).forEach(c => { if (!ids.has(c.id)) lista.push({id: c.id, nome: c.nome, foto: c.foto, tipo: c.treinada ? "treinada" : "referencia", versao: c.versao, noKaggle: false, emocoes: Object.keys(c.emocoes || {})}); });
+  if (!lista.find(v => v.id === "padrao")) lista.unshift({id: "padrao", nome: "Voz padrão do modelo", tipo: "padrao", noKaggle: !!S.url});
+  return lista;
+}
+const ativa = () => S.st ? S.st.ativa : null;
+const vozAtiva = () => vozesTodas().find(v => v.id === ativa()) || null;
+function etiqueta(v) {
+  if (v.tipo === "padrao") return '&lt;span class="etq">padrão&lt;/span>';
+  return (v.tipo === "treinada" ? `&lt;span class="etq t">treinada v${v.versao || 1}&lt;/span>` : '&lt;span class="etq">referência&lt;/span>') + (v.emocoes &amp;&amp; v.emocoes.length ? ` &lt;span class="etq">🎭 ${v.emocoes.length}&lt;/span>` : "") + (v.noKaggle ? "" : ' &lt;span class="etq ap">no aparelho&lt;/span>');
+}
+function desenharVozes() {
+  const lista = vozesTodas(), a = ativa();
+  $("#grade").innerHTML = lista.map(v => `&lt;button class="vcard" data-id="${esc(v.id)}" aria-pressed="${v.id === a}">&lt;div class="avatar">&lt;/div>&lt;span class="n">${v.id === a ? "✓ " : ""}${esc(v.nome)}&lt;/span>&lt;span>${etiqueta(v)}&lt;/span>&lt;/button>`).join("");
+  $("#grade").querySelectorAll(".vcard").forEach((b, i) => { avatar(b.querySelector(".avatar"), lista[i]); b.onclick = () => tocarVoz(lista[i]); });
+  const v = vozAtiva();
+  [["#usoFoto", "#usoNome"], ["#falaFoto", "#falaVoz"], ["#trFoto", "#trVoz"], ["#emFoto", "#emVoz"]].forEach(([f, n]) => { avatar($(f), v); $(n).textContent = v ? v.nome : (S.url ? "—" : "Kaggle desligado"); });
+  $("#usoEtq").innerHTML = v ? etiqueta(v) + (v.treinos ? ` &lt;span class="dica">· ${v.treinos} ${v.treinos === 1 ? "treino" : "treinos"}&lt;/span>` : "") : "";
+  const sua = v &amp;&amp; v.id !== "padrao";
+  $("#usoEditar").disabled = $("#usoCartao").disabled = $("#usoOuvir").disabled = !sua;
+  $("#optAtualizar").textContent = sua ? `Atualizar “${v.nome}”` : "Atualizar esta voz";
+}
+function desligado() { S.st = null; desenharVozes(); }
+async function tocarVoz(v) {
+  if (!S.url) return toast("Ligue o Kaggle para trocar de voz");
+  if (v.id === ativa()) return;
+  try {
+    if (!v.noKaggle) { await api("/vozes/importar", {body: {cartao: S.cartoes[v.id]}}); toast("Preparando a voz no Kaggle…"); }
+    else { toast("Trocando a voz…"); await api("/vozes/usar", {body: {id: v.id}}); toast(`Usando “${v.nome}”`); }
+    await atualizar();
+  } catch (e) { toast("Não troquei: " + e.message); }
+}
+async function cartaoDe(id) {
+  let c = S.cartoes[id];
+  if (S.url) { try { c = await api(`/vozes/${encodeURIComponent(id)}/cartao`); S.cartoes[id] = c; await CARTOES.por(c); } catch (e) {} }
+  if (!c) throw new Error("cartão não encontrado");
+  return c;
+}
+async function baixarCartao(id) {
+  try { const c = await cartaoDe(id); baixar(new Blob([JSON.stringify(c)], {type: "application/json"}), slug(c.nome) + ".voz.json"); toast("Cartão baixado"); }
+  catch (e) { toast(e.message); }
+}
+$("#usoCartao").onclick = () => baixarCartao(ativa());
+$("#usoOuvir").onclick = async () => { try { const b = await api(`/vozes/${encodeURIComponent(ativa())}/referencia`, {blob: true}); const el = $("#usoAudio"); el.src = URL.createObjectURL(b); el.hidden = false; el.play().catch(() => {}); } catch (e) { toast(e.message); } };
+$("#abrirCartao").onclick = () => $("#cartaoArq").click();
+$("#cartaoArq").onchange = async () => {
+  const f = $("#cartaoArq").files[0]; $("#cartaoArq").value = ""; if (!f) return;
+  try {
+    const c = JSON.parse(await f.text());
+    if (c.tipo !== "tamaki-voz" || !c.id) throw new Error("isso não é um cartão de voz");
+    S.cartoes[c.id] = c; await CARTOES.por(c); desenharVozes();
+    if (S.url) { await api("/vozes/importar", {body: {cartao: c}}); toast(`Preparando “${c.nome}” no Kaggle…`); }
+    else toast(`“${c.nome}” guardada no aparelho. Fica pronta quando o Kaggle ligar.`);
+  } catch (e) { toast("Não abri o cartão: " + e.message); }
+};
+
+/* ---------- folha: nova voz / salvar versão / editar ---------- */
+const F = {modo: null, id: null, i: null, foto: ""};
+async function fotoDe(arq) {
+  const img = await createImageBitmap(arq), s = Math.min(img.width, img.height), c = document.createElement("canvas");
+  c.width = c.height = 256; c.getContext("2d").drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 256, 256);
+  return c.toDataURL("image/jpeg", .82);
+}
+function abrirFolha(modo, o = {}) {
+  Object.assign(F, {modo, id: o.id || null, i: o.i ?? null, foto: o.foto || ""});
+  $("#folhaTitulo").textContent = {audio: "Nova voz com um áudio", design: "Salvar esta versão como voz", editar: "Nome e foto"}[modo];
+  $("#folhaAudio").hidden = modo !== "audio"; $("#fApagarLinha").hidden = modo !== "editar";
+  $("#fNome").value = o.nome || ""; $("#fArq").value = ""; $("#fTexto").value = ""; msg($("#folhaMsg"), "");
+  avatar($("#fFoto"), {foto: F.foto, nome: o.nome || "?"}); $("#fTirar").hidden = !F.foto;
+  $("#folha").showModal();
+}
+$("#fEscolher").onclick = () => $("#fFotoArq").click();
+$("#fFotoArq").onchange = async () => { const a = $("#fFotoArq").files[0]; $("#fFotoArq").value = ""; if (!a) return; try { F.foto = await fotoDe(a); avatar($("#fFoto"), {foto: F.foto}); $("#fTirar").hidden = false; } catch (e) { msg($("#folhaMsg"), "Não consegui abrir a imagem.", 1); } };
+$("#fTirar").onclick = () => { F.foto = ""; avatar($("#fFoto"), {nome: $("#fNome").value || "?"}); $("#fTirar").hidden = true; };
+$("#fCancelar").onclick = () => $("#folha").close();
+$("#novaAudio").onclick = () => abrirFolha("audio");
+$("#usoEditar").onclick = () => { const v = vozAtiva(); if (v &amp;&amp; v.id !== "padrao") abrirFolha("editar", {id: v.id, nome: v.nome, foto: v.foto}); };
+$("#fSalvar").onclick = async () => {
+  const nome = $("#fNome").value.trim();
+  if (!nome) return msg($("#folhaMsg"), "Escreva um nome.", 1);
+  const b = $("#fSalvar"); b.disabled = true; msg($("#folhaMsg"), "Salvando…");
+  try {
+    if (F.modo === "audio") {
+      const arq = $("#fArq").files[0]; if (!arq) throw new Error("Escolha o áudio da voz.");
+      const fd = new FormData(); fd.append("arquivo", arq); fd.append("texto", $("#fTexto").value); fd.append("nome", nome); fd.append("foto", F.foto);
+      await api("/vozes/nova", {body: fd});
+    } else if (F.modo === "design") await api("/vozes/nova_design", {body: {i: F.i, nome, foto: F.foto}});
+    else await api("/vozes/editar", {body: {id: F.id, nome, foto: F.foto}});
+    $("#folha").close(); toast(F.modo === "editar" ? "Salvo" : `“${nome}” salva e em uso`); await atualizar();
+  } catch (e) { msg($("#folhaMsg"), e.message, 1); }
+  b.disabled = false;
+};
+$("#fApagar").onclick = async () => {
+  if (!confirm("Apagar esta voz? O treino dela some do Kaggle, da nuvem e do aparelho.")) return;
+  try { await api("/vozes/apagar", {body: {id: F.id}}); delete S.cartoes[F.id]; await CARTOES.tirar(F.id); $("#folha").close(); toast("Voz apagada"); await atualizar(); }
+  catch (e) { msg($("#folhaMsg"), e.message, 1); }
+};
+
+/* ---------- desenho geral ---------- */
+const minutos = s => s > 3600 ? `${Math.floor(s / 3600)} h ${Math.floor(s % 3600 / 60)} min` : `${Math.floor(s / 60)} min`;
+function desenhar() {
+  const st = S.st, m = st.motor, pronto = m.estado === "pronto";
+  if (pronto) selo("ok", "pronto"); else if (m.estado === "erro") selo("mal", "erro no Kaggle"); else selo("vai", m.estado === "instalando" ? "instalando" : "carregando");
+  $("#motorTxt").textContent = pronto ? `Voz brasileira pronta (pacote ${m.pack || "?"}).` + (m.aviso ? " Aviso: " + m.aviso : "") : (m.msg || "Preparando…");
+  $("#tempoTxt").textContent = `Sessão termina em ${minutos(st.fim_em)} · nuvem: ${st.nuvem} · instalação: ${st.cache || "?"}`;
+  msg($("#tarefaTxt"), st.tarefa || "");
+  desenharVozes();
+  // erros
+  $("#erros").innerHTML = st.erros.length ? "" : '&lt;p class="dica">Nenhum erro.&lt;/p>';
+  st.erros.slice().reverse().forEach(er => {
+    const d = document.createElement("div"); d.className = "erro";
+    d.innerHTML = `&lt;b>&lt;/b>&lt;br>&lt;span>&lt;/span>&lt;pre>&lt;/pre>&lt;div class="btns">&lt;button class="btn">Copiar&lt;/button>&lt;/div>`;
+    d.querySelector("b").textContent = `${er.hora} · ${er.onde}`; d.querySelector("span").textContent = er.msg; d.querySelector("pre").textContent = er.detalhe;
+    d.querySelector("button").onclick = () => navigator.clipboard.writeText(`[${er.hora}] ${er.onde}\n${er.msg}\n${er.detalhe}`).then(() => d.querySelector("button").textContent = "Copiado");
+    $("#erros").appendChild(d);
+  });
+  if (!desenhar.ok) { $("#exag").value = st.conf.exaggeration; $("#cfg").value = st.conf.cfg_weight; $("#temp").value = st.conf.temperature; legendasAj();
+    $("#qtdFrases").value = [100, 200, 300, 500].includes(st.conf.quantidade) ? st.conf.quantidade : 300; $("#epocas").value = [3, 5, 8].includes(st.conf.epocas) ? st.conf.epocas : 5; desenhar.ok = true; }
+  $("#gerar").disabled = !pronto;
+  // criar
+  $("#designMsg").textContent = st.design.msg; $("#criarBtn").disabled = st.design.rodando;
+  if (!st.design.rodando &amp;&amp; st.design.n !== desenharVersoes.n) desenharVersoes(st.design.n);
+  // treinar
+  const sua = st.ativa !== "padrao", ds = st.dataset, tr = st.treino || {};
+  $("#trSemVoz").hidden = sua;
+  const outra = ds.feitas &amp;&amp; ds.voz &amp;&amp; ds.voz !== st.ativa;
+  $("#dsOutra").hidden = !outra; if (outra) $("#dsOutra").textContent = `As ${ds.feitas} frases que existem são da voz “${ds.voz_nome}”. Volte para ela para treinar, ou apague as frases para gerar com a voz atual.`;
+  $("#dsBarra").style.width = Math.min(100, 100 * ds.feitas / Math.max(1, ds.total)) + "%";
+  let t = `${ds.feitas} de ${ds.total} frases · ${ds.msg}` + (ds.descartadas ? ` · ${ds.descartadas} descartadas` : "");
+  if (ds.ultima) t += `\nÚltima: “${ds.ultima.frase}” (entendi ${Math.round(ds.ultima.nota * 100)}%)`;
+  $("#dsTxt").textContent = t;
+  $("#dsIniciar").disabled = ds.rodando || !pronto || !sua || outra || tr.rodando; $("#dsParar").disabled = !ds.rodando; $("#dsOuvir").disabled = ds.amostra === null;
+  $("#trBarra").style.width = tr.passos ? Math.min(100, 100 * tr.passo / tr.passos) + "%" : "0";
+  $("#trTxt").textContent = (tr.msg === "pronto" ? "Pronto: o treino foi salvo e a voz já está em uso." : (tr.msg || "Ainda não treinou.")) + (tr.perda != null ? ` · erro do modelo: ${tr.perda}` : "") + (tr.historico &amp;&amp; tr.historico.length ? ` · por volta: ${tr.historico.join(" → ")}` : "");
+  $("#trIniciar").disabled = !!tr.rodando || !pronto || !sua || ds.feitas &lt; 20 || outra; $("#trParar").disabled = !tr.rodando;
+  $("#trCartao").hidden = !(tr.msg === "pronto" &amp;&amp; sua);
+  desenharEmocoes(st, pronto);
+}
+
+/* ---------- ajustes da voz ---------- */
+function legendasAj() { $("#vExag").textContent = (+$("#exag").value).toFixed(2); $("#vCfg").textContent = (+$("#cfg").value).toFixed(2); $("#vTemp").textContent = (+$("#temp").value).toFixed(2); }
+let tAj;
+["exag", "cfg", "temp"].forEach(id => $("#" + id).oninput = () => { legendasAj(); clearTimeout(tAj); tAj = setTimeout(() => api("/config", {body: {exaggeration: +$("#exag").value, cfg_weight: +$("#cfg").value, temperature: +$("#temp").value}}).catch(() => {}), 500); });
+$("#exag").value = .5; $("#cfg").value = .5; $("#temp").value = .8; legendasAj();
+$("#qtdFrases").onchange = () => api("/config", {body: {quantidade: +$("#qtdFrases").value}}).then(atualizar).catch(() => {});
+$("#epocas").onchange = () => api("/config", {body: {epocas: +$("#epocas").value}}).catch(() => {});
+
+/* ---------- áudio (tratar) ---------- */
+let ctxA; const ctx = () => ctxA || (ctxA = new (window.AudioContext || window.webkitAudioContext)());
+const decodificar = async b => ctx().decodeAudioData(await b.arrayBuffer());
+function mono(ab) { const n = ab.length, x = new Float32Array(n); for (let c = 0; c &lt; ab.numberOfChannels; c++) { const d = ab.getChannelData(c); for (let i = 0; i &lt; n; i++) x[i] += d[i] / ab.numberOfChannels; } return x; }
+function wav(x, sr) {
+  const dv = new DataView(new ArrayBuffer(44 + x.length * 2)), w = (o, s) => [...s].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); dv.setUint32(4, 36 + x.length * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); w(36, "data"); dv.setUint32(40, x.length * 2, true);
+  for (let i = 0, o = 44; i &lt; x.length; i++, o += 2) { const v = Math.max(-1, Math.min(1, x[i])); dv.setInt16(o, v &lt; 0 ? v * 32768 : v * 32767, true); }
+  return new Blob([dv], {type: "audio/wav"});
+}
+function esticar(x, r) {   // muda a velocidade sem mudar o tom; r > 1 deixa mais lento
+  if (Math.abs(r - 1) &lt; .01) return x;
+  const N = 1024, Hs = N / 2, Ha = Hs / r, tol = 256, win = new Float32Array(N);
+  for (let i = 0; i &lt; N; i++) win[i] = .5 - .5 * Math.cos(2 * Math.PI * i / N);
+  const L = Math.ceil(x.length * r) + N, y = new Float32Array(L), nm = new Float32Array(L); let prev = 0;
+  for (let k = 0, out = 0; ; k++, out += Hs) {
+    const an = Math.round(k * Ha); if (an + N + tol >= x.length || out + N >= L) break;
+    let melhor = 0;
+    if (k > 0) { const ref = prev + Hs; let bv = -Infinity; for (let d = -tol; d &lt;= tol; d += 8) { const s0 = an + d; if (s0 &lt; 0 || ref + N / 2 >= x.length) continue; let c = 0; for (let i = 0; i &lt; N / 2; i += 4) c += x[ref + i] * x[s0 + i]; if (c > bv) { bv = c; melhor = d; } } }
+    const st = Math.max(0, an + melhor); prev = st;
+    for (let i = 0; i &lt; N; i++) { y[out + i] += x[st + i] * win[i]; nm[out + i] += win[i]; }
+  }
+  const n = Math.round(x.length * r), z = new Float32Array(n); for (let i = 0; i &lt; n; i++) z[i] = nm[i] > 1e-3 ? y[i] / nm[i] : 0; return z;
+}
+function semSilencios(x, sr) {
+  const J = Math.round(sr * .02), pico = x.reduce((m, v) => Math.max(m, Math.abs(v)), 0) || 1, lim = pico * .02, Q = Math.ceil(x.length / J), mudo = new Uint8Array(Q);
+  for (let q = 0; q &lt; Q; q++) { let s = 0; const a = q * J, b = Math.min(x.length, a + J); for (let i = a; i &lt; b; i++) s += x[i] * x[i]; mudo[q] = Math.sqrt(s / Math.max(1, b - a)) &lt; lim; }
+  const partes = []; let q = 0;
+  while (q &lt; Q) { let f = q; while (f &lt; Q &amp;&amp; mudo[f] === mudo[q]) f++; const a = q * J, b = Math.min(x.length, f * J);
+    if (mudo[q] &amp;&amp; b - a > sr * .45) { const meio = Math.round(sr * .15); partes.push(x.subarray(a, a + meio), x.subarray(b - meio, b)); } else partes.push(x.subarray(a, b)); q = f; }
+  const y = new Float32Array(partes.reduce((s, p) => s + p.length, 0)); let o = 0; for (const p of partes) { y.set(p, o); o += p.length; } return y;
+}
+function tratarAudio(x, sr, T) {
+  let y = x.slice(Math.round(T.ini * sr), Math.max(Math.round(T.ini * sr) + 1, x.length - Math.round(T.fim * sr)));
+  if (T.silencio) y = semSilencios(y, sr);
+  if (Math.abs(T.vel - 1) > .01) y = esticar(y, 1 / T.vel);
+  if (T.normal) { const p = y.reduce((m, v) => Math.max(m, Math.abs(v)), 0); if (p > 0) { const g = .89 / p; for (let i = 0; i &lt; y.length; i++) y[i] *= g; } }
+  const g = Math.pow(10, T.vol / 20); if (g !== 1) for (let i = 0; i &lt; y.length; i++) y[i] *= g;
+  if (T.suave) { const n = Math.min(Math.round(sr * .015), y.length >> 1); for (let i = 0; i &lt; n; i++) { y[i] *= i / n; y[y.length - 1 - i] *= i / n; } }
+  return y;
+}
+const T0 = () => ({ini: 0, fim: 0, vol: 0, vel: 1, silencio: false, normal: true, suave: true});
+const tratado = T => T.ini > 0 || T.fim > 0 || T.vol !== 0 || T.vel !== 1 || T.silencio;
+
+/* ---------- falas ---------- */
+let FALAS = [], parar = false;
+const nomePadrao = t => t.replace(/\s+/g, " ").trim().split(" ").slice(0, 6).join(" ") + (t.split(/\s+/).length > 6 ? "…" : "");
+const nomeEmo = id => { const e = ((S.st &amp;&amp; S.st.emocoes &amp;&amp; S.st.emocoes.lista) || []).find(x => x.id === id); return e ? e.emoji + " " + e.nome : id; };
+async function gerarAudio(texto) {
+  const r = await api("/falar", {resp: true, body: {texto, emocao: $("#falaEmo").value, exaggeration: +$("#exag").value, cfg_weight: +$("#cfg").value, temperature: +$("#temp").value}});
+  const falta = r.headers.get("X-Emocoes-Faltando");
+  if (falta) toast("Ainda não treinada: " + falta.split(",").map(nomeEmo).join(", ") + ". Essa parte saiu com a voz normal.");
+  return r.blob();
+}
+$("#gerar").onclick = async () => {
+  const linhas = $("#texto").value.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  if (!linhas.length) return msg($("#gerarMsg"), "Escreva pelo menos uma fala.", 1);
+  parar = false; $("#gerar").disabled = true; let falhou = false;
+  const v = vozAtiva();
+  for (const [i, t] of linhas.entries()) {
+    if (parar) break;
+    msg($("#gerarMsg"), `Gerando ${i + 1} de ${linhas.length}: ${t.slice(0, 50)}${t.length > 50 ? "…" : ""}`);
+    try { const b = await gerarAudio(t); const f = {id: "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), texto: t, nome: nomePadrao(t), voz: v ? v.nome : "", original: b, atual: b, trat: T0(), criado: Date.now()}; FALAS.push(f); await FDB.por(semExtras(f)); desenharLista(); }
+    catch (e) { msg($("#gerarMsg"), "Erro: " + e.message, 1); falhou = true; break; }
+  }
+  if (!falhou) msg($("#gerarMsg"), parar ? "Parado." : "Pronto. As falas estão logo abaixo.");
+  $("#gerar").disabled = false;
+};
+$("#pararGerar").onclick = () => { parar = true; };
+const semExtras = f => { const {url, buf, ...r} = f; return r; };
+function desenharLista() {
+  $("#todasAcoes").hidden = !FALAS.length;
+  const lista = $("#lista");
+  if (!FALAS.length) { lista.innerHTML = '&lt;div class="vazio">As falas aparecem aqui para ouvir, tratar, baixar e mandar para a Biblioteca.&lt;/div>'; return; }
+  if (lista.querySelector(".vazio")) lista.innerHTML = "";
+  const vistos = new Set();
+  FALAS.forEach((f, i) => { vistos.add(f.id); let el = lista.querySelector(`[data-f="${f.id}"]`); if (!el) el = cartaoFala(f); if (lista.children[i] !== el) lista.insertBefore(el, lista.children[i] || null); });
+  [...lista.children].forEach(c => { if (!vistos.has(c.dataset.f)) c.remove(); });
+}
+function cartaoFala(f) {
+  const el = document.createElement("div"); el.className = "fala"; el.dataset.f = f.id;
+  el.innerHTML = `&lt;div class="topo">&lt;input type="text" class="nome" aria-label="Nome da fala">&lt;span class="etq t" hidden>tratada&lt;/span>&lt;/div>
+    &lt;div class="texto">&lt;/div>&lt;canvas>&lt;/canvas>&lt;audio controls preload="metadata">&lt;/audio>
+    &lt;div class="btns acoes">
+      &lt;button class="btn" data-a="tratar" aria-expanded="false">✂ Tratar&lt;/button>&lt;button class="btn" data-a="baixar">⬇ Baixar&lt;/button>
+      &lt;button class="btn" data-a="bib">📚 Biblioteca&lt;/button>&lt;button class="btn" data-a="refazer">↻ Refazer&lt;/button>&lt;button class="btn perigo" data-a="apagar" aria-label="Apagar fala">🗑&lt;/button>
+    &lt;/div>
+    &lt;div class="tratar" hidden>
+      &lt;div class="duas">
+        &lt;div class="f">&lt;b>Cortar o começo &lt;i class="vIni">&lt;/i>&lt;/b>&lt;input type="range" class="ini" min="0" step="0.01" value="0">&lt;/div>
+        &lt;div class="f">&lt;b>Cortar o fim &lt;i class="vFim">&lt;/i>&lt;/b>&lt;input type="range" class="fim" min="0" step="0.01" value="0">&lt;/div>
+        &lt;div class="f">&lt;b>Volume &lt;i class="vVol">&lt;/i>&lt;/b>&lt;input type="range" class="vol" min="-12" max="12" step="1" value="0">&lt;/div>
+        &lt;div class="f">&lt;b>Velocidade &lt;i class="vVel">&lt;/i>&lt;/b>&lt;input type="range" class="vel" min="0.8" max="1.25" step="0.05" value="1">&lt;/div>
+      &lt;/div>
+      &lt;label class="check">&lt;input type="checkbox" class="silencio"> Encurtar pausas longas&lt;/label>
+      &lt;label class="check">&lt;input type="checkbox" class="normal"> Volume no máximo sem estourar&lt;/label>
+      &lt;label class="check">&lt;input type="checkbox" class="suave"> Suavizar o começo e o fim&lt;/label>
+      &lt;div class="btns trat">&lt;button class="btn pri" data-a="aplicar">Aplicar&lt;/button>&lt;button class="btn" data-a="previa">▶ Prévia&lt;/button>&lt;button class="btn" data-a="desfazer">Desfazer&lt;/button>&lt;/div>
+    &lt;/div>`;
+  const q = s => el.querySelector(s), audio = q("audio"), cv = q("canvas");
+  q(".nome").value = f.nome; q(".texto").textContent = f.texto + (f.voz ? ` · voz: ${f.voz}` : "");
+  q(".nome").onchange = () => { f.nome = q(".nome").value.trim() || nomePadrao(f.texto); q(".nome").value = f.nome; FDB.por(semExtras(f)); };
+  const porAudio = () => { if (f.url) URL.revokeObjectURL(f.url); f.url = URL.createObjectURL(f.atual); audio.src = f.url; q(".etq").hidden = !tratado(f.trat); };
+  porAudio();
+  const T = () => ({ini: +q(".ini").value, fim: +q(".fim").value, vol: +q(".vol").value, vel: +q(".vel").value, silencio: q(".silencio").checked, normal: q(".normal").checked, suave: q(".suave").checked});
+  const preencher = () => { const t = f.trat; q(".ini").value = t.ini; q(".fim").value = t.fim; q(".vol").value = t.vol; q(".vel").value = t.vel; q(".silencio").checked = t.silencio; q(".normal").checked = t.normal; q(".suave").checked = t.suave; legendas(); };
+  const legendas = () => { const t = T(); q(".vIni").textContent = t.ini.toFixed(2) + " s"; q(".vFim").textContent = t.fim.toFixed(2) + " s"; q(".vVol").textContent = (t.vol > 0 ? "+" : "") + t.vol + " dB"; q(".vVel").textContent = t.vel.toFixed(2) + "×"; onda(); };
+  async function base() { if (!f.buf) { const ab = await decodificar(f.original); f.buf = {x: mono(ab), sr: ab.sampleRate}; const d = f.buf.x.length / f.buf.sr; q(".ini").max = q(".fim").max = (d / 2).toFixed(2); } return f.buf; }
+  function onda() {
+    if (!f.buf) return; const {x, sr} = f.buf, dpr = devicePixelRatio || 1, W = cv.width = cv.clientWidth * dpr, H = cv.height = cv.clientHeight * dpr, g = cv.getContext("2d");
+    const cs = getComputedStyle(document.documentElement), t = T(), a = t.ini * sr / x.length * W, b = W - t.fim * sr / x.length * W, passo = x.length / W;
+    g.clearRect(0, 0, W, H);
+    for (let c = 0; c &lt; W; c++) { let mi = 1, ma = -1; const i1 = Math.min(x.length, Math.floor((c + 1) * passo)); for (let i = Math.floor(c * passo); i &lt; i1; i++) { const v = x[i]; if (v &lt; mi) mi = v; if (v > ma) ma = v; }
+      g.fillStyle = c &lt; a || c > b ? cs.getPropertyValue("--borda") : cs.getPropertyValue("--cor"); g.fillRect(c, (1 - ma) * H / 2, 1, Math.max(1, (ma - mi) * H / 2)); }
+  }
+  ["ini", "fim", "vol", "vel"].forEach(c => q("." + c).oninput = legendas);
+  const processar = async () => { const {x, sr} = await base(); return wav(tratarAudio(x, sr, T()), sr); };
+  q(".acoes").onclick = async e => {
+    const b = e.target.closest("button"); if (!b) return; const a = b.dataset.a;
+    if (a === "tratar") { const p = q(".tratar"); p.hidden = !p.hidden; b.setAttribute("aria-expanded", !p.hidden); if (!p.hidden) { await base(); preencher(); } }
+    if (a === "baixar") baixar(f.atual, slug(f.nome) + ".wav");
+    if (a === "bib") await mandarBib(f);
+    if (a === "refazer") { b.disabled = true; b.textContent = "Gerando…"; try { const bl = await gerarAudio(f.texto); f.original = f.atual = bl; f.buf = null; f.trat = T0(); const v = vozAtiva(); f.voz = v ? v.nome : f.voz; q(".texto").textContent = f.texto + (f.voz ? ` · voz: ${f.voz}` : ""); await FDB.por(semExtras(f)); porAudio(); await base(); if (!q(".tratar").hidden) preencher(); else onda(); audio.play().catch(() => {}); } catch (err) { toast("Não refiz: " + err.message); } b.disabled = false; b.textContent = "↻ Refazer"; }
+    if (a === "apagar") { if (!confirm("Apagar esta fala?")) return; if (f.url) URL.revokeObjectURL(f.url); FALAS = FALAS.filter(x => x !== f); await FDB.tirar(f.id); desenharLista(); }
+  };
+  q(".trat").onclick = async e => {
+    const b = e.target.closest("button"); if (!b) return; const a = b.dataset.a;
+    if (a === "previa") { audio.src = URL.createObjectURL(await processar()); audio.play().catch(() => {}); }
+    if (a === "aplicar") { b.disabled = true; f.atual = await processar(); f.trat = T(); await FDB.por(semExtras(f)); porAudio(); b.disabled = false; toast("Tratamento aplicado"); }
+    if (a === "desfazer") { f.atual = f.original; f.trat = T0(); await FDB.por(semExtras(f)); preencher(); porAudio(); toast("Voltou ao áudio original"); }
+  };
+  base().then(onda).catch(() => {});
+  return el;
+}
+async function mandarBib(f) {
+  if (!naCentral) toast("Atenção: a Biblioteca só recebe se esta página estiver no site da Tamaki Central.");
+  try { await TamakiBib.salvar(f.atual, {origem: "voz", nome: f.nome, texto: f.texto}); if (naCentral) toast(`“${f.nome}” foi para a Biblioteca`); }
+  catch (e) { toast("Não salvei na Biblioteca: " + e.message); }
+}
+$("#todasBib").onclick = async () => { if (!confirm(`Mandar ${FALAS.length} falas para a Biblioteca?`)) return; for (const f of FALAS) await TamakiBib.salvar(f.atual, {origem: "voz", nome: f.nome, texto: f.texto}).catch(() => {}); toast(naCentral ? "Todas foram para a Biblioteca" : "Salvas, mas a Biblioteca só enxerga se a página estiver na Tamaki Central"); };
+$("#juntar").onclick = async () => { try { const partes = []; let sr = 24000; for (const f of FALAS) { const ab = await decodificar(f.atual); sr = ab.sampleRate; partes.push(mono(ab), new Float32Array(Math.round(sr * .4))); } const y = new Float32Array(partes.reduce((s, p) => s + p.length, 0)); let o = 0; for (const p of partes) { y.set(p, o); o += p.length; } baixar(wav(y, sr), "falas-tamaki.wav"); } catch (e) { toast("Não consegui juntar: " + e.message); } };
+
+/* ---------- emoções ---------- */
+const lerJ = (k, f) => { try { return JSON.parse(ler(k, "")) || f; } catch (e) { return f; } };
+const EM = {marcadas: new Set(lerJ("emomarcadas", [])), aj: lerJ("emoaj", {}), suas: lerJ("emosuas", []), sig: "", alt: {}, gravarId: null};
+const guardarEM = () => { guardar("emomarcadas", JSON.stringify([...EM.marcadas])); guardar("emoaj", JSON.stringify(EM.aj)); guardar("emosuas", JSON.stringify(EM.suas)); };
+function listaEmocoes() {
+  const e = S.st &amp;&amp; S.st.emocoes; if (!e) return [];
+  const doKaggle = e.lista, ids = new Set(doKaggle.map(x => x.id));
+  EM.suas = EM.suas.filter(x => !(ids.has(x.id) &amp;&amp; doKaggle.find(y => y.id === x.id).pronta));   // a sua já treinada passa a vir do Kaggle
+  return doKaggle.concat(EM.suas.filter(x => !ids.has(x.id)));
+}
+function desenharEmocoes(st, pronto) {
+  const e = st.emocoes, sua = st.ativa !== "padrao";
+  $("#emAntigo").hidden = !!e; $("#emSemVoz").hidden = !e || sua;
+  if (!e) { $("#emTreinar").disabled = $("#emParar").disabled = true; return; }
+  const lista = listaEmocoes(), ocupado = st.dataset.rodando || (st.treino || {}).rodando || st.design.rodando;
+  $("#emTreinar").disabled = !pronto || !sua || ocupado; $("#emParar").disabled = !e.rodando;
+  $("#emBarra").style.width = e.passos ? Math.min(100, 100 * e.passo / e.passos) + "%" : (e.rodando ? "3%" : "0");
+  const ruins = e.feitas.filter(f => !f.ok);
+  msg($("#emMsg"), e.rodando || e.msg ? (e.msg || "Começando…") + (ruins.length ? " · não deu certo: " + ruins.map(f => f.nome).join(", ") : "") : (ocupado ? "Espere as frases de treino, o treino ou o criador de vozes terminarem." : ""), ruins.length &amp;&amp; !e.rodando);
+  const sig = JSON.stringify([st.ativa, e.rodando, e.atual, e.fila, lista.map(x => [x.id, x.pronta, x.atualizado, x.nome, x.alts, x.exag])]);
+  if (sig === EM.sig) return; EM.sig = sig;
+  // 1. lista para marcar
+  $("#emLista").innerHTML = lista.map(x => {
+    const fazendo = e.atual === x.id, fila = e.fila.includes(x.id), exag = EM.aj[x.id] &amp;&amp; !x.pronta ? EM.aj[x.id].exag : x.exag;
+    const est = fazendo ? '&lt;span class="etq vai">fazendo agora…&lt;/span>' : fila ? '&lt;span class="etq vai">na fila&lt;/span>' : x.pronta ? '&lt;span class="etq t">pronta ✓&lt;/span>' : '&lt;span class="etq">ainda não&lt;/span>';
+    return `&lt;div class="emo" data-id="${esc(x.id)}">&lt;div class="lin">&lt;label class="check">&lt;input type="checkbox"${EM.marcadas.has(x.id) ? " checked" : ""}${fazendo || fila ? " disabled" : ""}>&lt;span class="emj" aria-hidden="true">${esc(x.emoji)}&lt;/span>&lt;b>${esc(x.nome)}&lt;/b>${est}&lt;/label>
+      &lt;button class="btn" data-a="gravar" title="Usar uma gravação sua como exemplo">🎤 Gravação&lt;/button>${x.sua &amp;&amp; !x.pronta ? '&lt;button class="btn perigo" data-a="tirar" aria-label="Tirar da lista">✕&lt;/button>' : ""}&lt;/div>
+      &lt;div class="f">&lt;b>Intensidade &lt;i>${(+exag).toFixed(2)}&lt;/i>&lt;/b>&lt;input type="range" min="0.25" max="1.6" step="0.05" value="${exag}" aria-label="Intensidade de ${esc(x.nome)}">&lt;/div>
+      &lt;div class="regua">&lt;span>leve&lt;/span>&lt;span>exagerada&lt;/span>&lt;/div>&lt;/div>`; }).join("");
+  // 2. prontas
+  const prontas = lista.filter(x => x.pronta);
+  $("#emProntas").innerHTML = prontas.length ? prontas.map(x => `&lt;div class="fala" data-id="${esc(x.id)}">&lt;div class="topo">&lt;span class="emj" style="font-size:1.4em" aria-hidden="true">${esc(x.emoji)}&lt;/span>&lt;b style="flex:1">${esc(x.nome)}&lt;/b>
+      &lt;span class="etq">${x.origem === "gravada" ? "gravação sua" : x.nota != null ? "entendi " + Math.round(x.nota * 100) + "%" : "escolhida por você"}&lt;/span>&lt;/div>
+      &lt;audio controls preload="none">&lt;/audio>
+      &lt;div class="btns">&lt;button class="btn" data-a="ouvir">▶ Ouvir&lt;/button>${x.alts ? `&lt;button class="btn" data-a="outra">🔀 Outra versão (${x.alts})&lt;/button>` : ""}&lt;button class="btn" data-a="refazer">↻ Refazer só esta&lt;/button>&lt;button class="btn perigo" data-a="apagar" aria-label="Apagar ${esc(x.nome)}">🗑&lt;/button>&lt;/div>&lt;/div>`).join("")
+    : '&lt;p class="dica">Nenhuma ainda. Marque as emoções acima e toque em Treinar.&lt;/p>';
+  // emoção para todas as falas (aba Falas)
+  const sel = $("#falaEmo"), v = sel.value;
+  sel.innerHTML = '&lt;option value="">Normal&lt;/option>' + prontas.map(x => `&lt;option value="${esc(x.id)}">${esc(x.emoji + " " + x.nome)}&lt;/option>`).join("");
+  sel.value = prontas.some(x => x.id === v) ? v : "";
+}
+$("#emLista").addEventListener("change", e => { const d = e.target.closest(".emo"); if (!d || e.target.type !== "checkbox") return; e.target.checked ? EM.marcadas.add(d.dataset.id) : EM.marcadas.delete(d.dataset.id); guardarEM(); });
+let tEmo;
+$("#emLista").addEventListener("input", e => { const d = e.target.closest(".emo"); if (!d || e.target.type !== "range") return; const id = d.dataset.id, val = +e.target.value; d.querySelector(".f i").textContent = val.toFixed(2);
+  const x = listaEmocoes().find(y => y.id === id);
+  if (x &amp;&amp; x.pronta) { clearTimeout(tEmo); tEmo = setTimeout(() => api("/emocoes/ajustar", {body: {id, exag: val}}).then(() => toast(`${x.nome}: intensidade guardada`)).catch(er => toast(er.message)), 600); }
+  else { EM.aj[id] = {exag: val}; guardarEM(); } });
+$("#emLista").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; const id = b.closest(".emo").dataset.id;
+  if (b.dataset.a === "gravar") { EM.gravarId = id; $("#emArq").click(); }
+  if (b.dataset.a === "tirar") { EM.suas = EM.suas.filter(x => x.id !== id); EM.marcadas.delete(id); guardarEM(); EM.sig = ""; atualizar(); } });
+$("#emArq").onchange = async () => { const f = $("#emArq").files[0]; $("#emArq").value = ""; if (!f || !EM.gravarId) return;
+  const x = listaEmocoes().find(y => y.id === EM.gravarId) || {}, fd = new FormData();
+  fd.append("arquivo", f); fd.append("id", EM.gravarId); fd.append("nome", x.nome || ""); fd.append("emoji", x.emoji || "🎭"); fd.append("texto", x.texto || "");
+  toast("Enviando a gravação…"); try { await api("/emocoes/gravar", {body: fd}); toast(`${x.emoji || ""} ${x.nome || "Emoção"} pronta com a sua gravação`); await atualizar(); } catch (er) { toast("Não usei a gravação: " + er.message); } };
+$("#emAdd").onclick = () => { const nome = $("#emNome").value.trim(), texto = $("#emFrase").value.trim();
+  if (!nome) return toast("Escreva o nome da emoção"); if (texto.length &lt; 20) return toast("Escreva uma frase maior (uns 10 segundos de fala)");
+  const id = "c_" + (slug(nome).replace(/-/g, "_").slice(0, 24) || "emocao");
+  EM.suas = EM.suas.filter(x => x.id !== id).concat([{id, nome, emoji: $("#emEmoji").value.trim() || "🎭", texto, exag: .8, cfg: .4, temp: .8, sua: true, pronta: false}]);
+  EM.marcadas.add(id); guardarEM(); $("#emNome").value = $("#emEmoji").value = $("#emFrase").value = ""; EM.sig = ""; atualizar(); toast(`${nome} está na lista e marcada`); };
+async function treinarEmocoes(ids) {
+  const suasIds = new Set(EM.suas.map(x => x.id));
+  const corpo = {ids: ids.filter(i => !suasIds.has(i)), sua: EM.suas.filter(x => ids.includes(x.id)).map(x => ({...x, ...(EM.aj[x.id] || {})})), ajustes: EM.aj, versoes: +$("#emVersoes").value};
+  await api("/emocoes/treinar", {body: corpo}); toast("Começou. Cada emoção entra na voz assim que fica pronta."); EM.sig = ""; await atualizar();
+}
+$("#emTreinar").onclick = () => acao($("#emTreinar"), async () => { const ids = listaEmocoes().map(x => x.id).filter(i => EM.marcadas.has(i)); if (!ids.length) throw new Error("Marque pelo menos uma emoção"); await treinarEmocoes(ids); });
+$("#emParar").onclick = () => acao($("#emParar"), () => api("/emocoes/parar", {body: {}}));
+$("#emProntas").addEventListener("click", async e => { const b = e.target.closest("button"); if (!b) return; const d = b.closest(".fala"), id = d.dataset.id, x = listaEmocoes().find(y => y.id === id) || {}, el = d.querySelector("audio");
+  const ouvir = async () => { el.src = URL.createObjectURL(await api(`/emocoes/${encodeURIComponent(id)}/audio`, {blob: true})); el.play().catch(() => {}); };
+  try {
+    if (b.dataset.a === "ouvir") await ouvir();
+    if (b.dataset.a === "outra") { b.disabled = true; const k = EM.alt[id] = ((EM.alt[id] ?? -1) + 1) % Math.max(1, x.alts); await api("/emocoes/escolher", {body: {id, alt: k}}); await ouvir(); toast("Trocada. Se preferir a anterior, toque de novo."); b.disabled = false; }
+    if (b.dataset.a === "refazer") { await treinarEmocoes([id]); }
+    if (b.dataset.a === "apagar") { if (!confirm(`Apagar a emoção ${x.nome} desta voz?`)) return; await api("/emocoes/apagar", {body: {id}}); toast("Emoção apagada"); EM.sig = ""; await atualizar(); }
+  } catch (er) { b.disabled = false; toast(er.message); } });
+
+/* ---------- criar ---------- */
+function desenharVersoes(n) {
+  desenharVersoes.n = n; const cx = $("#versoes"); cx.innerHTML = "";
+  for (let i = 0; i &lt; n; i++) {
+    const d = document.createElement("div"); d.className = "versao";
+    d.innerHTML = `&lt;b>Versão ${i + 1}&lt;/b>&lt;audio controls preload="none">&lt;/audio>&lt;div class="btns" style="margin:0">&lt;button class="btn">▶ Ouvir&lt;/button>&lt;button class="btn pri">💾 Salvar como voz&lt;/button>&lt;/div>`;
+    const [ouvir, salvar] = d.querySelectorAll("button"), el = d.querySelector("audio");
+    ouvir.onclick = async () => { try { el.src = URL.createObjectURL(await api(`/design/${i}`, {blob: true})); el.play().catch(() => {}); } catch (e) { msg($("#designMsg"), e.message, 1); } };
+    salvar.onclick = () => abrirFolha("design", {i});
+    cx.appendChild(d);
+  }
+}
+desenharVersoes.n = -1;
+$("#criarBtn").onclick = async () => { try { desenharVersoes(0); await api("/design", {body: {descricao: $("#descricao").value, texto: $("#fraseDesign").value, quantidade: +$("#qtdDesign").value}}); msg($("#designMsg"), "Criando… pode levar alguns minutos."); } catch (e) { msg($("#designMsg"), e.message, 1); } };
+
+/* ---------- treinar ---------- */
+const NV = {foto: ""};
+document.querySelectorAll('input[name="destino"]').forEach(r => r.onchange = () => { $("#novaCampos").hidden = document.querySelector('input[name="destino"]:checked').value !== "nova"; });
+$("#trEscolherFoto").onclick = () => $("#trFotoArq").click();
+$("#trFotoArq").onchange = async () => { const a = $("#trFotoArq").files[0]; $("#trFotoArq").value = ""; if (!a) return; NV.foto = await fotoDe(a); avatar($("#trNovaFoto"), {foto: NV.foto}); $("#trTirarFoto").hidden = false; };
+$("#trTirarFoto").onclick = () => { NV.foto = ""; $("#trNovaFoto").textContent = "？"; $("#trTirarFoto").hidden = true; };
+async function acao(b, fn) { b.disabled = true; try { await fn(); } catch (e) { toast(e.message); } b.disabled = false; atualizar(); }
+$("#trIniciar").onclick = () => acao($("#trIniciar"), async () => {
+  const destino = document.querySelector('input[name="destino"]:checked').value;
+  if (destino === "nova" &amp;&amp; !$("#trNome").value.trim()) throw new Error("Escreva o nome da voz nova");
+  await api("/treino/iniciar", {body: {epocas: +$("#epocas").value, destino, nome: $("#trNome").value.trim(), foto: NV.foto}});
+  toast("Treino começou");
+});
+$("#trParar").onclick = () => acao($("#trParar"), () => api("/treino/parar", {method: "POST", body: {}}));
+$("#trCartao").onclick = () => baixarCartao(ativa());
+$("#dsIniciar").onclick = () => acao($("#dsIniciar"), () => api("/dataset/iniciar", {body: {}}));
+$("#dsParar").onclick = () => acao($("#dsParar"), () => api("/dataset/parar", {body: {}}));
+$("#dsOuvir").onclick = async () => { try { const el = $("#dsAudio"); el.src = URL.createObjectURL(await api("/dataset/amostra", {blob: true})); el.hidden = false; el.play().catch(() => {}); } catch (e) { toast(e.message); } };
+$("#dsLimpar").onclick = () => { if (confirm("Apagar todas as frases de treino?")) acao($("#dsLimpar"), () => api("/dataset/limpar", {body: {}})); };
+$("#dsEnviar").onclick = () => acao($("#dsEnviar"), async () => { const f = $("#dsZip").files[0]; if (!f) throw new Error("Escolha o zip primeiro"); const fd = new FormData(); fd.append("arquivo", f); await api("/dataset/zip", {body: fd}); toast("Frases recebidas"); });
+$("#dsBaixar").onclick = () => acao($("#dsBaixar"), async () => baixar(await api("/dataset/baixar", {blob: true}), "frases_treino.zip"));
+$("#limparErros").onclick = () => acao($("#limparErros"), () => api("/erros/limpar", {body: {}}));
+
+/* ---------- começar ---------- */
+CARTOES.todas().then(cs => { (cs || []).forEach(c => S.cartoes[c.id] = c); desenharVozes(); }).catch(() => desenharVozes());
+FDB.todas().then(t => { FALAS = (t || []).map(f => ({...f, trat: f.trat || T0()})).sort((a, b) => a.criado - b.criado); desenharLista(); }).catch(() => desenharLista());
+procurar();
+setInterval(() => { if (S.url) atualizar(); else procurar(); }, 4000);
+})();
+&lt;/script>
+&lt;/body>
+&lt;/html>
+</textarea>
+<iframe id="app" title="Estúdio de voz"></iframe>
+<button id="atalho">Atualizações</button>
+
+<div id="painel" role="dialog" aria-modal="true" aria-labelledby="ptitulo">
+  <div class="caixa">
+    <h2 id="ptitulo">Atualizar o painel</h2>
+    <p id="versao" class="dica"></p>
+    <label for="pacote">Cole a atualização</label>
+    <textarea id="pacote" spellcheck="false" placeholder="Cole aqui o texto inteiro que o Claude mandar (começa com uma chave)"></textarea>
+    <div class="botoes">
+      <button class="principal" id="aplicar">Atualizar</button>
+      <button id="fechar">Fechar</button>
+    </div>
+    <p id="msg" role="status"></p>
+    <h3>Se algo der errado</h3>
+    <div class="botoes">
+      <button id="desfazer">Voltar à versão anterior</button>
+      <button id="voltarOriginal">Voltar à versão original</button>
+    </div>
+    <h3>Pedir uma atualização nova</h3>
+    <p class="dica">Se for pedir uma mudança grande ao Claude em outra conversa, copie o código atual e mande junto.</p>
+    <div class="botoes"><button id="copiar">Copiar o código atual</button></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const LS = {
+  get: k => { try { return localStorage.getItem("tvz_" + k); } catch (e) { return null; } },
+  set: (k, v) => { try { localStorage.setItem("tvz_" + k, v); return true; } catch (e) { return false; } },
+  del: k => { try { localStorage.removeItem("tvz_" + k); } catch (e) {} }
+};
+const ORIGINAL = $("original").value;
+const maisNova = (a, b) => { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+const atual = () => {
+  const s = LS.get("app");
+  if (s && maisNova(versaoDe(ORIGINAL), versaoDe(s))) { LS.del("app"); LS.del("anterior"); return ORIGINAL; }   // o arquivo novo vale mais que atualizações antigas
+  return s || ORIGINAL;
+};
+const versaoDe = src => (src.match(/<meta name="tvz-versao" content="([^"]+)">/) || [])[1] || "?";
+const msg = t => { $("msg").textContent = t; };
+
+function carregar() {
+  $("app").srcdoc = atual();
+  $("versao").textContent = "Versão atual: " + versaoDe(atual()) + (LS.get("app") ? "" : " (original)");
+}
+function abrir() { $("painel").classList.add("aberto"); msg(""); $("pacote").focus(); }
+function fechar() { $("painel").classList.remove("aberto"); }
+
+function aplicar() {
+  let pac;
+  try { pac = JSON.parse($("pacote").value.trim()); }
+  catch (e) { return msg("Não reconheci o texto. Copie a atualização inteira, da primeira à última chave."); }
+  if (!pac || pac.tvz !== 1) return msg("Isso não é uma atualização do Estúdio de voz.");
+  let src = atual();
+  if (pac.precisa && versaoDe(src) !== pac.precisa)
+    return msg(`Esta atualização é para a versão ${pac.precisa} e a sua é a ${versaoDe(src)}. Aplique as anteriores primeiro.`);
+  if (typeof pac.completo === "string") src = pac.completo;
+  const trocas = pac.trocas || [];
+  for (let n = 0; n < trocas.length; n++) {
+    const partes = src.split(trocas[n].de);
+    if (partes.length !== 2)
+      return msg(`A troca ${n + 1} não encaixou (${partes.length === 1 ? "trecho não encontrado" : "trecho repetido"}). Nada foi mudado.`);
+    src = partes[0] + trocas[n].para + partes[1];
+  }
+  if (pac.versao) src = src.replace(/<meta name="tvz-versao" content="[^"]+">/, `<meta name="tvz-versao" content="${pac.versao}">`);
+  const anterior = LS.get("app") || "";
+  if (!LS.set("app", src)) return msg("Não consegui salvar no aparelho. A memória do navegador pode estar cheia ou bloqueada.");
+  LS.set("anterior", anterior);
+  $("pacote").value = "";
+  carregar();
+  msg("Atualizado para a versão " + versaoDe(src) + (pac.nota ? ": " + pac.nota : "."));
+}
+
+$("aplicar").onclick = aplicar;
+$("fechar").onclick = fechar;
+$("desfazer").onclick = () => {
+  const a = LS.get("anterior");
+  if (a === null) return msg("Não há versão anterior guardada.");
+  if (a) LS.set("app", a); else LS.del("app");
+  LS.del("anterior"); carregar(); msg("Voltei para a versão " + versaoDe(atual()) + ".");
+};
+$("voltarOriginal").onclick = () => {
+  if (!confirm("Voltar para a versão original? As atualizações coladas serão desfeitas.")) return;
+  const a = LS.get("app"); if (a) LS.set("anterior", a);
+  LS.del("app"); carregar(); msg("Voltei para a versão original.");
+};
+$("copiar").onclick = async () => {
+  try { await navigator.clipboard.writeText(atual()); msg("Código copiado."); }
+  catch (e) { $("pacote").value = atual(); $("pacote").select(); document.execCommand("copy"); msg("Código copiado (está na caixa acima)."); }
+};
+$("atalho").onclick = abrir;
+document.addEventListener("keydown", e => { if (e.key === "Escape") fechar(); });
+window.addEventListener("message", e => { if (e.data && e.data.tvz === "abrir-atualizar") abrir(); });
+
+carregar();
+if (location.hash === "#atualizar") abrir();
+setTimeout(() => $("atalho").classList.add("some"), 5000);   // o atalho aparece só no começo, para o caso do painel quebrar
+</script>
+</body>
+</html>
