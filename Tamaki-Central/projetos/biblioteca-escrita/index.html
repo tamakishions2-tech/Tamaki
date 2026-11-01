@@ -87,6 +87,27 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 #ferr .ic.tk{width:auto;border-radius:22px;padding:0 12px;gap:4px;display:inline-flex;align-items:center;font-weight:600}
 #ferr .ic.tk small{font-size:.8rem}
 #ferr .ic.tk.on{background:var(--ac);color:var(--ac-tx)}
+/* humor: cada trecho com a cor da emoção */
+#corpo .humor{border-radius:4px;background:color-mix(in srgb,var(--h) 32%,transparent);box-shadow:inset 0 -2px 0 var(--h)}
+.dlg{border:0;border-radius:22px;background:var(--card);color:var(--tx);width:min(640px,94vw);max-height:90vh;padding:18px;box-shadow:0 20px 60px #0008}
+.dlg::backdrop{background:#0008}
+.dlg [hidden]{display:none!important}
+.dlg h3{margin:0 0 4px;font-size:1.2rem}
+.dlg .mut{color:var(--mu);font-size:.85rem;margin:0 0 10px}
+.dlg textarea,.dlg input[type=text]{width:100%;background:var(--bg);border:1px solid var(--ln);border-radius:12px;padding:10px;color:var(--tx);font:inherit}
+.dlg textarea{min-height:70px;max-height:140px;resize:vertical;line-height:1.5;color:var(--mu)}
+.dlg .lin{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.dlg .bt{border:0;border-radius:22px;padding:10px 16px;background:var(--card2);font-weight:600;min-height:44px}
+.dlg .bt.pri{background:var(--ac);color:var(--ac-tx)}
+.dlg .bt:disabled{opacity:.45}
+.dlg label{font-size:.82rem;color:var(--mu);display:block;margin:10px 0 4px}
+.hms{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.hm{display:flex;align-items:center;gap:8px;min-height:48px;padding:6px 10px;border-radius:14px;border:2px solid transparent;background:color-mix(in srgb,var(--h) 22%,var(--card2));color:var(--tx);text-align:left;font-weight:600}
+.hm.on{border-color:var(--h);background:color-mix(in srgb,var(--h) 45%,var(--card2))}
+.hm .e{font-size:1.4rem}.hm small{display:block;font-weight:400;font-size:.72rem;color:var(--mu)}
+.dlg .barra{height:12px;background:var(--card2);border-radius:999px;overflow:hidden;margin:8px 0}
+.dlg .barra b{display:block;height:100%;width:0;background:var(--ac);transition:width .3s}
+.dlg .opc{display:flex;gap:10px;align-items:center;background:var(--card2);border-radius:14px;padding:10px 12px;margin:6px 0;color:var(--tx);font-size:.95rem}
 #dTk{border:0;border-radius:22px;background:var(--card);color:var(--tx);width:min(640px,94vw);max-height:90vh;padding:18px;box-shadow:0 20px 60px #0008}
 #dTk::backdrop{background:#0008}
 #dTk h3{margin:0 0 4px;font-size:1.2rem}
@@ -155,6 +176,8 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div id="ferr">
     <button class="ic tk" id="fTamaki" aria-label="Colocar nas palavras da Tamaki" title="Colocar nas palavras da Tamaki">🎭<small>Tamaki</small></button>
     <button class="ic tk" id="fOuvir" aria-label="Ouvir com a voz da Tamaki" title="Ouvir o trecho selecionado">🔊<small>Ouvir</small></button>
+    <button class="ic tk" id="fHumor" aria-label="Humor: escolher a emoção do trecho selecionado" title="Humor do trecho selecionado">🎭<small>Humor</small></button>
+    <button class="ic tk" id="fAudio" aria-label="Gerar o áudio com os humores" title="Gerar o áudio com os humores">🎧<small>Áudio</small></button>
     <span class="sepv"></span>
     <select id="fTam" aria-label="Tamanho da letra"><option value="2">Pequeno</option><option value="3" selected>Normal</option><option value="5">Grande</option><option value="6">Título</option></select>
     <button class="ic" data-cmd="bold" aria-label="Negrito"><b>B</b></button>
@@ -174,6 +197,32 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <button class="ic" data-cmd="removeFormat" aria-label="Limpar formatação">⌫</button>
   </div>
 </section>
+<dialog id="dHumor" class="dlg" aria-label="Humor do trecho">
+  <h3>🎭 Humor do trecho</h3>
+  <p class="mut" id="hmVoz">Procurando o Estúdio de voz…</p>
+  <textarea id="hmTrecho" readonly aria-label="Trecho escolhido"></textarea>
+  <label>Qual emoção cabe aqui?</label>
+  <div class="hms" id="hmLista"></div>
+  <audio id="hmAudio" controls hidden style="width:100%;margin-top:10px"></audio>
+  <p class="mut" id="hmMsg" style="margin-top:8px"></p>
+  <div class="lin"><button class="bt" id="hmTestar">▶ Testar</button><button class="bt pri" id="hmOk">✓ Confirmar</button><button class="bt" id="hmTirar" hidden>Tirar o humor</button><button class="bt" id="hmFechar">Cancelar</button></div>
+</dialog>
+<dialog id="dAudio" class="dlg" aria-label="Áudio com os humores">
+  <h3>🎧 Áudio com os humores</h3>
+  <p class="mut" id="auVoz">Procurando o Estúdio de voz…</p>
+  <label class="opc"><input type="radio" name="auQual" value="tudo" checked> Texto todo</label>
+  <label class="opc" id="auSelOp"><input type="radio" name="auQual" value="sel"> Só o trecho selecionado</label>
+  <p class="mut" id="auInfo"></p>
+  <div class="barra"><b id="auBarra"></b></div>
+  <p class="mut" id="auMsg"></p>
+  <div class="lin"><button class="bt pri" id="auGerar">▶ Gerar o áudio</button><button class="bt" id="auParar" disabled>■ Parar</button></div>
+  <div id="auPronto" hidden>
+    <audio id="auAudio" controls style="width:100%"></audio>
+    <label for="auNome">Nome do áudio</label><input type="text" id="auNome" maxlength="80">
+    <div class="lin"><button class="bt pri" id="auBib">📚 Mandar à Biblioteca</button><button class="bt" id="auBaixar">⬇ Baixar (.wav)</button></div>
+  </div>
+  <div class="lin"><button class="bt" id="auFechar">Fechar</button></div>
+</dialog>
 <dialog id="dTk" aria-label="Colocar nas palavras da Tamaki">
   <h3>🎭 Colocar nas palavras da Tamaki</h3>
   <p class="mut" id="tkDe"></p>
@@ -446,6 +495,174 @@ async function ouvir(texto, botao){
 }
 const selecionado = () => { const s = getSelection(); return s.rangeCount && $("#corpo").contains(s.anchorNode) ? s.toString() : ""; };
 $("#fOuvir").onclick = () => ouvir(selecionado() || $("#corpo").innerText, $("#fOuvir"));
+
+/* ---------- humor: cada trecho com uma emoção da voz do Estúdio de voz ---------- */
+const HUMORES = [{id: "feliz", nome: "Feliz", emoji: "😄", cor: "#f2d14b"}, {id: "animada", nome: "Animada", emoji: "🤩", cor: "#ffab5e"}, {id: "brava", nome: "Brava", emoji: "😠", cor: "#ff6b6b"},
+  {id: "triste", nome: "Triste", emoji: "😢", cor: "#6fa8ff"}, {id: "assustada", nome: "Assustada", emoji: "😱", cor: "#b48cff"}, {id: "sarcastica", nome: "Sarcástica", emoji: "😏", cor: "#a8d65a"},
+  {id: "cochicho", nome: "Cochichando", emoji: "🤫", cor: "#9fb3c8"}, {id: "rindo", nome: "Rindo", emoji: "😂", cor: "#ff8fc8"}, {id: "calma", nome: "Calma", emoji: "😌", cor: "#5fd4c8"}];
+const CORES_SUAS = ["#e2a3ff", "#ffc48a", "#7fe3c0", "#8fb8ff", "#ff9fae"];
+const corHumor = id => (HUMORES.find(h => h.id == id) || {}).cor || CORES_SUAS[[...String(id)].reduce((a, c) => a + c.charCodeAt(0), 0) % CORES_SUAS.length];
+// ligação com o Estúdio de voz (o mesmo código e o mesmo Kaggle da aba Estúdio)
+const EST = {url: null, st: null};
+const codigoEst = () => { try { return localStorage.getItem("tvz_codigo") || ""; } catch (e) { return ""; } };
+async function respondeEst(u){ const c = new AbortController(), t = setTimeout(() => c.abort(), 7000); try { return (await fetch(u + "/", {signal: c.signal})).ok; } catch (e) { return false; } finally { clearTimeout(t); } }
+async function ligarEst(){
+  if (EST.url && await respondeEst(EST.url)) return true;
+  let c = codigoEst();
+  if (!c) { c = (prompt("Para usar as vozes do Estúdio, cole o código de ligação (começa com tamaki-). Ele fica guardado neste aparelho.") || "").trim(); if (!c) return false; try { localStorage.setItem("tvz_codigo", c); } catch (e) {} }
+  const r = await fetch(`https://ntfy.sh/${encodeURIComponent(c)}/json?poll=1&since=12h`);
+  const ms = (await r.text()).trim().split("\n").filter(Boolean).map(l => { try { const m = JSON.parse(l); return m.event === "message" ? JSON.parse(m.message) : null; } catch (e) { return null; } }).filter(Boolean);
+  const fechados = new Set(ms.filter(m => m.estado === "encerrado").map(m => m.url));
+  for (const u of [...new Set(ms.filter(m => m.estado === "ligado" && m.url && !fechados.has(m.url)).map(m => m.url).reverse())]) if (await respondeEst(u)) { EST.url = u; return true; }
+  return false;
+}
+async function est(rota, o = {}){
+  const cab = {"x-codigo": codigoEst()}; let corpo = o.body; if (corpo) { corpo = JSON.stringify(corpo); cab["Content-Type"] = "application/json"; }
+  const r = await fetch(EST.url + rota, {method: corpo ? "POST" : "GET", headers: cab, body: corpo});
+  if (!r.ok) { let m = r.statusText; try { m = (await r.json()).erro || m; } catch (e) {} if (r.status == 401) m = "código de ligação errado (confira na aba Kaggle do Estúdio)"; throw new Error(m); }
+  return o.resp ? r : r.json();
+}
+async function estadoEst(el){ // liga no Estúdio e diz qual voz está em uso
+  try {
+    if (!(await ligarEst())) { el.textContent = "Estúdio de voz desligado. Rode o Kaggle (aba 🎤 Estúdio de voz). Dá para marcar os humores agora e testar depois."; return null; }
+    const st = await est("/status"); EST.st = st;
+    if (!st.versao || st.versao < 3) { el.textContent = "O Kaggle do Estúdio está com o código antigo, sem emoções. Troque a célula pelo código novo (versão 3)."; return null; }
+    if (st.motor.estado != "pronto") { el.textContent = "O Estúdio está ligando (" + (st.motor.msg || st.motor.estado) + "). Tente de novo em alguns minutos."; return null; }
+    const v = (st.vozes || []).find(x => x.id == st.ativa), n = st.emocoes.lista.filter(e => e.pronta).length;
+    el.textContent = `Voz: ${v ? v.nome : "?"} · ${n} ${n == 1 ? "emoção treinada" : "emoções treinadas"} no Estúdio`;
+    return st;
+  } catch (e) { el.textContent = "Não consegui falar com o Estúdio: " + e.message; return null; }
+}
+const listaHumores = () => { const l = EST.st && EST.st.emocoes ? EST.st.emocoes.lista : []; const ids = new Set(l.map(e => e.id));
+  return l.map(e => ({...e, cor: corHumor(e.id), conhecida: true})).concat(HUMORES.filter(h => !ids.has(h.id))); };
+// marca o trecho: um <span class="humor"> em cada pedaço de texto (funciona mesmo atravessando parágrafos)
+function marcarHumor(range, h){
+  const raiz = $("#corpo"), hg = uid(), nos = [], w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT, {acceptNode: n => range.intersectsNode(n) && n.nodeValue.trim() ? 1 : 2});
+  while (w.nextNode()) nos.push(w.currentNode);
+  for (let n of nos) {
+    const ini = n === range.startContainer ? range.startOffset : 0, fim = n === range.endContainer ? range.endOffset : n.nodeValue.length;
+    if (fim <= ini) continue;
+    if (fim < n.nodeValue.length) n.splitText(fim);
+    if (ini > 0) n = n.splitText(ini);
+    const velho = n.parentElement.closest(".humor"); // marcar de novo por cima: o pedaço sai do humor antigo
+    const sp = document.createElement("span"); sp.className = "humor"; sp.dataset.humor = h.id; sp.dataset.hg = hg; sp.style.setProperty("--h", h.cor); sp.title = h.emoji + " " + h.nome;
+    if (velho && raiz.contains(velho) && velho.textContent === n.nodeValue) { velho.dataset.humor = h.id; velho.dataset.hg = hg; velho.style.setProperty("--h", h.cor); velho.title = sp.title; continue; }
+    n.parentNode.insertBefore(sp, n); sp.appendChild(n);
+  }
+  marcarSujo();
+}
+function tirarHumor(hg){ const raiz = $("#corpo"); raiz.querySelectorAll(`.humor[data-hg="${hg}"]`).forEach(sp => sp.replaceWith(...sp.childNodes)); raiz.normalize(); marcarSujo(); }
+const HM = {range: null, hg: null, escolhido: null, texto: ""};
+function chipsHumor(){ $("#hmLista").innerHTML = listaHumores().map(h => `<button type="button" class="hm${HM.escolhido == h.id ? " on" : ""}" data-id="${esc(h.id)}" style="--h:${h.cor}" aria-pressed="${HM.escolhido == h.id}"><span class="e" aria-hidden="true">${esc(h.emoji)}</span><span>${esc(h.nome)}<small>${h.pronta ? "treinada ✓" : h.conhecida ? "ainda não treinada" : "—"}</small></span></button>`).join(""); }
+$("#fHumor").onclick = async () => {
+  const s = getSelection(), raiz = $("#corpo"); let r = s.rangeCount && raiz.contains(s.anchorNode) ? s.getRangeAt(0) : null;
+  const dentro = r && (r.startContainer.nodeType == 1 ? r.startContainer : r.startContainer.parentElement).closest(".humor");
+  if (r && r.collapsed && dentro && raiz.contains(dentro)) { // cursor dentro de um trecho já marcado: edita ele
+    Object.assign(HM, {range: null, hg: dentro.dataset.hg, escolhido: dentro.dataset.humor, texto: [...raiz.querySelectorAll(`.humor[data-hg="${dentro.dataset.hg}"]`)].map(x => x.textContent).join(" ")});
+  } else if (r && !r.collapsed && s.toString().trim()) Object.assign(HM, {range: r.cloneRange(), hg: null, escolhido: null, texto: s.toString()});
+  else return toast("Selecione o trecho e toque em 🎭 Humor. Para mudar um trecho colorido, toque dentro dele antes.");
+  $("#hmTrecho").value = HM.texto.trim(); $("#hmTirar").hidden = !HM.hg; $("#hmAudio").hidden = true; $("#hmMsg").textContent = ""; chipsHumor(); $("#dHumor").showModal();
+  await estadoEst($("#hmVoz")); chipsHumor();
+};
+$("#hmLista").onclick = e => { const b = e.target.closest(".hm"); if (!b) return; HM.escolhido = b.dataset.id; chipsHumor(); };
+$("#hmTestar").onclick = async () => {
+  if (!HM.escolhido) return $("#hmMsg").textContent = "Escolha uma emoção primeiro.";
+  const b = $("#hmTestar"); b.disabled = true; $("#hmMsg").textContent = "Gerando o teste…";
+  try {
+    if (!(await estadoEst($("#hmVoz")))) throw new Error("o Estúdio de voz não está pronto");
+    const r = await est("/falar", {resp: true, body: {texto: HM.texto.trim().slice(0, 1500), emocao: HM.escolhido}});
+    const el = $("#hmAudio"); el.src = URL.createObjectURL(await r.blob()); el.hidden = false; el.play().catch(() => {});
+    $("#hmMsg").textContent = r.headers.get("X-Emocoes-Faltando") ? "Essa emoção ainda não foi treinada: saiu com a voz normal. Treine em Estúdio de voz › 🎭 Emoções." : "Gostou? Toque em ✓ Confirmar. Para ouvir outra versão, toque em Testar de novo.";
+  } catch (er) { $("#hmMsg").textContent = "Não consegui testar: " + er.message; }
+  b.disabled = false; b.textContent = "▶ Testar de novo";
+};
+$("#hmOk").onclick = () => {
+  if (!HM.escolhido) return $("#hmMsg").textContent = "Escolha uma emoção primeiro.";
+  const h = listaHumores().find(x => x.id == HM.escolhido);
+  if (HM.hg) $("#corpo").querySelectorAll(`.humor[data-hg="${HM.hg}"]`).forEach(sp => { sp.dataset.humor = h.id; sp.style.setProperty("--h", h.cor); sp.title = h.emoji + " " + h.nome; });
+  else marcarHumor(HM.range, h);
+  if (HM.hg) marcarSujo();
+  getSelection().removeAllRanges(); $("#dHumor").close(); toast(`${h.emoji} ${h.nome} no trecho`);
+};
+$("#hmTirar").onclick = () => { tirarHumor(HM.hg); $("#dHumor").close(); toast("Humor tirado do trecho"); };
+$("#hmFechar").onclick = () => $("#dHumor").close();
+$("#dHumor").addEventListener("close", () => { const el = $("#hmAudio"); el.pause(); $("#hmTestar").textContent = "▶ Testar"; });
+
+/* ---------- gerar o áudio da nota com os humores e mandar para a Biblioteca ---------- */
+const BLOCOS = /^(P|DIV|LI|H1|H2|H3|H4|H5|H6|BR|UL|OL|BLOCKQUOTE|TR)$/;
+function trechosHumor(range){ // [{emo, texto}] na ordem do texto; parágrafo novo vira "\n"
+  const raiz = $("#corpo"), out = [], w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT); let n;
+  const quebra = () => { if (out.length) out[out.length - 1].texto += "\n"; };
+  while ((n = w.nextNode())) {
+    if (n.nodeType == 1) { if (BLOCOS.test(n.tagName)) quebra(); continue; }
+    if (range && !range.intersectsNode(n)) continue;
+    let t = n.nodeValue; const fim = range && n === range.endContainer ? range.endOffset : t.length, ini = range && n === range.startContainer ? range.startOffset : 0; t = t.slice(ini, fim);
+    if (!t) continue;
+    const h = n.parentElement.closest(".humor"), emo = h && raiz.contains(h) ? h.dataset.humor : "", u = out[out.length - 1];
+    if (u && u.emo === emo) u.texto += t; else out.push({emo, texto: t});
+  }
+  return out.filter(x => x.texto.trim());
+}
+function pedidosAudio(trechos){ // pedaços de até ~800 letras, sem misturar emoções; marca onde acaba parágrafo
+  const ped = [];
+  for (const {emo, texto} of trechos) {
+    const pars = texto.split("\n").map(x => x.replace(/\s+/g, " ").trim()).filter(Boolean);
+    pars.forEach((p, i) => { let a = ""; for (const f of p.match(/[^.!?…]+[.!?…]*["”']?\s*/g) || [p]) { if ((a + f).length > 800 && a) { ped.push({emo, texto: a.trim(), fimPar: false}); a = ""; } a += f; }
+      if (a.trim()) ped.push({emo, texto: a.trim(), fimPar: i < pars.length - 1 || /\n\s*$/.test(texto)}); });
+  }
+  return ped;
+}
+function wavDe(partes, sr){ const n = partes.reduce((s, p) => s + p.length, 0), h = new DataView(new ArrayBuffer(44)), w = (o, t) => [...t].forEach((c, i) => h.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); h.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); h.setUint32(16, 16, true); h.setUint16(20, 1, true); h.setUint16(22, 1, true); h.setUint32(24, sr, true); h.setUint32(28, sr * 2, true); h.setUint16(32, 2, true); h.setUint16(34, 16, true); w(36, "data"); h.setUint32(40, n * 2, true);
+  return new Blob([h, ...partes], {type: "audio/wav"}); }
+const AU = {range: null, parar: false, rodando: false, blob: null, salvo: true};
+$("#fAudio").onclick = async () => {
+  const s = getSelection(), raiz = $("#corpo"), r = s.rangeCount && raiz.contains(s.anchorNode) && !s.isCollapsed ? s.getRangeAt(0).cloneRange() : null;
+  AU.range = r; $("#auSelOp").hidden = !r; document.querySelector(`[name=auQual][value=${r ? "sel" : "tudo"}]`).checked = true;
+  infoAudio(); $("#auMsg").textContent = ""; $("#auBarra").style.width = "0"; $("#auNome").value = $("#titulo").value.trim() || "Áudio da nota";
+  $("#dAudio").showModal(); $("#auGerar").disabled = true; $("#auGerar").disabled = !(await estadoEst($("#auVoz")));
+};
+function infoAudio(){ const sel = document.querySelector("[name=auQual]:checked").value == "sel", tr = trechosHumor(sel ? AU.range : null), t = tr.map(x => x.texto).join(" "), p = (t.match(/\S+/g) || []).length, h = tr.filter(x => x.emo).length;
+  $("#auInfo").textContent = `${p} palavras · ${h} ${h == 1 ? "trecho" : "trechos"} com humor` + (p > 1500 ? ` · leva uns ${Math.round(p / 120)} min ou mais` : ""); return p; }
+document.querySelectorAll("[name=auQual]").forEach(r => r.onchange = infoAudio);
+$("#auGerar").onclick = async () => {
+  const sel = document.querySelector("[name=auQual]:checked").value == "sel", ped = pedidosAudio(trechosHumor(sel ? AU.range : null)), palavras = infoAudio();
+  if (!ped.length) return $("#auMsg").textContent = "Não tem texto para falar.";
+  if (palavras > 3000 && !confirm(`São ${palavras} palavras: pode levar mais de ${Math.round(palavras / 120)} minutos e gasta tempo do Kaggle. Gerar mesmo? (Dica: selecione só um trecho.)`)) return;
+  Object.assign(AU, {parar: false, rodando: true, blob: null}); $("#auGerar").disabled = true; $("#auParar").disabled = false; $("#auPronto").hidden = true;
+  let trava = null; try { trava = await navigator.wakeLock.request("screen"); } catch (e) {}
+  const SR = 24000, ctx = new (window.AudioContext || window.webkitAudioContext)({sampleRate: SR}), partes = [], faltou = new Set(), sil = s => new Int16Array(Math.round(SR * s));
+  try {
+    for (const [i, q] of ped.entries()) {
+      if (AU.parar) break;
+      const h = q.emo ? listaHumores().find(x => x.id == q.emo) : null;
+      $("#auMsg").textContent = `Gerando ${i + 1} de ${ped.length}${h ? " · " + h.emoji + " " + h.nome : ""}: ${q.texto.slice(0, 60)}${q.texto.length > 60 ? "…" : ""}`;
+      let r; for (let tent = 0; ; tent++) { try { r = await est("/falar", {resp: true, body: {texto: q.texto, emocao: q.emo || ""}}); break; } catch (er) { if (tent >= 1 || AU.parar) throw er; await ligarEst(); } }
+      (r.headers.get("X-Emocoes-Faltando") || "").split(",").filter(Boolean).forEach(x => faltou.add(x));
+      const ab = await ctx.decodeAudioData(await (await r.blob()).arrayBuffer()), x = ab.getChannelData(0), y = new Int16Array(x.length);
+      for (let k = 0; k < x.length; k++) { const v = Math.max(-1, Math.min(1, x[k])); y[k] = v < 0 ? v * 32768 : v * 32767; }
+      partes.push(y, sil(q.fimPar ? .7 : .35));
+      $("#auBarra").style.width = (100 * (i + 1) / ped.length) + "%";
+    }
+  } catch (er) { $("#auMsg").textContent = "Parou com erro: " + er.message + (partes.length ? ". O que já ficou pronto está aqui embaixo." : ""); }
+  finally { AU.rodando = false; $("#auGerar").disabled = false; $("#auParar").disabled = true; if (trava) trava.release().catch(() => {}); ctx.close().catch(() => {}); }
+  if (!partes.length) return;
+  AU.blob = wavDe(partes.slice(0, -1), SR); AU.salvo = false;
+  $("#auAudio").src = URL.createObjectURL(AU.blob); $("#auPronto").hidden = false;
+  if (!/erro/.test($("#auMsg").textContent)) $("#auMsg").textContent = (AU.parar ? "Parado: guardei o que já tinha ficado pronto." : "Pronto! Ouça e mande para a Biblioteca.")
+    + (faltou.size ? " Ainda sem treino (saiu com a voz normal): " + [...faltou].map(id => (listaHumores().find(x => x.id == id) || {nome: id}).nome).join(", ") + "." : "");
+};
+$("#auParar").onclick = () => { AU.parar = true; $("#auMsg").textContent = "Parando depois deste pedaço…"; };
+$("#auBaixar").onclick = () => { if (!AU.blob) return; baixar(AU.blob, ($("#auNome").value.trim() || "audio").replace(/[\\/:*?"<>|]+/g, "-") + ".wav"); AU.salvo = true; };
+$("#auBib").onclick = () => { if (!AU.blob) return; const nome = $("#auNome").value.trim() || "Áudio da nota", b = AU.blob;
+  const r = indexedDB.open("tamaki-biblioteca", 1); r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains("itens")) r.result.createObjectStore("itens", {keyPath: "id"}); };
+  r.onerror = () => toast("Não consegui abrir a Biblioteca");
+  r.onsuccess = () => { const db = r.result, id = "b" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), t = db.transaction("itens", "readwrite");
+    t.objectStore("itens").put({id, origem: "voz", tipo: "audio", nome, texto: ($("#titulo").value.trim() ? $("#titulo").value.trim() + " · " : "") + "áudio com humores", mime: "audio/wav", tamanho: b.size, criado: Date.now(), blob: b});
+    t.oncomplete = () => { db.close(); AU.salvo = true; try { const c = new BroadcastChannel("tamaki-biblioteca"); c.postMessage({novo: id}); c.close(); } catch (e) {} toast("“" + nome + "” foi para a Biblioteca 📚"); };
+    t.onerror = () => toast("Sem espaço para guardar na Biblioteca"); }; };
+$("#auFechar").onclick = () => { if (AU.rodando && !confirm("O áudio ainda está sendo gerado. Parar e fechar?")) return; AU.parar = true;
+  if (AU.blob && !AU.salvo && !confirm("Você ainda não salvou o áudio. Fechar mesmo assim?")) return; $("#auAudio").pause(); $("#dAudio").close(); };
 
 // personagem: a ficha (aba Tamaki da Central) e os documentos marcados com "Usar"
 async function docsTamaki(){ try { const d = await new Promise((ok, no) => { const r = indexedDB.open("tamaki-docs", 1); r.onupgradeneeded = () => r.result.createObjectStore("docs", {keyPath: "id"}); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
