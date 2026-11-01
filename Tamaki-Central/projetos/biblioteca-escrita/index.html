@@ -101,6 +101,9 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .dlg .bt.pri{background:var(--ac);color:var(--ac-tx)}
 .dlg .bt:disabled{opacity:.45}
 .dlg label{font-size:.82rem;color:var(--mu);display:block;margin:10px 0 4px}
+.vzl h4{margin:12px 0 6px;font-size:.78rem;letter-spacing:.06em;color:var(--mu)}
+.vzl .hm{width:100%;margin-bottom:6px}
+.vzl .hm:disabled{opacity:.5}
 .hms{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 .hm{display:flex;align-items:center;gap:8px;min-height:48px;padding:6px 10px;border-radius:14px;border:2px solid transparent;background:color-mix(in srgb,var(--h) 22%,var(--card2));color:var(--tx);text-align:left;font-weight:600}
 .hm.on{border-color:var(--h);background:color-mix(in srgb,var(--h) 45%,var(--card2))}
@@ -207,9 +210,17 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <p class="mut" id="hmMsg" style="margin-top:8px"></p>
   <div class="lin"><button class="bt" id="hmTestar">▶ Testar</button><button class="bt pri" id="hmOk">✓ Confirmar</button><button class="bt" id="hmTirar" hidden>Tirar o humor</button><button class="bt" id="hmFechar">Cancelar</button></div>
 </dialog>
+<dialog id="dVoz" class="dlg" aria-label="Ouvir com qual voz">
+  <h3>🔊 Ouvir com qual voz?</h3>
+  <p class="mut" id="vzO"></p>
+  <div class="vzl" id="vzLista"></div>
+  <p class="mut" id="vzMsg"></p>
+  <div class="lin"><button class="bt pri" id="vzOuvir">▶ Ouvir</button><button class="bt" id="vzFechar">Cancelar</button></div>
+</dialog>
 <dialog id="dAudio" class="dlg" aria-label="Áudio com os humores">
   <h3>🎧 Áudio com os humores</h3>
   <p class="mut" id="auVoz">Procurando o Estúdio de voz…</p>
+  <label for="auVozSel">Voz</label><select id="auVozSel" style="width:100%;background:var(--bg);border:1px solid var(--ln);border-radius:12px;padding:10px;color:var(--tx);font:inherit;margin-bottom:6px"></select>
   <label class="opc"><input type="radio" name="auQual" value="tudo" checked> Texto todo</label>
   <label class="opc" id="auSelOp"><input type="radio" name="auQual" value="sel"> Só o trecho selecionado</label>
   <p class="mut" id="auInfo"></p>
@@ -494,7 +505,7 @@ async function ouvir(texto, botao){
   } finally { falando = null; marca(false); }
 }
 const selecionado = () => { const s = getSelection(); return s.rangeCount && $("#corpo").contains(s.anchorNode) ? s.toString() : ""; };
-$("#fOuvir").onclick = () => ouvir(selecionado() || $("#corpo").innerText, $("#fOuvir"));
+$("#fOuvir").onclick = () => { if (falando) return falando.parar(); abrirOuvir(); };
 
 /* ---------- humor: cada trecho com uma emoção da voz do Estúdio de voz ---------- */
 const HUMORES = [{id: "feliz", nome: "Feliz", emoji: "😄", cor: "#f2d14b"}, {id: "animada", nome: "Animada", emoji: "🤩", cor: "#ffab5e"}, {id: "brava", nome: "Brava", emoji: "😠", cor: "#ff6b6b"},
@@ -570,6 +581,7 @@ $("#hmTestar").onclick = async () => {
   const b = $("#hmTestar"); b.disabled = true; $("#hmMsg").textContent = "Gerando o teste…";
   try {
     if (!(await estadoEst($("#hmVoz")))) throw new Error("o Estúdio de voz não está pronto");
+    const pref = prefVoz(); if (pref.startsWith("est:")) await usarVozEst(pref.slice(4), t => $("#hmMsg").textContent = t);
     const r = await est("/falar", {resp: true, body: {texto: HM.texto.trim().slice(0, 1500), emocao: HM.escolhido}});
     const el = $("#hmAudio"); el.src = URL.createObjectURL(await r.blob()); el.hidden = false; el.play().catch(() => {});
     $("#hmMsg").textContent = r.headers.get("X-Emocoes-Faltando") ? "Essa emoção ainda não foi treinada: saiu com a voz normal. Treine em Estúdio de voz › 🎭 Emoções." : "Gostou? Toque em ✓ Confirmar. Para ouvir outra versão, toque em Testar de novo.";
@@ -603,11 +615,11 @@ function trechosHumor(range){ // [{emo, texto}] na ordem do texto; parágrafo no
   }
   return out.filter(x => x.texto.trim());
 }
-function pedidosAudio(trechos){ // pedaços de até ~800 letras, sem misturar emoções; marca onde acaba parágrafo
+function pedidosAudio(trechos, max = 800){ // pedaços de até ~800 letras, sem misturar emoções; marca onde acaba parágrafo
   const ped = [];
   for (const {emo, texto} of trechos) {
     const pars = texto.split("\n").map(x => x.replace(/\s+/g, " ").trim()).filter(Boolean);
-    pars.forEach((p, i) => { let a = ""; for (const f of p.match(/[^.!?…]+[.!?…]*["”']?\s*/g) || [p]) { if ((a + f).length > 800 && a) { ped.push({emo, texto: a.trim(), fimPar: false}); a = ""; } a += f; }
+    pars.forEach((p, i) => { let a = ""; for (const f of p.match(/[^.!?…]+[.!?…]*["”']?\s*/g) || [p]) { if ((a + f).length > max && a) { ped.push({emo, texto: a.trim(), fimPar: false}); a = ""; } a += f; }
       if (a.trim()) ped.push({emo, texto: a.trim(), fimPar: i < pars.length - 1 || /\n\s*$/.test(texto)}); });
   }
   return ped;
@@ -620,7 +632,9 @@ $("#fAudio").onclick = async () => {
   const s = getSelection(), raiz = $("#corpo"), r = s.rangeCount && raiz.contains(s.anchorNode) && !s.isCollapsed ? s.getRangeAt(0).cloneRange() : null;
   AU.range = r; $("#auSelOp").hidden = !r; document.querySelector(`[name=auQual][value=${r ? "sel" : "tudo"}]`).checked = true;
   infoAudio(); $("#auMsg").textContent = ""; $("#auBarra").style.width = "0"; $("#auNome").value = $("#titulo").value.trim() || "Áudio da nota";
-  $("#dAudio").showModal(); $("#auGerar").disabled = true; $("#auGerar").disabled = !(await estadoEst($("#auVoz")));
+  $("#dAudio").showModal(); $("#auGerar").disabled = true; const st = await estadoEst($("#auVoz")); $("#auGerar").disabled = !st;
+  const vs = await vozesEstudio(), pref = prefVoz().startsWith("est:") ? prefVoz().slice(4) : (st && st.ativa);
+  $("#auVozSel").innerHTML = vs.length ? vs.map(v => `<option value="${esc(v.id)}"${v.id == pref ? " selected" : ""}>${esc(v.nome)}${v.emocoes ? " · 🎭 " + v.emocoes : ""}${v.noKaggle ? " (só no aparelho)" : ""}</option>`).join("") : '<option value="">Nenhuma voz do Estúdio</option>';
 };
 function infoAudio(){ const sel = document.querySelector("[name=auQual]:checked").value == "sel", tr = trechosHumor(sel ? AU.range : null), t = tr.map(x => x.texto).join(" "), p = (t.match(/\S+/g) || []).length, h = tr.filter(x => x.emo).length;
   $("#auInfo").textContent = `${p} palavras · ${h} ${h == 1 ? "trecho" : "trechos"} com humor` + (p > 1500 ? ` · leva uns ${Math.round(p / 120)} min ou mais` : ""); return p; }
@@ -630,6 +644,8 @@ $("#auGerar").onclick = async () => {
   if (!ped.length) return $("#auMsg").textContent = "Não tem texto para falar.";
   if (palavras > 3000 && !confirm(`São ${palavras} palavras: pode levar mais de ${Math.round(palavras / 120)} minutos e gasta tempo do Kaggle. Gerar mesmo? (Dica: selecione só um trecho.)`)) return;
   Object.assign(AU, {parar: false, rodando: true, blob: null}); $("#auGerar").disabled = true; $("#auParar").disabled = false; $("#auPronto").hidden = true;
+  const vozId = $("#auVozSel").value;
+  if (vozId) { try { guardarPref("est:" + vozId); await usarVozEst(vozId, t => $("#auMsg").textContent = t); } catch (er) { $("#auMsg").textContent = "Não troquei a voz: " + er.message; AU.rodando = false; $("#auGerar").disabled = false; $("#auParar").disabled = true; return; } }
   let trava = null; try { trava = await navigator.wakeLock.request("screen"); } catch (e) {}
   const SR = 24000, ctx = new (window.AudioContext || window.webkitAudioContext)({sampleRate: SR}), partes = [], faltou = new Set(), sil = s => new Int16Array(Math.round(SR * s));
   try {
@@ -663,6 +679,75 @@ $("#auBib").onclick = () => { if (!AU.blob) return; const nome = $("#auNome").va
     t.onerror = () => toast("Sem espaço para guardar na Biblioteca"); }; };
 $("#auFechar").onclick = () => { if (AU.rodando && !confirm("O áudio ainda está sendo gerado. Parar e fechar?")) return; AU.parar = true;
   if (AU.blob && !AU.salvo && !confirm("Você ainda não salvou o áudio. Fechar mesmo assim?")) return; $("#auAudio").pause(); $("#dAudio").close(); };
+
+/* ---------- ouvir: escolher a voz; as do Estúdio leem com as emoções dos trechos coloridos ---------- */
+const prefVoz = () => { try { return localStorage.getItem("escrita-ouvir") || ""; } catch (e) { return ""; } };
+const guardarPref = v => { try { localStorage.setItem("escrita-ouvir", v); } catch (e) {} };
+const espera = ms => new Promise(r => setTimeout(r, ms));
+function cartoesAparelho(){ return new Promise(ok => { try { const r = indexedDB.open("tamaki-vozes", 1); r.onupgradeneeded = () => r.result.createObjectStore("cartoes", {keyPath: "id"});
+  r.onsuccess = () => { try { const q = r.result.transaction("cartoes").objectStore("cartoes").getAll(); q.onsuccess = () => { ok(q.result || []); r.result.close(); }; q.onerror = () => ok([]); } catch (e) { ok([]); } }; r.onerror = () => ok([]); } catch (e) { ok([]); } }); }
+async function vozesEstudio(){ // as vozes do Kaggle (se ligado) e os cartões guardados no aparelho
+  const cs = await cartoesAparelho(), lista = [];
+  for (const v of (EST.st && EST.st.vozes) || []) if (v.id != "padrao") { const c = cs.find(x => x.id == v.id); lista.push({id: v.id, nome: v.nome, emocoes: (v.emocoes || Object.keys((c || {}).emocoes || {})).length, noKaggle: false}); }
+  for (const c of cs) if (!lista.some(v => v.id == c.id)) lista.push({id: c.id, nome: c.nome, emocoes: Object.keys(c.emocoes || {}).length, noKaggle: true});
+  return lista;
+}
+async function usarVozEst(id, aviso){ // põe a voz em uso no Kaggle (e importa o cartão se ela só estiver no aparelho)
+  if (!EST.st || EST.st.ativa == id) return;
+  if (EST.st.vozes.some(v => v.id == id)) { aviso && aviso("Trocando a voz…"); await est("/vozes/usar", {body: {id}}); }
+  else { const c = (await cartoesAparelho()).find(x => x.id == id); if (!c) throw new Error("não achei o cartão dessa voz"); aviso && aviso("Levando a voz “" + c.nome + "” para o Kaggle (1–3 min)…"); await est("/vozes/importar", {body: {cartao: c}}); }
+  for (let i = 0; i < 90; i++) { const st = await est("/status"); EST.st = st; if (st.ativa == id && !st.tarefa) return; await espera(2000); }
+  throw new Error("a voz demorou demais para ficar pronta");
+}
+// voz do aparelho: emoções simuladas com velocidade, tom e volume
+const EMO_APARELHO = {feliz: [1.08, 1.25, 1], animada: [1.18, 1.3, 1], brava: [1.12, .85, 1], triste: [.82, .8, .9], assustada: [1.2, 1.35, 1], sarcastica: [.92, .95, 1], cochicho: [.85, .9, .45], rindo: [1.15, 1.4, 1], calma: [.85, .95, .9]};
+function falaAparelho(t, emo){ return new Promise(ok => { if (!window.speechSynthesis) return ok(); const u = new SpeechSynthesisUtterance(t), V = (lerJ("palco-cfg") || {}).voz || {}, vs = speechSynthesis.getVoices(), [r, pi, vo] = EMO_APARELHO[emo] || [1, 1, 1];
+  u.voice = vs.find(v => v.voiceURI == V.navVoz) || vs.find(v => /^pt(-|_)BR/i.test(v.lang)) || null; u.lang = "pt-BR"; u.rate = r; u.pitch = pi; u.volume = vo; u.onend = u.onerror = ok; speechSynthesis.speak(u); setTimeout(ok, 2000 + t.length * 110); }); }
+const VZ = {range: null, escolha: ""};
+const NOMES_MOTOR = {termux: "Kokoro (Termux)", azure: "Azure", eleven: "ElevenLabs", browser: "voz do aparelho"};
+async function abrirOuvir(){
+  const s = getSelection(), raiz = $("#corpo"); VZ.range = s.rangeCount && raiz.contains(s.anchorNode) && !s.isCollapsed ? s.getRangeAt(0).cloneRange() : null;
+  const tr = trechosHumor(VZ.range), p = (tr.map(x => x.texto).join(" ").match(/\S+/g) || []).length, h = tr.filter(x => x.emo).length;
+  if (!p) return toast("Não tem texto para ouvir");
+  $("#vzO").textContent = (VZ.range ? "Vai ler o trecho selecionado" : "Vai ler a nota toda") + ` · ${p} palavras · ${h} ${h == 1 ? "trecho" : "trechos"} com humor`;
+  VZ.escolha = prefVoz() || "aparelho"; $("#vzMsg").textContent = "Procurando o Estúdio de voz…"; desenharVozes([]); $("#dVoz").showModal();
+  const st = await estadoEst($("#vzMsg")); desenharVozes(await vozesEstudio(), !!st);
+};
+function desenharVozes(vs, ligado){
+  const motor = (lerJ("palco-cfg") || {}).motor || "browser", item = (v, nome, sub, cor, dis) => `<button type="button" class="hm${VZ.escolha == v ? " on" : ""}" data-v="${esc(v)}" style="--h:${cor}"${dis ? " disabled" : ""}><span class="e" aria-hidden="true">${v.startsWith("est:") ? "🎤" : v == "palco" ? "🎙" : "📱"}</span><span>${esc(nome)}<small>${esc(sub)}</small></span></button>`;
+  $("#vzLista").innerHTML = "<h4>ESTÚDIO DE VOZ · COM AS EMOÇÕES</h4>" + (vs.length ? vs.map(v => item("est:" + v.id, v.nome, (v.emocoes ? "🎭 " + v.emocoes + " emoções" : "sem emoções treinadas") + (ligado ? "" : " · ligue o Kaggle"), "#ff9a3c", !ligado)).join("") : '<p class="mut">Nenhuma voz do Estúdio ainda.</p>')
+    + "<h4>OUTRAS VOZES</h4>" + (motor != "browser" ? item("palco", "Voz do Palco", NOMES_MOTOR[motor] + " · sem emoções", "#7db8ff") : "")
+    + item("aparelho", "Voz do aparelho", "grátis e sem internet · emoções simuladas", "#93d67f");
+  if (!$("#vzLista .hm.on:not(:disabled)")) { const b = $("#vzLista .hm:not(:disabled)"); if (b) { VZ.escolha = b.dataset.v; b.classList.add("on"); } }
+}
+$("#vzLista").onclick = e => { const b = e.target.closest(".hm"); if (!b || b.disabled) return; VZ.escolha = b.dataset.v; $("#vzLista").querySelectorAll(".hm").forEach(x => x.classList.toggle("on", x == b)); };
+$("#vzFechar").onclick = () => $("#dVoz").close();
+$("#vzOuvir").onclick = async () => {
+  const v = VZ.escolha; guardarPref(v);
+  if (v == "palco") { $("#dVoz").close(); const t = trechosHumor(VZ.range).map(x => x.texto).join(" "); return ouvir(t, $("#fOuvir")); }
+  const ped = pedidosAudio(trechosHumor(VZ.range), 260);
+  if (v.startsWith("est:")) { const b = $("#vzOuvir"); b.disabled = true;
+    try { await usarVozEst(v.slice(4), t => $("#vzMsg").textContent = t); } catch (er) { $("#vzMsg").textContent = "Não troquei a voz: " + er.message; b.disabled = false; return; }
+    b.disabled = false; }
+  $("#dVoz").close(); lerPedidos(ped, v.startsWith("est:"));
+};
+async function lerPedidos(ped, estudio){ // lê em sequência; com o Estúdio, já pede o próximo pedaço enquanto toca o atual
+  let parou = false, el = null; const botoes = () => document.querySelectorAll("#fOuvir");
+  falando = {parar(){ parou = true; if (el) el.pause(); if (window.speechSynthesis) speechSynthesis.cancel(); }};
+  botoes().forEach(b => { b.classList.add("on"); b.innerHTML = "⏹ <small>Parar</small>"; });
+  const gerar = q => est("/falar", {resp: true, body: {texto: q.texto, emocao: q.emo || ""}}).then(r => r.blob());
+  try {
+    let prox = estudio && ped[0] ? gerar(ped[0]) : null;
+    if (estudio) toast("Preparando a voz… o primeiro pedaço demora uns segundos");
+    for (let i = 0; i < ped.length && !parou; i++) {
+      const q = ped[i];
+      if (estudio) { const blob = await prox; prox = ped[i + 1] ? gerar(ped[i + 1]).catch(er => er) : null; if (parou) break; if (blob instanceof Error) throw blob;
+        el = new Audio(URL.createObjectURL(blob)); await new Promise(ok => { el.onended = el.onerror = ok; el.play().catch(ok); }); URL.revokeObjectURL(el.src); if (q.fimPar) await espera(250); }
+      else await falaAparelho(q.texto, q.emo);
+    }
+  } catch (er) { toast("Parei: " + er.message); }
+  finally { falando = null; botoes().forEach(b => { b.classList.remove("on"); b.innerHTML = "🔊<small>Ouvir</small>"; }); }
+}
 
 // personagem: a ficha (aba Tamaki da Central) e os documentos marcados com "Usar"
 async function docsTamaki(){ try { const d = await new Promise((ok, no) => { const r = indexedDB.open("tamaki-docs", 1); r.onupgradeneeded = () => r.result.createObjectStore("docs", {keyPath: "id"}); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
