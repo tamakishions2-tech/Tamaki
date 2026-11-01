@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atriz – Animador da PNGtuber</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ece8f7; --surface:#ffffff; --surface2:#f3f0fb; --ink:#26213d; --muted:#6c6690;
+  --line:#d9d3ee; --lamp:#e39a1c; --lamp-ink:#2b1d00; --teal:#1f9c8c; --danger:#c8435a;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#191630; --surface:#24203f; --surface2:#2d2850; --ink:#f1edff; --muted:#a59fcb;
+    --line:#3b3566; --lamp:#f2b544; --lamp-ink:#2b1d00; --teal:#5cc8b8; --danger:#ff7a90;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#191630; --surface:#24203f; --surface2:#2d2850; --ink:#f1edff; --muted:#a59fcb;
+  --line:#3b3566; --lamp:#f2b544; --lamp-ink:#2b1d00; --teal:#5cc8b8; --danger:#ff7a90;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:'Fredoka',ui-rounded,'Segoe UI',system-ui,sans-serif;
+  display:flex;flex-direction:column;overflow:hidden;font-size:15px;line-height:1.4}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--lamp);outline-offset:2px}
+
+.top{display:flex;align-items:center;gap:10px;padding:8px 14px}
+.top h1{font-size:1.15rem;font-weight:600;margin:0;flex:1;letter-spacing:.01em}
+.status{padding:3px 12px;border-radius:999px;background:var(--surface2);color:var(--muted);font-weight:500;font-size:.9rem;transition:background .15s,color .15s}
+.status.on{background:var(--lamp);color:var(--lamp-ink)}
+.top{flex-wrap:wrap}
+.top .btn{padding:6px 12px}
+.top select{flex:1;min-width:120px;width:auto;font-weight:600}
+
+.app{flex:1;min-height:0;display:grid;grid-template-rows:auto 1fr;grid-template-columns:minmax(0,1fr);gap:10px}
+.stage-wrap{padding:0 10px;display:flex;justify-content:center;align-items:flex-start}
+.stage{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;
+  box-shadow:0 0 0 2px var(--line), 0 10px 40px -18px rgba(242,181,68,.55)}
+.stage canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.float{position:absolute;display:flex;gap:6px}
+.float.br{right:8px;bottom:8px}.float.tr{right:8px;top:8px}
+.chip{border:0;border-radius:999px;padding:6px 12px;background:rgba(20,16,40,.7);color:#fff;font-weight:500;cursor:pointer;backdrop-filter:blur(4px);user-select:none;-webkit-user-select:none;touch-action:none}
+.chip.hold.active{background:var(--lamp);color:var(--lamp-ink)}
+.rec-dot{position:absolute;left:10px;top:10px;padding:4px 10px;border-radius:999px;background:var(--danger);color:#fff;font-weight:600;font-size:.85rem;display:none}
+.rec-dot.on{display:block}
+
+.panel{min-height:0;display:flex;flex-direction:column;background:var(--surface);border-top:1px solid var(--line);border-radius:20px 20px 0 0}
+.tabs{display:flex;gap:4px;padding:8px 8px 0;overflow-x:auto;scrollbar-width:none}
+.tabs button{flex:1 0 auto;border:0;background:transparent;padding:8px 10px;border-radius:12px 12px 0 0;color:var(--muted);font-weight:500;cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected="true"]{background:var(--surface2);color:var(--ink)}
+.tab-body{flex:1;min-height:0;overflow:auto;background:var(--surface2);padding:14px 14px 20px;margin:0 8px 8px;border-radius:0 0 14px 14px}
+.pane{display:none}.pane.on{display:block}
+.pane h2{font-size:1rem;font-weight:600;margin:16px 0 8px}
+.pane h2:first-child{margin-top:0}
+.hint{color:var(--muted);font-size:.88rem;margin:4px 0 10px}
+
+.row{display:flex;align-items:center;gap:10px;margin:8px 0}
+.row label{flex:0 0 108px;color:var(--muted)}
+.row input[type=range]{flex:1;accent-color:var(--lamp);min-width:0}
+.row output{flex:0 0 46px;text-align:right;font-variant-numeric:tabular-nums}
+select,textarea,input[type=text]{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 10px;width:100%}
+textarea{resize:vertical;min-height:70px}
+.row select{flex:1}
+.check{display:flex;align-items:center;gap:8px;margin:8px 0;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--lamp)}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:9px 14px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--lamp)}
+.btn.main{background:var(--lamp);border-color:var(--lamp);color:var(--lamp-ink)}
+.btn.warn{background:var(--danger);border-color:var(--danger);color:#fff}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+
+.presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.preset{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 12px;cursor:pointer}
+.preset b{display:block;font-weight:600}
+.preset span{color:var(--muted);font-size:.84rem}
+.preset.on{border-color:var(--lamp);box-shadow:inset 0 0 0 1px var(--lamp)}
+
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.slot{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.slot .thumb{aspect-ratio:1;border-radius:10px;background:
+  repeating-conic-gradient(var(--surface2) 0 25%, var(--surface) 0 50%) 0 0/18px 18px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;border:2px dashed var(--line)}
+.slot .thumb img{max-width:100%;max-height:100%;object-fit:contain}
+.slot .name{font-weight:600}
+.slot .sub{color:var(--muted);font-size:.8rem;line-height:1.25}
+.slot .acts{display:flex;gap:6px}
+.slot .acts button{flex:1;padding:5px 6px;font-size:.85rem}
+
+.setor{margin-bottom:16px}
+.setor-cab{display:flex;align-items:center;gap:8px;margin:14px 0 6px}
+.setor-cab h2{flex:1;margin:0!important}
+.cam{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px;margin:8px 0}
+.cam.on{border-color:var(--lamp);box-shadow:inset 0 0 0 1px var(--lamp)}
+.cam.off{opacity:.55}
+.cam .thumb{width:64px;height:64px;border-radius:10px;background:repeating-conic-gradient(var(--surface2) 0 25%, var(--surface) 0 50%) 0 0/14px 14px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;border:2px dashed var(--line)}
+.cam .thumb img{max-width:100%;max-height:100%;object-fit:contain}
+.cam .info{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cam .acts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.cam .acts button{padding:5px 10px;font-size:.85rem}
+.cam .ed{grid-column:1/-1;border-top:1px solid var(--line);padding-top:4px}
+.actions{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.actions button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.actions button .e{font-size:1.5rem;line-height:1}
+.actions button small{color:var(--muted)}
+.actions button:active{transform:scale(.96);border-color:var(--lamp)}
+
+.meter{position:relative;height:16px;border-radius:999px;background:var(--surface);border:1px solid var(--line);overflow:hidden;flex:1}
+.meter i{position:absolute;inset:0 auto 0 0;width:0;background:var(--teal);transition:width .05s linear}
+.meter b{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--lamp);border-radius:2px}
+.swatches{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.swatches input[type=color]{width:44px;height:36px;border:1px solid var(--line);border-radius:10px;padding:2px;background:var(--surface)}
+
+.so-pintar[hidden]{display:none!important}
+.plist{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.plist button{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;cursor:pointer}
+.plist button.on{border-color:var(--lamp);box-shadow:inset 0 0 0 1px var(--lamp)}
+.plist i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.seg{display:flex;gap:6px;margin:8px 0}
+.seg button{flex:1;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px;cursor:pointer;font-weight:500}
+.seg button.on{background:var(--lamp);border-color:var(--lamp);color:var(--lamp-ink)}
+.pe-wrap{display:flex;justify-content:center;border-radius:12px;overflow:hidden;background:repeating-conic-gradient(var(--surface2) 0 25%, var(--surface) 0 50%) 0 0/18px 18px;border:1px solid var(--line)}
+#pe{display:block;touch-action:none;cursor:crosshair}
+.zoom{display:flex;align-items:center;gap:6px;margin:6px 0;flex-wrap:wrap}
+.zoom .btn{padding:6px 12px}
+.zoom #zNivel{min-width:38px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+@media (orientation:landscape) and (min-width:640px){
+  .app{grid-template-columns:1fr minmax(300px,370px);grid-template-rows:1fr;gap:10px;padding:0 10px 10px 0}
+  .stage-wrap{container-type:size;align-items:center;padding:0 0 0 10px}
+  .stage{width:min(100cqw, calc(100cqh * 16 / 9));height:auto}
+  .panel{border-radius:20px;border:1px solid var(--line)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <select id="atorSel" aria-label="Qual ator você está editando"></select>
+  <button class="btn" id="atorNovo">+ Ator</button>
+  <button class="btn" id="atorNome" aria-label="Renomear ator" title="Renomear">✎</button>
+  <button class="btn" id="atorApaga" aria-label="Apagar ator" title="Apagar ator">🗑</button>
+  <span id="status" class="status">Parada</span>
+  <button class="btn main" id="enviarBtn">Mandar para o Palco</button>
+</header>
+
+<main class="app">
+  <section class="stage-wrap">
+    <div class="stage" id="stage">
+      <canvas id="cv" width="1280" height="720" aria-label="Palco com a personagem"></canvas>
+      <span class="rec-dot" id="recDot">Gravando 0:00</span>
+      <div class="float tr"><button class="chip" id="fsBtn" title="Tela cheia">Tela cheia</button></div>
+      <div class="float br"><button class="chip hold" id="holdBtn">Segure para falar</button></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="mov" aria-selected="true">🎭 Movimentos</button>
+      <button role="tab" data-tab="img" aria-selected="false">🖼️ Imagens</button>
+      <button role="tab" data-tab="rosto" aria-selected="false">🙂 Rosto</button>
+      <button role="tab" data-tab="partes" aria-selected="false">🪄 Partes</button>
+      <button role="tab" data-tab="fala" aria-selected="false">🎙️ Fala</button>
+      <button role="tab" data-tab="acoes" aria-selected="false">✨ Ações</button>
+      <button role="tab" data-tab="rec" aria-selected="false">⏺️ Gravar</button>
+    </nav>
+    <div class="tab-body">
+
+      <!-- MOVIMENTOS -->
+      <div class="pane on" id="pane-mov">
+        <h2>Estilos prontos</h2>
+        <div class="presets" id="presets"></div>
+
+        <h2>Parada (respirando)</h2>
+        <div class="row"><label>Movimento</label>
+          <select data-k="idleStyle">
+            <option value="respirar">Respirar</option>
+            <option value="flutuar">Flutuar</option>
+            <option value="balancar">Balançar</option>
+            <option value="nada">Sem movimento</option>
+          </select></div>
+        <div class="row"><label>Intensidade</label><input type="range" data-k="idleAmt" min="0" max="2.5" step="0.05"><output data-for="idleAmt"></output></div>
+        <div class="row"><label>Velocidade</label><input type="range" data-k="idleSpd" min="0.2" max="3" step="0.05"><output data-for="idleSpd"></output></div>
+
+        <h2>Falando</h2>
+        <div class="row"><label>Movimento</label>
+          <select data-k="talkStyle">
+            <option value="pulinho">Pulinho</option>
+            <option value="quicar">Quicar com elástico</option>
+            <option value="voz">Seguir a voz</option>
+            <option value="inclinar">Inclinar a cabeça</option>
+            <option value="tremer">Tremidinha</option>
+          </select></div>
+        <div class="row"><label>Intensidade</label><input type="range" data-k="talkAmt" min="0" max="2.5" step="0.05"><output data-for="talkAmt"></output></div>
+        <div class="row"><label>Velocidade</label><input type="range" data-k="talkSpd" min="0.3" max="2.5" step="0.05"><output data-for="talkSpd"></output></div>
+
+        <h2>Troca entre parada e falando</h2>
+        <div class="row"><label>Tipo de troca</label>
+          <select data-k="swap">
+            <option value="corte">Corte seco (PNGtuber clássico)</option>
+            <option value="suave">Suave (desvanece)</option>
+          </select></div>
+        <div class="row"><label>Tempo do fade</label><input type="range" data-k="fadeMs" min="30" max="300" step="10"><output data-for="fadeMs"></output></div>
+        <label class="check"><input type="checkbox" data-k="pop"> Pulinho elástico ao começar a falar</label>
+        <div class="row"><label>Força do pulinho</label><input type="range" data-k="popAmt" min="0.2" max="2.5" step="0.05"><output data-for="popAmt"></output></div>
+        <div class="row"><label>Boca aberta por</label><input type="range" data-k="holdMs" min="40" max="500" step="10"><output data-for="holdMs"></output></div>
+        <p class="hint">“Boca aberta por” segura a pose Falando um pouco depois de cada som, para a boca não ficar piscando.</p>
+        <div class="row"><label>Troca da boca</label><input type="range" data-k="flapMs" min="60" max="300" step="10"><output data-for="flapMs"></output></div>
+        <p class="hint">Usado quando existe a pose Falando 2: alterna entre as duas bocas nesse ritmo.</p>
+
+        <h2>Olhos</h2>
+        <div class="row"><label>Piscar a cada</label><input type="range" data-k="blinkEvery" min="1.5" max="10" step="0.5"><output data-for="blinkEvery"></output></div>
+      </div>
+
+      <!-- IMAGENS -->
+      <div class="pane" id="pane-img">
+        <h2>Poses da personagem</h2>
+        <p class="hint">Exporte todas as PNGs com o mesmo tamanho de tela e a personagem no mesmo lugar, mudando só boca e olhos. Toque no quadrado para escolher a imagem.</p>
+        <div class="slots" id="slots"></div>
+
+        <h2>Posição</h2>
+        <p class="hint">Arraste a personagem no palco para mudar de lugar.</p>
+        <div class="row"><label>Tamanho</label><input type="range" data-k="size" min="0.2" max="2.5" step="0.01"><output data-for="size"></output></div>
+        <div class="btns"><button class="btn" id="centerBtn">Centralizar embaixo</button></div>
+
+        <h2>Fundo</h2>
+        <div class="row"><label>Tipo</label>
+          <select data-k="bgMode">
+            <option value="cor">Cor</option>
+            <option value="verde">Verde (chroma key)</option>
+            <option value="imagem">Imagem</option>
+          </select></div>
+        <div class="swatches">
+          <input type="color" data-k="bgColor" aria-label="Cor do fundo">
+          <button class="btn" id="bgPick">Escolher imagem de fundo</button>
+          <button class="btn" id="bgClear">Remover imagem</button>
+          <input type="file" id="bgFile" accept="image/*" hidden>
+        </div>
+      </div>
+
+      <!-- ROSTO -->
+      <div class="pane" id="pane-rosto">
+        <h2>Camadas do rosto</h2>
+        <p class="hint">Olhos, bocas, sobrancelhas e o resto do rosto em camadas separadas, quantas quiser em cada setor. Elas ficam presas na personagem e acompanham tudo que ela faz. Se exportar cada camada com o mesmo tamanho de tela da Parada, ela já entra no lugar certo. Se for só o recorte, toque na miniatura e arraste no palco (dois dedos mudam o tamanho). Lembre de exportar a Parada sem o rosto, senão ele aparece duas vezes.</p>
+        <div id="rostoSetores"></div>
+        <input type="file" id="rostoFile" accept="image/png,image/*" multiple hidden>
+      </div>
+
+      <!-- PARTES -->
+      <div class="pane" id="pane-partes">
+        <h2>Partes que mexem</h2>
+        <p class="hint">Pinte com o dedo por cima da parte que vai se mexer. Não precisa cortar a PNG: o resto do corpo fica parado e a parte pintada balança.</p>
+        <div class="btns">
+          <button class="btn" data-nova="cabelo">+ Cabelo de trás</button>
+          <button class="btn" data-nova="mecha">+ Mecha</button>
+          <button class="btn" data-nova="mao">+ Mão</button>
+          <button class="btn" data-nova="outra">+ Outra parte</button>
+        </div>
+        <div class="plist" id="partesLista"></div>
+        <div id="parteEd" hidden>
+          <div class="seg" id="segComo"><button data-como="pintar" class="on">🖌️ Pintar na imagem</button><button data-como="png">🧩 PNG separada</button></div>
+          <div id="pngBloco" hidden>
+            <div class="btns"><button class="btn main" id="pngPick">Escolher PNG da parte</button><input type="file" id="pngFile" accept="image/png,image/*" hidden></div>
+            <div class="row"><label>Fica</label><select data-p="camada"><option value="atras">Atrás do corpo</option><option value="frente">Na frente do corpo</option></select></div>
+            <p class="hint">Exporte a parte com o mesmo tamanho de tela da Parada, já no lugar certo. Tire essa parte da PNG do corpo, senão ela aparece duas vezes.</p>
+          </div>
+          <div class="seg"><button data-modo="pintar" class="on so-pintar">🖌️ Pintar</button><button data-modo="apagar" class="so-pintar">🧽 Apagar</button><button data-modo="fixo">📍 Ponto fixo</button><button data-modo="mover">✋ Mover</button></div>
+          <div class="row so-pintar"><label>Pincel</label><input type="range" id="pincel" min="1" max="10" step="0.5" value="3"><output id="pincelOut">3</output></div>
+          <div class="zoom"><button class="btn" id="zMenos" aria-label="Afastar">−</button><span id="zNivel">1×</span><button class="btn" id="zMais" aria-label="Aproximar">＋</button><button class="btn" id="zAjustar">Ver tudo</button><button class="btn so-pintar" id="peDesfazer">↶ Desfazer traço</button></div>
+          <div class="pe-wrap"><canvas id="pe" aria-label="Pintar a parte que mexe"></canvas></div>
+          <p class="hint" id="peDica">Pinte por cima da parte, sem passar no rosto nem no corpo. As bordas ficam suaves sozinhas.</p>
+          <div class="btns"><button class="btn so-pintar" id="peLimpar">Limpar pintura</button><button class="btn" id="peApagar">Apagar esta parte</button></div>
+
+          <h2>Movimento desta parte</h2>
+          <div class="row"><label>Nome</label><input type="text" data-p="nome"></div>
+          <div class="row"><label>Movimento</label>
+            <select data-p="tipo">
+              <option value="balanco">Balançar como cabelo</option>
+              <option value="ondular">Ondular (mecha)</option>
+              <option value="acenar">Girar no ponto fixo (mão)</option>
+              <option value="flutuar">Subir e descer</option>
+            </select></div>
+          <div class="row"><label>Quando</label>
+            <select data-p="quando">
+              <option value="sempre">Sempre</option>
+              <option value="mais">Sempre, mais forte falando</option>
+              <option value="falando">Só quando fala</option>
+            </select></div>
+          <div class="row"><label>Força</label><input type="range" data-p="amp" min="0" max="3" step="0.05"><output data-pfor="amp"></output></div>
+          <div class="row"><label>Velocidade</label><input type="range" data-p="vel" min="0.2" max="3" step="0.05"><output data-pfor="vel"></output></div>
+          <div class="row"><label>Onda</label><input type="range" data-p="onda" min="0" max="3" step="0.05"><output data-pfor="onda"></output></div>
+          <div class="row"><label>Atraso</label><input type="range" data-p="fase" min="0" max="6.28" step="0.05"><output data-pfor="fase"></output></div>
+          <div class="row"><label>Reage ao pulo</label><input type="range" data-p="reage" min="0" max="3" step="0.05"><output data-pfor="reage"></output></div>
+          <div class="row"><label>Borda suave</label><input type="range" data-p="borda" min="0" max="6" step="1"><output data-pfor="borda"></output></div>
+          <p class="hint">“Onda” faz a ponta mexer depois da raiz, como cabelo de verdade. “Atraso” deixa esta parte fora do ritmo das outras. “Reage ao pulo” faz ela sacudir quando a personagem pula.</p>
+        </div>
+      </div>
+
+      <!-- FALA -->
+      <div class="pane" id="pane-fala">
+        <h2>Microfone</h2>
+        <div class="btns"><button class="btn main" id="micBtn">Ligar microfone</button></div>
+        <div class="row"><label>Volume</label><div class="meter"><i id="meterFill"></i><b id="meterTh"></b></div></div>
+        <div class="row"><label>Sensibilidade</label><input type="range" data-k="gain" min="0.5" max="8" step="0.1"><output data-for="gain"></output></div>
+        <div class="row"><label>Abrir a boca em</label><input type="range" data-k="thresh" min="0.02" max="0.8" step="0.01"><output data-for="thresh"></output></div>
+        <p class="hint">A linha amarela é o ponto em que a boca abre. Fale e ajuste até ela abrir só com a sua voz, sem o barulho de fundo.</p>
+
+        <h2>Texto que vira voz</h2>
+        <textarea id="ttsText" placeholder="Escreva aqui o que a Tamaki vai falar…">Oi, gente! Bem-vindos ao meu quarto. Hoje eu tenho uma história nova para contar.</textarea>
+        <div class="row"><label>Voz</label><select id="voiceSel"></select></div>
+        <div class="row"><label>Velocidade</label><input type="range" data-k="rate" min="0.5" max="1.8" step="0.05"><output data-for="rate"></output></div>
+        <div class="row"><label>Tom</label><input type="range" data-k="pitch" min="0.5" max="2" step="0.05"><output data-for="pitch"></output></div>
+        <div class="btns"><button class="btn main" id="ttsBtn">Falar texto</button><button class="btn" id="ttsStop">Parar</button></div>
+
+        <h2>Arquivo de áudio</h2>
+        <p class="hint">Use uma voz já gravada (MP3, WAV…). A boca segue o volume do áudio.</p>
+        <div class="btns">
+          <button class="btn" id="audPick">Escolher áudio</button>
+          <button class="btn main" id="audPlay" disabled>Tocar</button>
+          <input type="file" id="audFile" accept="audio/*" hidden>
+        </div>
+        <p class="hint" id="audName"></p>
+
+        <h2>Legenda</h2>
+        <label class="check"><input type="checkbox" data-k="caption"> Mostrar caixa de diálogo com o texto falado</label>
+      </div>
+
+      <!-- AÇÕES -->
+      <div class="pane" id="pane-acoes">
+        <h2>Ações rápidas</h2>
+        <p class="hint">Toque para a personagem fazer o movimento uma vez. No teclado, use os números.</p>
+        <div class="actions" id="actions"></div>
+        <h2>Intensidade das ações</h2>
+        <div class="row"><label>Intensidade</label><input type="range" data-k="actAmt" min="0.3" max="2" step="0.05"><output data-for="actAmt"></output></div>
+      </div>
+
+      <!-- GRAVAR -->
+      <div class="pane" id="pane-rec">
+        <h2>Gravar o palco</h2>
+        <p class="hint">Grava o vídeo do palco para levar ao CapCut. Com o fundo verde, use “Remover fundo” ou “Chroma key” no CapCut.</p>
+        <label class="check"><input type="checkbox" id="recAudio" checked> Gravar junto o som do microfone e do arquivo de áudio</label>
+        <p class="hint">A voz do “Texto que vira voz” é do sistema e não entra na gravação. Para ter a voz junto, use um arquivo de áudio.</p>
+        <div class="btns"><button class="btn warn" id="recBtn">Começar a gravar</button></div>
+        <p class="hint" id="recInfo"></p>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const cv = $('#cv'), ctx = cv.getContext('2d');
+const W = 1280, H = 720;
+
+/* ---------- Configurações ---------- */
+const DEFAULTS = {
+  idleStyle:'respirar', idleAmt:1, idleSpd:1,
+  talkStyle:'pulinho', talkAmt:1, talkSpd:1,
+  swap:'corte', fadeMs:90, pop:true, popAmt:1, holdMs:160, flapMs:120,
+  blinkEvery:4, size:1, x:640, y:720,
+  bgMode:'cor', bgColor:'#2a2440',
+  gain:3, thresh:0.14, rate:1, pitch:1.1, voice:'',
+  caption:true, actAmt:1, preset:'classico', partes:[], rosto:[]
+};
+/* Vários atores: cada um com poses, movimentos e partes próprios */
+let ATORES = {lista:[{id:'principal', nome:'Tamaki'}], atual:'principal'};
+try { const o = JSON.parse(localStorage.getItem('palco-atores') || 'null'); if (o && o.lista && o.lista.length) ATORES = o; } catch(e) {}
+if (!ATORES.lista.some(a => a.id === ATORES.atual)) ATORES.atual = ATORES.lista[0].id;
+const chaveCfg = id => id === 'principal' ? 'palco-animador-v1' : 'palco-animador-v1:' + id;
+const chaveImg = (id, k) => id === 'principal' ? 'img-' + k : id + '/img-' + k;
+function salvarAtores(){ try { localStorage.setItem('palco-atores', JSON.stringify(ATORES)); } catch(e) {} }
+function carregarS(id){
+  let saved = null; try { saved = JSON.parse(localStorage.getItem(chaveCfg(id)) || 'null'); } catch(e) {}
+  const o = {...DEFAULTS, ...(saved || {})}; o.partes = Array.isArray(saved && saved.partes) ? saved.partes : []; o.rosto = Array.isArray(saved && saved.rosto) ? saved.rosto : []; return o;
+}
+let S = carregarS(ATORES.atual);
+let saveTimer;
+function gravarS(){ try { localStorage.setItem(chaveCfg(ATORES.atual), JSON.stringify(S)); } catch(e) {} }
+function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(gravarS, 250); }
+
+const PRESETS = [
+  {id:'classico', name:'Clássico', desc:'Respira e dá pulinhos ao falar', v:{idleStyle:'respirar',idleAmt:1,idleSpd:1,talkStyle:'pulinho',talkAmt:1,talkSpd:1,swap:'corte',pop:true,popAmt:1,holdMs:160}},
+  {id:'animada', name:'Animada', desc:'Flutua e quica cheia de energia', v:{idleStyle:'flutuar',idleAmt:1.1,idleSpd:1.1,talkStyle:'quicar',talkAmt:1.2,talkSpd:1.15,swap:'corte',pop:true,popAmt:1.5,holdMs:150}},
+  {id:'calma', name:'Calma', desc:'Narração tranquila de audiobook', v:{idleStyle:'respirar',idleAmt:0.7,idleSpd:0.7,talkStyle:'inclinar',talkAmt:0.7,talkSpd:0.8,swap:'suave',fadeMs:120,pop:true,popAmt:0.5,holdMs:220}},
+  {id:'voz', name:'Segue a voz', desc:'Sobe e desce com o volume', v:{idleStyle:'balancar',idleAmt:0.6,idleSpd:0.8,talkStyle:'voz',talkAmt:1.2,talkSpd:1,swap:'corte',pop:true,popAmt:0.8,holdMs:140}},
+  {id:'agitada', name:'Agitada', desc:'Treme de empolgação ou nervoso', v:{idleStyle:'respirar',idleAmt:1.3,idleSpd:1.4,talkStyle:'tremer',talkAmt:1.3,talkSpd:1.3,swap:'corte',pop:true,popAmt:1.4,holdMs:130}},
+];
+
+/* ---------- Imagens ---------- */
+const SLOTS = [
+  {k:'idle', name:'Parada', sub:'Boca fechada, olhos abertos. Obrigatória.'},
+  {k:'talk', name:'Falando', sub:'Boca aberta.'},
+  {k:'talk2', name:'Falando 2', sub:'Outra boca aberta, alterna com Falando. Opcional.'},
+  {k:'idleBlink', name:'Parada piscando', sub:'Boca fechada, olhos fechados. Opcional.'},
+  {k:'talkBlink', name:'Falando piscando', sub:'Boca aberta, olhos fechados. Opcional.'},
+];
+const images = {};      // k -> {src, w, h, user, url}
+let bgImage = null;
+
+function makeChar(open, blink){
+  const c = document.createElement('canvas'); c.width = 600; c.height = 700;
+  const g = c.getContext('2d');
+  const hair = '#5b6fd8', skin = '#ffe1cc';
+  // corpo
+  g.fillStyle = '#3a3168';
+  g.beginPath(); g.ellipse(300, 720, 215, 190, 0, Math.PI, 2*Math.PI); g.fill();
+  g.fillStyle = '#f2b544'; g.beginPath(); g.moveTo(255,545); g.lineTo(300,600); g.lineTo(345,545); g.closePath(); g.fill();
+  // orelhas de gato
+  g.fillStyle = hair;
+  g.beginPath(); g.moveTo(130,250); g.lineTo(150,70); g.lineTo(265,160); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(470,250); g.lineTo(450,70); g.lineTo(335,160); g.closePath(); g.fill();
+  g.fillStyle = '#ffb9c9';
+  g.beginPath(); g.moveTo(165,200); g.lineTo(170,115); g.lineTo(225,165); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(435,200); g.lineTo(430,115); g.lineTo(375,165); g.closePath(); g.fill();
+  // rosto
+  g.fillStyle = skin; g.beginPath(); g.arc(300, 340, 190, 0, 2*Math.PI); g.fill();
+  // cabelo
+  g.fillStyle = hair;
+  g.beginPath(); g.arc(300, 330, 200, Math.PI, 2*Math.PI);
+  g.quadraticCurveTo(440, 230, 370, 250); g.quadraticCurveTo(330, 200, 290, 255);
+  g.quadraticCurveTo(230, 205, 190, 255); g.quadraticCurveTo(140, 230, 100, 330); g.closePath(); g.fill();
+  // olhos
+  g.fillStyle = '#26213d'; g.strokeStyle = '#26213d'; g.lineWidth = 9; g.lineCap = 'round';
+  for (const ex of [225, 375]){
+    if (blink){ g.beginPath(); g.arc(ex, 352, 26, 0.15*Math.PI, 0.85*Math.PI); g.stroke(); }
+    else {
+      g.beginPath(); g.ellipse(ex, 350, 24, 34, 0, 0, 2*Math.PI); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(ex+8, 336, 9, 0, 2*Math.PI); g.fill(); g.fillStyle = '#26213d';
+    }
+  }
+  // bochechas
+  g.fillStyle = 'rgba(255,120,150,.35)';
+  g.beginPath(); g.ellipse(185, 420, 30, 18, 0, 0, 2*Math.PI); g.fill();
+  g.beginPath(); g.ellipse(415, 420, 30, 18, 0, 0, 2*Math.PI); g.fill();
+  // boca
+  if (open){
+    g.fillStyle = '#7a2140'; g.beginPath(); g.ellipse(300, 445, open === 2 ? 30 : 40, open === 2 ? 34 : 28, 0, 0, 2*Math.PI); g.fill();
+    g.fillStyle = '#ff8fa8'; g.beginPath(); g.ellipse(300, 462, 22, 11, 0, 0, 2*Math.PI); g.fill();
+  } else {
+    g.strokeStyle = '#7a2140'; g.lineWidth = 8; g.beginPath(); g.arc(300, 425, 24, 0.2*Math.PI, 0.8*Math.PI); g.stroke();
+  }
+  return c;
+}
+const PLACEHOLDER = {
+  idle: makeChar(0,false), talk: makeChar(1,false), talk2: makeChar(2,false),
+  idleBlink: makeChar(0,true), talkBlink: makeChar(1,true)
+};
+function usePlaceholders(){
+  for (const k in PLACEHOLDER) if (!images[k] || !images[k].user) images[k] = {src:PLACEHOLDER[k], w:600, h:700, user:false};
+}
+function hasUserImages(){ return SLOTS.some(s => images[s.k] && images[s.k].user); }
+
+/* IndexedDB para guardar as PNGs */
+function openDB(){ return new Promise((res, rej) => { const r = indexedDB.open('palco-animador', 1); r.onupgradeneeded = () => r.result.createObjectStore('files'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+// avisa a aba Palco da Central (mesmo endereço) que a atriz mudou
+function avisarPalco(k){ try { localStorage.setItem(k, JSON.stringify({t: Date.now(), ator: ATORES.atual})); } catch(e) {} }
+async function dbPut(k, v){
+  try { const db = await openDB(); await new Promise(ok => { const tx = db.transaction('files','readwrite'); v === null ? tx.objectStore('files').delete(k) : tx.objectStore('files').put(v, k); tx.oncomplete = tx.onerror = ok; }); db.close(); } catch(e) {}
+  avisarPalco('palco-atriz-versao');
+}
+async function dbGet(k){ try { const db = await openDB(); return await new Promise(res => { const r = db.transaction('files').objectStore('files').get(k); r.onsuccess = () => res(r.result || null); r.onerror = () => res(null); }); } catch(e) { return null; } }
+
+function blobToImage(blob){
+  return new Promise((res, rej) => { const url = URL.createObjectURL(blob); const im = new Image(); im.onload = () => res({src:im, w:im.naturalWidth, h:im.naturalHeight, user:true, url}); im.onerror = rej; im.src = url; });
+}
+async function setSlot(k, blob, persist = true){
+  if (images[k] && images[k].url) URL.revokeObjectURL(images[k].url);
+  if (!blob){ delete images[k]; if (persist) dbPut(chaveImg(ATORES.atual, k), null); }
+  else { images[k] = await blobToImage(blob); if (persist) dbPut(chaveImg(ATORES.atual, k), blob); }
+  // se a pessoa usar imagens próprias, as poses de exemplo saem
+  if (hasUserImages()){ for (const s of SLOTS) if (images[s.k] && !images[s.k].user) delete images[s.k]; }
+  else usePlaceholders();
+  renderSlots(); desenharEditor();
+}
+
+$('#enviarBtn').onclick = () => {
+  clearTimeout(saveTimer); gravarS(); salvarAtores();
+  avisarPalco('palco-atriz-versao'); avisarPalco('palco-atriz-pedido');
+  const b = $('#enviarBtn'); b.textContent = 'Enviada! Abra o Palco'; setTimeout(() => b.textContent = 'Mandar para o Palco', 2500);
+};
+
+/* ---------- partes que mexem (deformação da imagem, sem cortar) ---------- */
+// Uma malha cobre a PNG; cada parte pintada puxa só os pontos da malha que estão debaixo dela.
+function criarPartes(){
+  // um só WebGL para todas as partes (o tablet aguenta poucos)
+  const SH = criarPartes.sh || (criarPartes.sh = (() => {
+    const gc = document.createElement("canvas"); let gl = null;
+    try { gl = gc.getContext("webgl", {premultipliedAlpha: true, alpha: true, antialias: false}); } catch (e) {}
+    if (!gl) return {gc, gl: null};
+    const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, "attribute vec2 p;attribute vec2 u;varying vec2 v;void main(){v=u;gl_Position=vec4(p,0.,1.);}"));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, "precision mediump float;varying vec2 v;uniform sampler2D t;void main(){gl_FragColor=texture2D(t,v);}"));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return {gc, gl: null};
+    return {gc, gl, prog, aP: gl.getAttribLocation(prog, "p"), aU: gl.getAttribLocation(prog, "u"), uT: gl.getUniformLocation(prog, "t")};
+  })());
+  const gc = SH.gc, gl = SH.gl, prog = SH.prog, aP = SH.aP, aU = SH.aU, uT = SH.uT;
+  const dimsDe = x => ({w: x.naturalWidth || x.width, h: x.naturalHeight || x.height});
+  let bPos, bUV, bIdx, nIdx = 0;
+  if (gl) { bPos = gl.createBuffer(); bUV = gl.createBuffer(); bIdx = gl.createBuffer(); }
+  const caixas = new WeakMap(), texs = new WeakMap(); let pesos = {};
+  let G = null, molas = {}, ultimo = 0, enviado = -1, quadro = 0;
+  function caixa(img){ // retângulo onde a imagem não é transparente
+    if (caixas.has(img)) return caixas.get(img);
+    const d = dimsDe(img), s = Math.min(1, 256 / Math.max(d.w, d.h)), c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(d.w * s)); c.height = Math.max(1, Math.round(d.h * s));
+    const x = c.getContext("2d"); x.drawImage(img, 0, 0, c.width, c.height);
+    let r = {x: 0, y: 0, w: d.w, h: d.h, justa: {x: 0, y: 0, w: d.w, h: d.h}};
+    try { const a = x.getImageData(0, 0, c.width, c.height).data; let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+      for (let j = 0; j < c.height; j++) for (let i = 0; i < c.width; i++) if (a[(j * c.width + i) * 4 + 3] > 12) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (j < y0) y0 = j; if (j > y1) y1 = j; }
+      if (x1 >= 0) { const m = .1 * Math.max(x1 - x0, y1 - y0); const X0 = Math.max(0, (x0 - m) / s), Y0 = Math.max(0, (y0 - m) / s), X1 = Math.min(d.w, (x1 + 1 + m) / s), Y1 = Math.min(d.h, (y1 + 1 + m) / s); r = {x: X0, y: Y0, w: X1 - X0, h: Y1 - Y0, justa: {x: x0 / s, y: y0 / s, w: (x1 + 1 - x0) / s, h: (y1 + 1 - y0) / s}}; }
+    } catch (e) {}
+    caixas.set(img, r); return r;
+  }
+  function rasterizar(p, nx, ny, bx, by, bw, bh, d){
+    const A = new Float32Array(nx * ny);
+    if (p.png) { A.fill(1); return A; }
+    for (const [sx, sy, sr, er] of (p.tr || [])) {
+      const cx = sx * d.w, cy = sy * d.h, r = sr * d.h;
+      const i0 = Math.max(0, Math.floor((cx - r - bx) / bw * (nx - 1))), i1 = Math.min(nx - 1, Math.ceil((cx + r - bx) / bw * (nx - 1)));
+      const j0 = Math.max(0, Math.floor((cy - r - by) / bh * (ny - 1))), j1 = Math.min(ny - 1, Math.ceil((cy + r - by) / bh * (ny - 1)));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const X = bx + i / (nx - 1) * bw, Y = by + j / (ny - 1) * bh; if ((X - cx) * (X - cx) + (Y - cy) * (Y - cy) <= r * r) A[j * nx + i] = er ? 0 : 1; }
+    }
+    const rb = Math.round(+p.borda || 0); if (!rb) return A;
+    const T = new Float32Array(nx * ny);
+    for (let pass = 0; pass < 2; pass++) {
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { let s = 0, n = 0; for (let k = -rb; k <= rb; k++) { const ii = i + k; if (ii >= 0 && ii < nx) { s += A[j * nx + ii]; n++; } } T[j * nx + i] = s / n; }
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { let s = 0, n = 0; for (let k = -rb; k <= rb; k++) { const jj = j + k; if (jj >= 0 && jj < ny) { s += T[jj * nx + i]; n++; } } A[j * nx + i] = s / n; }
+    }
+    return A;
+  }
+  function preparar(ref, lista){
+    lista = (lista || []).filter(p => p.png || (p.tr && p.tr.length));
+    if (!gl || !ref || !lista.length) { G = null; return; }
+    const d = dimsDe(ref); if (!d.w || !d.h) { G = null; return; }
+    const chave = d.w + "x" + d.h + "|" + lista.map(p => p.id + ":" + (p.v || 0) + ":" + p.borda).join(",");
+    if (G && G.ref === ref && G.chave === chave) { G.lista = lista; return; }
+    const b = caixa(ref);
+    let cols = 90, rows = Math.round(cols * b.h / b.w); if (rows > 130) { rows = 130; cols = Math.max(20, Math.round(rows * b.w / b.h)); } rows = Math.max(20, rows);
+    const nx = cols + 1, ny = rows + 1, base = new Float32Array(nx * ny * 2), uv = new Float32Array(nx * ny * 2), idx = new Uint16Array(cols * rows * 6);
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const k = (j * nx + i) * 2; base[k] = b.x + i / cols * b.w; base[k + 1] = b.y + j / rows * b.h; uv[k] = i / cols; uv[k + 1] = j / rows; }
+    let q = 0; for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) { const a = j * nx + i, c = a + nx; idx.set([a, a + 1, c, a + 1, c + 1, c], q); q += 6; }
+    const pad = .25 * Math.max(b.w, b.h), R = {x: b.x - pad, y: b.y - pad, w: b.w + 2 * pad, h: b.h + 2 * pad};
+    const W = {}, novos = {}; for (const p of lista) { const kk = p.id + ":" + (p.v || 0) + ":" + p.borda + ":" + chave.split("|")[0]; W[p.id] = novos[kk] = pesos[kk] || rasterizar(p, nx, ny, b.x, b.y, b.w, b.h, d); } pesos = novos;
+    G = {ref, chave, b, R, nx, ny, base, clip: new Float32Array(nx * ny * 2), W, lista, H: d.h, Wd: d.w}; ultimo = 0; enviado = -1;
+    gl.bindBuffer(gl.ARRAY_BUFFER, bUV); gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bIdx); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx, gl.STATIC_DRAW); nIdx = idx.length;
+  }
+  function atualizar(now, info){
+    if (!G) return;
+    const dt = ultimo ? Math.min(.05, Math.max(0, (now - ultimo) / 1000)) : 0; if (dt === 0 && ultimo) return; ultimo = now; quadro++;
+    const t = now / 1000, fala = Math.max(0, Math.min(1, info.fala || 0)), cy = info.corpoY || 0, H = G.H, R = G.R;
+    const pos = G.clip; pos.set(G.base);
+    for (const p of G.lista) {
+      const Wp = G.W[p.id]; if (!Wp) continue;
+      const f = p.quando == "falando" ? fala : p.quando == "mais" ? 1 + fala : 1;
+      const m = molas[p.id] || (molas[p.id] = {x: 0, v: 0, y: cy});
+      if (dt > 0) { const vy = (cy - m.y) / dt; m.v += (-110 * m.x - 8 * m.v - vy * .02 * (+p.reage || 0)) * dt; m.x += m.v * dt; m.x = Math.max(-15, Math.min(15, m.x)); }
+      m.y = cy;
+      const lag = m.x, w = 2 * Math.PI * .5 * (+p.vel || 1), fase = +p.fase || 0, amp = (+p.amp || 0) * f, onda = +p.onda || 0;
+      const Px = (+p.px || .5) * G.Wd, Py = (+p.py || .5) * H, meio = H * .5, tipo = p.tipo;
+      const ang0 = (tipo == "acenar" ? amp * 8 * Math.sin(w * t + fase) : 0) + lag;
+      const c0 = Math.cos(ang0 * Math.PI / 180), s0 = Math.sin(ang0 * Math.PI / 180);
+      for (let k = 0, n = Wp.length; k < n; k++) {
+        const wk = Wp[k]; if (wk < .002) continue;
+        const X = G.base[2 * k], Y = G.base[2 * k + 1], dx = X - Px, dy = Y - Py; let ux = 0, uy = 0;
+        if (tipo == "balanco") { const dn = Math.hypot(dx, dy) / meio, a = (amp * 4 * Math.sin(w * t - onda * dn * 3 + fase) + lag) * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); ux = dx * c - dy * s - dx; uy = dx * s + dy * c - dy; }
+        else if (tipo == "ondular") { const dn = Math.hypot(dx, dy) / meio; ux = (amp * .015 * Math.sin(w * t - onda * dn * 5 + fase) + lag * .004) * H * dn; uy = amp * .004 * H * dn * Math.sin(w * t * 1.3 - onda * dn * 4 + fase); }
+        else if (tipo == "acenar") { ux = dx * c0 - dy * s0 - dx; uy = dx * s0 + dy * c0 - dy; }
+        else { ux = lag * .003 * H; uy = amp * .008 * H * Math.sin(w * t + fase); }
+        pos[2 * k] += wk * ux; pos[2 * k + 1] += wk * uy;
+      }
+    }
+    for (let k = 0, n = pos.length; k < n; k += 2) { pos[k] = (pos[k] - R.x) / R.w * 2 - 1; pos[k + 1] = 1 - (pos[k + 1] - R.y) / R.h * 2; }
+  }
+  function textura(img){
+    let T = texs.get(img); if (T && T.b === G.b) return T.tex;
+    const b = G.b, s = Math.min(1, 1600 / Math.max(b.w, b.h)), c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(b.w * s)); c.height = Math.max(1, Math.round(b.h * s));
+    c.getContext("2d").drawImage(img, b.x, b.y, b.w, b.h, 0, 0, c.width, c.height);
+    const tex = T ? T.tex : gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    texs.set(img, {tex, b: G.b}); return tex;
+  }
+  function pintar(ctx, img, dx, dy, dw, dh){
+    if (!G || !gl || gl.isContextLost()) { ctx.drawImage(img, dx, dy, dw, dh); return; }
+    const d = dimsDe(img), sx = dw / d.w, sy = dh / d.h, R = G.R;
+    const ow = Math.max(1, Math.min(2048, Math.ceil(R.w * Math.abs(sx)))), oh = Math.max(1, Math.min(2048, Math.ceil(R.h * Math.abs(sy))));
+    if (gc.width != ow || gc.height != oh) { gc.width = ow; gc.height = oh; }
+    gl.viewport(0, 0, ow, oh); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(prog); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.bindBuffer(gl.ARRAY_BUFFER, bPos); if (enviado != quadro) { gl.bufferData(gl.ARRAY_BUFFER, G.clip, gl.DYNAMIC_DRAW); enviado = quadro; }
+    gl.enableVertexAttribArray(aP); gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, bUV); gl.enableVertexAttribArray(aU); gl.vertexAttribPointer(aU, 2, gl.FLOAT, false, 0, 0);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, textura(img)); gl.uniform1i(uT, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bIdx); gl.drawElements(gl.TRIANGLES, nIdx, gl.UNSIGNED_SHORT, 0);
+    ctx.drawImage(gc, dx + R.x * sx, dy + R.y * sy, R.w * sx, R.h * sy);
+  }
+  return {preparar, atualizar, pintar, caixa, ativo: () => !!gl};
+}
+// partes em PNG separada: cada uma é uma camada própria, atrás ou na frente do corpo
+function criarSeparadas(){
+  const inst = {}, dimsDe = x => ({w: x.naturalWidth || x.width, h: x.naturalHeight || x.height});
+  const usar = (lista, img) => (lista || []).filter(p => p.png && img(p.id));
+  return {
+    passo(lista, img, now, info){ for (const p of usar(lista, img)) { const I = inst[p.id] || (inst[p.id] = criarPartes()); I.preparar(img(p.id), [p]); I.atualizar(now, info); } },
+    pintar(ctx, lista, img, lado, ox, oy, q){ for (const p of usar(lista, img)) { if ((p.camada || "atras") !== lado || !inst[p.id]) continue; const im = img(p.id), d = dimsDe(im); inst[p.id].pintar(ctx, im, ox, oy, d.w * q, d.h * q); } }
+  };
+}
+/* ---------- Partes que mexem: editor ---------- */
+const PARTES = criarPartes();
+const PRESET_PARTE = {
+  cabelo: {nome:'Cabelo de trás', tipo:'balanco', amp:1, vel:.6, onda:1, fase:0, quando:'mais', reage:1, borda:3},
+  mecha: {nome:'Mecha', tipo:'ondular', amp:1, vel:.9, onda:1.2, fase:1.5, quando:'mais', reage:1.2, borda:2},
+  mao: {nome:'Mão', tipo:'acenar', amp:.8, vel:1.2, onda:0, fase:0, quando:'falando', reage:.3, borda:2},
+  outra: {nome:'Parte', tipo:'flutuar', amp:1, vel:1, onda:0, fase:0, quando:'sempre', reage:.5, borda:2}
+};
+const CORES = ['#f2b544','#5cc8b8','#ff7a90','#8f8cff','#7bd65a','#ff9f45'];
+let parteSel = (S.partes[0] || {}).id || null, peModo = 'pintar', pincel = 3, traco = null;
+const pe = $('#pe'), pg = pe.getContext('2d'), mascara = document.createElement('canvas');
+const parteAtual = () => S.partes.find(p => p.id === parteSel) || null;
+const SEP = criarSeparadas(), partImgs = {}, imgParte = id => partImgs[id] ? partImgs[id].src : null;
+async function carregarPartesPNG(){ for (const p of S.partes) if (p.png && !partImgs[p.id]) { const b = await dbGet('parte-' + p.id); if (b) { try { partImgs[p.id] = await blobToImage(b); } catch(e) {} } } desenharEditor(); }
+async function setParteImg(p, f){
+  if (partImgs[p.id] && partImgs[p.id].url) URL.revokeObjectURL(partImgs[p.id].url);
+  partImgs[p.id] = await blobToImage(f); p.png = true; p.v++;
+  if (!p.fixo) { const im = partImgs[p.id], j = PARTES.caixa(im.src).justa;
+    p.px = r4((j.x + j.w / 2) / im.w); p.py = r4(p.tipo === 'acenar' ? (j.y + j.h) / im.h : p.tipo === 'flutuar' ? (j.y + j.h / 2) / im.h : j.y / im.h); }
+  save(); dbPut('parte-' + p.id, f); listaPartes();
+}
+$('#pngPick').onclick = () => $('#pngFile').click();
+$('#pngFile').onchange = () => { const f = $('#pngFile').files[0], p = parteAtual(); $('#pngFile').value = ''; if (f && p) setParteImg(p, f); };
+document.querySelectorAll('[data-como]').forEach(b => b.onclick = () => {
+  const p = parteAtual(); if (!p) return; p.png = b.dataset.como === 'png'; p.v++;
+  if (p.png) { peModo = 'fixo'; if (!partImgs[p.id]) $('#pngFile').click(); } else peModo = 'pintar';
+  marcarModo(); save(); listaPartes();
+});
+const refPartes = () => (images.idle || images.talk || {}).src || null;
+function corDe(p){ return CORES[S.partes.indexOf(p) % CORES.length]; }
+function listaPartes(){
+  $('#partesLista').innerHTML = S.partes.map(p => `<button data-parte="${p.id}" class="${p.id === parteSel ? 'on' : ''}"><i style="background:${corDe(p)}"></i>${p.nome.replace(/</g,'&lt;')}</button>`).join('')
+    || '<p class="hint">Nenhuma parte ainda. Escolha acima o que vai se mexer.</p>';
+  const p = parteAtual(); $('#parteEd').hidden = !p;
+  if (p) { const png = !!p.png; document.querySelectorAll('[data-como]').forEach(b => b.classList.toggle('on', (b.dataset.como === 'png') === png));
+    $('#pngBloco').hidden = !png; document.querySelectorAll('.so-pintar').forEach(el => el.hidden = png);
+    $('#pngPick').textContent = partImgs[p.id] ? 'Trocar PNG da parte' : 'Escolher PNG da parte';
+    if (png && (peModo === 'pintar' || peModo === 'apagar')) { peModo = 'fixo'; marcarModo(); } }
+  if (p) document.querySelectorAll('[data-p]').forEach(el => { el.value = p[el.dataset.p]; const o = document.querySelector(`output[data-pfor="${el.dataset.p}"]`); if (o) o.textContent = (+p[el.dataset.p]).toFixed(2).replace(/\.?0+$/, '') || '0'; });
+  desenharEditor();
+}
+$('#partesLista').onclick = e => { const b = e.target.closest('[data-parte]'); if (!b) return; parteSel = b.dataset.parte; listaPartes(); };
+document.querySelectorAll('[data-nova]').forEach(b => b.onclick = () => {
+  const n = Object.assign({id: Math.random().toString(36).slice(2, 9), px:.5, py:.3, fixo:false, tr:[], v:0, png:false, camada:'atras'}, PRESET_PARTE[b.dataset.nova]);
+  S.partes.push(n); parteSel = n.id; peModo = 'pintar'; marcarModo(); save(); listaPartes();
+});
+function marcarModo(){
+  document.querySelectorAll('[data-modo]').forEach(b => b.classList.toggle('on', b.dataset.modo === peModo));
+  $('#peDica').textContent = peModo === 'mover' ? 'Arraste para ver outra parte da imagem. Com dois dedos você aproxima e afasta em qualquer modo.' : peModo === 'fixo' ? 'Toque onde a parte fica presa: na raiz do cabelo ou no pulso da mão.'
+    : peModo === 'apagar' ? 'Passe o dedo onde pintou demais.' : 'Pinte por cima da parte, sem passar no rosto nem no corpo. As bordas ficam suaves sozinhas.';
+}
+document.querySelectorAll('[data-modo]').forEach(b => b.onclick = () => { peModo = b.dataset.modo; marcarModo(); });
+$('#pincel').oninput = e => { pincel = +e.target.value; $('#pincelOut').textContent = pincel; };
+$('#peLimpar').onclick = () => { const p = parteAtual(); if (!p) return; p.tr = []; p.fixo = false; p.v++; save(); desenharEditor(); };
+$('#peApagar').onclick = () => { const p = parteAtual(); if (!p) return; if (p.png) { dbPut('parte-' + p.id, null); delete partImgs[p.id]; } S.partes = S.partes.filter(x => x !== p); parteSel = (S.partes[0] || {}).id || null; save(); listaPartes(); };
+document.querySelectorAll('[data-p]').forEach(el => el.addEventListener('input', () => {
+  const p = parteAtual(); if (!p) return; const k = el.dataset.p;
+  p[k] = el.type === 'range' ? parseFloat(el.value) : el.value;
+  const o = document.querySelector(`output[data-pfor="${k}"]`); if (o) o.textContent = (+p[k]).toFixed(2).replace(/\.?0+$/, '') || '0';
+  if (k === 'borda') p.v++;
+  if (k === 'nome') $('#partesLista').querySelector('.on').lastChild.textContent = p.nome;
+  save();
+}));
+function geoEditor(){
+  const ref = refPartes(); if (!ref) return null;
+  const d = {w: ref.naturalWidth || ref.width, h: ref.naturalHeight || ref.height}, b = PARTES.caixa(ref);
+  return {ref, d, b};
+}
+let vista = null, ptrs = new Map(), pinca = null, arrasto = null; const pilha = [];
+function vistaDe(E){ if (!vista || vista.b !== E.b) vista = {x: E.b.x, y: E.b.y, w: E.b.w, h: E.b.h, b: E.b}; return vista; }
+function prenderVista(E, V){ V.w = Math.max(E.b.w / 10, Math.min(E.b.w, V.w)); V.h = V.w * E.b.h / E.b.w; V.x = Math.max(E.b.x, Math.min(E.b.x + E.b.w - V.w, V.x)); V.y = Math.max(E.b.y, Math.min(E.b.y + E.b.h - V.h, V.y)); $('#zNivel').textContent = (E.b.w / V.w).toFixed(1).replace('.0', '') + '×'; }
+function zoomEm(f, fx = .5, fy = .5){ const E = geoEditor(); if (!E) return; const V = vistaDe(E), nw = Math.max(E.b.w / 10, Math.min(E.b.w, V.w / f)), nh = nw * E.b.h / E.b.w; V.x += fx * (V.w - nw); V.y += fy * (V.h - nh); V.w = nw; prenderVista(E, V); desenharEditor(); }
+$('#zMais').onclick = () => zoomEm(1.5); $('#zMenos').onclick = () => zoomEm(1 / 1.5);
+$('#zAjustar').onclick = () => { vista = null; desenharEditor(); $('#zNivel').textContent = '1×'; };
+$('#peDesfazer').onclick = () => { const p = parteAtual(); if (!p) return; for (let i = pilha.length - 1; i >= 0; i--) if (pilha[i].id === p.id) { p.tr.length = Math.min(p.tr.length, pilha[i].ini); pilha.splice(i, 1); p.v++; save(); desenharEditor(); return; } };
+function desenharEditor(){
+  const E = geoEditor(); if (!E || $('#parteEd').hidden) return;
+  const V = vistaDe(E); prenderVista(E, V);
+  const wrap = pe.parentElement, maxW = wrap.clientWidth || 320, maxH = 400;
+  let cw = maxW, ch = cw * E.b.h / E.b.w; if (ch > maxH) { ch = maxH; cw = ch * E.b.w / E.b.h; }
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  pe.style.width = cw + 'px'; pe.style.height = ch + 'px'; pe.width = Math.round(cw * dpr); pe.height = Math.round(ch * dpr);
+  const k = pe.width / V.w;
+  pg.clearRect(0, 0, pe.width, pe.height);
+  const sep = lado => S.partes.filter(p => p.png && partImgs[p.id] && (p.camada || 'atras') === lado);
+  const recorte = (im, x) => { const f = im.w / E.d.w; x.drawImage(im.src, V.x * f, V.y * f, V.w * f, V.h * f, 0, 0, pe.width, pe.height); };
+  sep('atras').forEach(p => recorte(partImgs[p.id], pg));
+  pg.drawImage(E.ref, V.x, V.y, V.w, V.h, 0, 0, pe.width, pe.height);
+  sep('frente').forEach(p => recorte(partImgs[p.id], pg));
+  mascara.width = pe.width; mascara.height = pe.height; const mg = mascara.getContext('2d');
+  for (const p of S.partes) {
+    if (p.png) { if (!partImgs[p.id] || p.id !== parteSel) continue; mg.globalCompositeOperation = 'source-over'; mg.clearRect(0, 0, mascara.width, mascara.height); recorte(partImgs[p.id], mg);
+      mg.globalCompositeOperation = 'source-in'; mg.fillStyle = corDe(p); mg.fillRect(0, 0, mascara.width, mascara.height); pg.globalAlpha = .4; pg.drawImage(mascara, 0, 0); pg.globalAlpha = 1; continue; }
+    mg.globalCompositeOperation = 'source-over'; mg.clearRect(0, 0, mascara.width, mascara.height);
+    for (const [x, y, r, er] of p.tr) { mg.globalCompositeOperation = er ? 'destination-out' : 'source-over'; mg.fillStyle = '#000'; mg.beginPath(); mg.arc((x * E.d.w - V.x) * k, (y * E.d.h - V.y) * k, Math.max(1, r * E.d.h * k), 0, 7); mg.fill(); }
+    mg.globalCompositeOperation = 'source-in'; mg.fillStyle = corDe(p); mg.fillRect(0, 0, mascara.width, mascara.height);
+    pg.globalAlpha = p.id === parteSel ? .55 : .22; pg.drawImage(mascara, 0, 0); pg.globalAlpha = 1;
+  }
+  const p = parteAtual();
+  if (p && (p.tr.length || (p.png && partImgs[p.id]))) { const X = (p.px * E.d.w - V.x) * k, Y = (p.py * E.d.h - V.y) * k, R = 11 * dpr;
+    pg.lineWidth = 3 * dpr; pg.strokeStyle = '#fff'; pg.fillStyle = corDe(p);
+    pg.beginPath(); pg.arc(X, Y, R, 0, 7); pg.fill(); pg.stroke();
+    pg.beginPath(); pg.moveTo(X - R * 1.7, Y); pg.lineTo(X + R * 1.7, Y); pg.moveTo(X, Y - R * 1.7); pg.lineTo(X, Y + R * 1.7); pg.stroke(); }
+}
+function fracao(e){ const r = pe.getBoundingClientRect(); return {fx: (e.clientX - r.left) / r.width, fy: (e.clientY - r.top) / r.height}; }
+function pontoImagem(e){
+  const E = geoEditor(), V = vistaDe(E), f = fracao(e);
+  return {x: (V.x + f.fx * V.w) / E.d.w, y: (V.y + f.fy * V.h) / E.d.h, E};
+}
+function autoFixo(p){
+  if (p.fixo) return; const pts = p.tr.filter(t => !t[3]); if (!pts.length) return;
+  p.px = pts.reduce((s, t) => s + t[0], 0) / pts.length;
+  p.py = p.tipo === 'acenar' ? Math.max(...pts.map(t => t[1])) : (p.tipo === 'balanco' || p.tipo === 'ondular') ? Math.min(...pts.map(t => t[1])) : pts.reduce((s, t) => s + t[1], 0) / pts.length;
+}
+const r4 = v => Math.round(v * 10000) / 10000;
+function iniciarPinca(){
+  const [a, b] = [...ptrs.values()], E = geoEditor(); if (!E) return; const V = vistaDe(E);
+  pinca = {d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, mx: (a.clientX + b.clientX) / 2, my: (a.clientY + b.clientY) / 2, V: {x: V.x, y: V.y, w: V.w}};
+}
+pe.addEventListener('pointerdown', e => {
+  const p = parteAtual(); if (!p || !geoEditor()) return; pe.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, e);
+  if (ptrs.size === 2) { if (traco) { p.tr.length = traco.ini; p.v++; traco = null; desenharEditor(); } arrasto = null; iniciarPinca(); return; }
+  if (ptrs.size > 2) return;
+  if (peModo === 'mover') { const V = vistaDe(geoEditor()); arrasto = {cx: e.clientX, cy: e.clientY, x: V.x, y: V.y}; return; }
+  const q = pontoImagem(e);
+  if (peModo === 'fixo') { p.px = r4(q.x); p.py = r4(q.y); p.fixo = true; save(); desenharEditor(); return; }
+  const V = vistaDe(q.E);
+  traco = {last: q, r: r4(pincel / 100 * V.h / q.E.b.h * q.E.b.h / q.E.d.h), ini: p.tr.length};
+  p.tr.push([r4(q.x), r4(q.y), traco.r, peModo === 'apagar' ? 1 : 0]); p.v++; desenharEditor();
+});
+pe.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, e);
+  const E = geoEditor(); if (!E) return; const V = vistaDe(E), r = pe.getBoundingClientRect();
+  if (pinca && ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, mx = (a.clientX + b.clientX) / 2, my = (a.clientY + b.clientY) / 2;
+    const nw = Math.max(E.b.w / 10, Math.min(E.b.w, pinca.V.w * pinca.d / d)), nh = nw * E.b.h / E.b.w, h0 = pinca.V.w * E.b.h / E.b.w;
+    const ix = pinca.V.x + (pinca.mx - r.left) / r.width * pinca.V.w, iy = pinca.V.y + (pinca.my - r.top) / r.height * h0;
+    V.w = nw; V.x = ix - (mx - r.left) / r.width * nw; V.y = iy - (my - r.top) / r.height * nh; prenderVista(E, V); desenharEditor(); return;
+  }
+  if (arrasto) { V.x = arrasto.x - (e.clientX - arrasto.cx) / r.width * V.w; V.y = arrasto.y - (e.clientY - arrasto.cy) / r.height * V.h; prenderVista(E, V); desenharEditor(); return; }
+  const p = parteAtual(); if (!traco || !p) return;
+  const q = pontoImagem(e), dist = Math.hypot((q.x - traco.last.x) * q.E.d.w, (q.y - traco.last.y) * q.E.d.h) / q.E.d.h;
+  if (dist < traco.r * .4) return;
+  const n = Math.ceil(dist / (traco.r * .4));
+  for (let i = 1; i <= n; i++) { const x = traco.last.x + (q.x - traco.last.x) * i / n, y = traco.last.y + (q.y - traco.last.y) * i / n; p.tr.push([r4(x), r4(y), traco.r, peModo === 'apagar' ? 1 : 0]); }
+  traco.last = q; p.v++; desenharEditor();
+});
+const fimTraco = e => {
+  ptrs.delete(e.pointerId); if (ptrs.size < 2) pinca = null; if (!ptrs.size) arrasto = null;
+  const p = parteAtual(); if (!traco || !p) return; pilha.push({id: p.id, ini: traco.ini}); if (pilha.length > 60) pilha.shift();
+  traco = null; autoFixo(p); p.v++; save(); desenharEditor();
+};
+pe.addEventListener('pointerup', fimTraco); pe.addEventListener('pointercancel', fimTraco);
+pe.addEventListener('wheel', e => { e.preventDefault(); const f = fracao(e); zoomEm(e.deltaY < 0 ? 1.25 : .8, f.fx, f.fy); }, {passive: false});
+addEventListener('resize', () => desenharEditor());
+
+
+/* ---------- Rosto: camadas por setor, presas na personagem ---------- */
+const SETORES = [
+  {k:'olhos', nome:'👁️ Olhos', q:['aberto','piscando']},
+  {k:'boca', nome:'👄 Boca', q:['calada','falando','falando2']},
+  {k:'sobr', nome:'〰️ Sobrancelhas', q:['sempre']},
+  {k:'boch', nome:'🌸 Bochechas', q:['sempre']},
+  {k:'outros', nome:'✨ Outros (lágrima, suor, acessórios…)', q:['sempre']},
+];
+const ORDEM_ROSTO = ['boch', 'olhos', 'sobr', 'boca', 'outros']; // de trás para a frente
+const QUANDO = [['sempre','Sempre'],['calada','Só parada (boca fechada)'],['falando','Só falando (boca aberta)'],['falando2','Falando 2 (alterna com Falando)'],['aberto','Olho aberto (some ao piscar)'],['piscando','Olho fechado (só ao piscar)']];
+const rostoImgs = {}; let rostoSel = null;
+const escH = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rostoAberto = () => $('#pane-rosto').classList.contains('on');
+const camadaRosto = id => S.rosto.find(c => c.id === id) || null;
+const temFalando2 = () => S.rosto.some(c => c.vis !== false && c.quando === 'falando2' && rostoImgs[c.id]);
+async function carregarRostoPNG(){ for (const c of S.rosto) if (!rostoImgs[c.id]) { const b = await dbGet('rosto-' + c.id); if (b) { try { rostoImgs[c.id] = await blobToImage(b); } catch(e) {} } } renderRosto(); }
+function encaixe(c, im){ // mesma proporção da Parada: ocupa a tela inteira dela; senão, entra no meio do rosto
+  const ref = images.idle || images.talk; if (!ref) return;
+  if (Math.abs(im.w / im.h - ref.w / ref.h) < .01) Object.assign(c, {x:.5, y:.5, k:r4(ref.w / im.w)});
+  else if (c.x == null) Object.assign(c, {x:.5, y:.3, k:1});
+}
+async function novasCamadas(setor, files){
+  const S0 = SETORES.find(x => x.k === setor);
+  for (const f of files){ if (!/^image\//.test(f.type)) continue;
+    const ja = S.rosto.filter(c => c.setor === setor).length, c = {id: 'r' + Math.random().toString(36).slice(2, 9), setor, nome: f.name.replace(/\.[^.]+$/, ''), quando: S0.q[Math.min(ja, S0.q.length - 1)], vis: true, x: null, y: null, k: 1, r: 0};
+    rostoImgs[c.id] = await blobToImage(f); encaixe(c, rostoImgs[c.id]); S.rosto.push(c); dbPut('rosto-' + c.id, f); rostoSel = c.id; }
+  save(); renderRosto();
+}
+async function trocarCamada(c, f){ if (rostoImgs[c.id] && rostoImgs[c.id].url) URL.revokeObjectURL(rostoImgs[c.id].url); rostoImgs[c.id] = await blobToImage(f); dbPut('rosto-' + c.id, f); save(); renderRosto(); }
+function cartao(c){
+  const im = rostoImgs[c.id], on = c.id === rostoSel, linha = (k, rot, min, max, st) => `<div class="row"><label>${rot}</label><input type="range" data-rc="${k}" min="${min}" max="${max}" step="${st}" value="${c[k] ?? 0}"><output>${(+(c[k] ?? 0)).toFixed(2).replace(/\.?0+$/, '') || '0'}</output></div>`;
+  return `<div class="cam${on ? ' on' : ''}${c.vis === false ? ' off' : ''}" data-rid="${c.id}"><div class="thumb" data-ra="sel" title="Posicionar no palco">${im ? `<img src="${im.url}" alt="">` : '<span class="sub">…</span>'}</div>
+    <div class="info"><input type="text" data-rc="nome" value="${escH(c.nome)}" aria-label="Nome da camada"><select data-rc="quando" aria-label="Quando aparece">${QUANDO.map(([v, n]) => `<option value="${v}"${v === c.quando ? ' selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="acts"><button class="btn" data-ra="vis">${c.vis === false ? '🙈 Mostrar' : '👁️ Esconder'}</button><button class="btn" data-ra="sobe" title="Mais para a frente">▲</button><button class="btn" data-ra="desce" title="Mais para trás">▼</button><button class="btn" data-ra="troca">Trocar</button><button class="btn" data-ra="del">Remover</button><button class="btn${on ? ' main' : ''}" data-ra="sel">${on ? '✋ Arraste no palco' : '✋ Posicionar'}</button></div>
+    ${on ? `<div class="ed">${linha('x', 'Horizontal', -.5, 1.5, .001)}${linha('y', 'Vertical', -.5, 1.5, .001)}${linha('k', 'Tamanho', .05, 4, .005)}${linha('r', 'Girar', -180, 180, 1)}<div class="btns"><button class="btn" data-ra="encaixar">Encaixar na Parada</button><button class="btn" data-ra="pronto">Pronto</button></div></div>` : ''}</div>`;
+}
+function renderRosto(){
+  const el = $('#rostoSetores'); if (!el) return;
+  el.innerHTML = SETORES.map(st => { const L = S.rosto.filter(c => c.setor === st.k);
+    return `<div class="setor"><div class="setor-cab"><h2>${st.nome}</h2><button class="btn main" data-radd="${st.k}">+ Camada</button></div>${L.map(cartao).join('') || '<p class="hint">Nenhuma camada. Toque em + Camada (pode escolher várias PNGs de uma vez).</p>'}</div>`; }).join('');
+}
+$('#rostoSetores').addEventListener('click', e => {
+  const add = e.target.closest('[data-radd]'); if (add){ const f = $('#rostoFile'); f.dataset.setor = add.dataset.radd; f.dataset.troca = ''; f.click(); return; }
+  const b = e.target.closest('[data-ra]'), card = e.target.closest('[data-rid]'); if (!b || !card) return;
+  const c = camadaRosto(card.dataset.rid); if (!c) return; const a = b.dataset.ra, irmas = S.rosto.filter(x => x.setor === c.setor);
+  if (a === 'sel') rostoSel = rostoSel === c.id ? null : c.id;
+  else if (a === 'pronto') rostoSel = null;
+  else if (a === 'vis') c.vis = c.vis === false;
+  else if (a === 'troca'){ const f = $('#rostoFile'); f.dataset.setor = c.setor; f.dataset.troca = c.id; f.click(); return; }
+  else if (a === 'encaixar'){ const im = rostoImgs[c.id], ref = images.idle || images.talk; if (im && ref) Object.assign(c, {x:.5, y:.5, k:r4(ref.w / im.w), r:0}); }
+  else if (a === 'del'){ if (!b.dataset.ok){ b.dataset.ok = 1; b.textContent = 'Remover?'; return; } S.rosto = S.rosto.filter(x => x !== c); dbPut('rosto-' + c.id, null); delete rostoImgs[c.id]; if (rostoSel === c.id) rostoSel = null; }
+  else if (a === 'sobe' || a === 'desce'){ const i = irmas.indexOf(c), j = i + (a === 'sobe' ? 1 : -1); if (j < 0 || j >= irmas.length) return; const A = S.rosto.indexOf(c), B = S.rosto.indexOf(irmas[j]); [S.rosto[A], S.rosto[B]] = [S.rosto[B], S.rosto[A]]; }
+  save(); renderRosto();
+});
+$('#rostoSetores').addEventListener('input', e => {
+  const k = e.target.dataset.rc, card = e.target.closest('[data-rid]'); if (!k || !card) return; const c = camadaRosto(card.dataset.rid); if (!c) return;
+  c[k] = e.target.type === 'range' ? parseFloat(e.target.value) : e.target.value;
+  const o = e.target.parentElement.querySelector('output'); if (o) o.textContent = (+c[k]).toFixed(2).replace(/\.?0+$/, '') || '0';
+  save();
+});
+$('#rostoFile').onchange = () => { const f = $('#rostoFile'), fs = [...f.files], troca = f.dataset.troca; f.value = ''; if (!fs.length) return;
+  if (troca){ const c = camadaRosto(troca); if (c) trocarCamada(c, fs[0]); } else novasCamadas(f.dataset.setor, fs); };
+function desenharRosto(sc, ref, abre, blinking){ // dentro da mesma transformação do corpo: acompanha tudo que ela faz
+  const f2 = temFalando2(), selec = [];
+  for (const k of ORDEM_ROSTO) for (const c of S.rosto) {
+    if (c.setor !== k || c.vis === false) continue; const im = rostoImgs[c.id]; if (!im) continue;
+    const q = c.quando, ve = q === 'sempre' || (q === 'calada' && !abre) || (q === 'falando' && abre && !(flap && f2)) || (q === 'falando2' && abre && flap) || (q === 'aberto' && !blinking) || (q === 'piscando' && blinking);
+    const w = im.w * sc * (+c.k || 1), h = im.h * sc * (+c.k || 1), cx = -ref.w * sc / 2 + (c.x ?? .5) * ref.w * sc, cy = -ref.h * sc + (c.y ?? .5) * ref.h * sc;
+    if (c.id === rostoSel && rostoAberto() && !rec) selec.push([cx, cy, w, h, c.r]);
+    if (!ve) continue;
+    ctx.save(); ctx.translate(cx, cy); if (c.r) ctx.rotate(c.r * Math.PI / 180); ctx.drawImage(im.src, -w / 2, -h / 2, w, h); ctx.restore();
+  }
+  for (const [cx, cy, w, h, r] of selec){ ctx.save(); ctx.translate(cx, cy); if (r) ctx.rotate(r * Math.PI / 180); ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = '#f2b544'; ctx.strokeRect(-w / 2, -h / 2, w, h); ctx.restore(); }
+}
+
+/* ---------- Atores ---------- */
+function listaAtores(){
+  const sel = $('#atorSel'); sel.innerHTML = ATORES.lista.map(a => `<option value="${a.id}">🎭 ${a.nome.replace(/</g, '&lt;')}</option>`).join(''); sel.value = ATORES.atual;
+}
+async function trocarAtor(id, semSalvar){
+  clearTimeout(saveTimer); if (!semSalvar) gravarS();
+  ATORES.atual = id; salvarAtores(); S = carregarS(id);
+  for (const k in images){ if (images[k].url) URL.revokeObjectURL(images[k].url); delete images[k]; }
+  for (const k in partImgs){ if (partImgs[k].url) URL.revokeObjectURL(partImgs[k].url); delete partImgs[k]; }
+  for (const k in rostoImgs){ if (rostoImgs[k].url) URL.revokeObjectURL(rostoImgs[k].url); delete rostoImgs[k]; } rostoSel = null;
+  usePlaceholders();
+  for (const s of SLOTS){ const b = await dbGet(chaveImg(id, s.k)); if (b) { try { images[s.k] = await blobToImage(b); } catch(e) {} } }
+  if (hasUserImages()) for (const s of SLOTS) if (images[s.k] && !images[s.k].user) delete images[s.k];
+  parteSel = (S.partes[0] || {}).id || null; vista = null; pilha.length = 0;
+  if (S.voice) voiceSel.value = S.voice;
+  listaAtores(); renderSlots(); syncControls(); listaPartes(); carregarPartesPNG(); carregarRostoPNG();
+  runAction(ACTIONS.find(a => a.id === 'entrada'));
+}
+$('#atorSel').onchange = e => trocarAtor(e.target.value);
+$('#atorNovo').onclick = () => {
+  const n = (prompt('Nome do novo ator:', 'Ator ' + (ATORES.lista.length + 1)) || '').trim(); if (!n) return;
+  const id = 'a' + Math.random().toString(36).slice(2, 8); ATORES.lista.push({id, nome: n}); trocarAtor(id).then(gravarS);
+};
+$('#atorNome').onclick = () => {
+  const a = ATORES.lista.find(x => x.id === ATORES.atual), n = (prompt('Novo nome do ator:', a.nome) || '').trim(); if (!n) return;
+  a.nome = n; salvarAtores(); listaAtores();
+};
+$('#atorApaga').onclick = async () => {
+  if (ATORES.lista.length < 2) { alert('Precisa ter pelo menos um ator. Crie outro antes de apagar este.'); return; }
+  const a = ATORES.lista.find(x => x.id === ATORES.atual);
+  if (!confirm(`Apagar o ator “${a.nome}” com as poses e partes dele? Ele também sai do Palco.`)) return;
+  for (const s of SLOTS) await dbPut(chaveImg(a.id, s.k), null);
+  for (const p of S.partes) if (p.png) await dbPut('parte-' + p.id, null);
+  for (const c of S.rosto) await dbPut('rosto-' + c.id, null);
+  try { localStorage.removeItem(chaveCfg(a.id)); } catch(e) {}
+  ATORES.lista = ATORES.lista.filter(x => x !== a); trocarAtor(ATORES.lista[0].id, true);
+};
+
+/* ---------- Interface: slots ---------- */
+const slotsEl = $('#slots');
+function renderSlots(){
+  slotsEl.innerHTML = '';
+  for (const s of SLOTS){
+    const im = images[s.k];
+    const div = document.createElement('div'); div.className = 'slot';
+    const thumbSrc = im ? (im.user ? im.url : im.src.toDataURL()) : '';
+    div.innerHTML = `<div class="thumb" role="button" tabindex="0" aria-label="Escolher imagem ${s.name}">${thumbSrc ? `<img src="${thumbSrc}" alt="">` : '<span class="sub">Toque para escolher</span>'}</div>
+      <div class="name">${s.name}${im && !im.user ? ' <span class="sub">(exemplo)</span>' : ''}</div>
+      <div class="sub">${s.sub}</div>
+      <div class="acts"><button class="btn pick">Trocar</button>${im && im.user ? '<button class="btn del">Remover</button>' : ''}</div>
+      <input type="file" accept="image/png,image/*" hidden>`;
+    const inp = div.querySelector('input');
+    const open = () => inp.click();
+    div.querySelector('.thumb').onclick = open;
+    div.querySelector('.thumb').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
+    div.querySelector('.pick').onclick = open;
+    const del = div.querySelector('.del'); if (del) del.onclick = () => setSlot(s.k, null);
+    inp.onchange = () => { if (inp.files[0]) setSlot(s.k, inp.files[0]); };
+    slotsEl.appendChild(div);
+  }
+}
+
+/* ---------- Interface: controles ligados a S ---------- */
+function fmt(k, v){
+  if (k.endsWith('Ms')) return Math.round(v) + 'ms';
+  if (k === 'blinkEvery') return v + 's';
+  if (k === 'thresh') return Math.round(v*100) + '%';
+  return (+v).toFixed(2).replace(/\.?0+$/, '') || '0';
+}
+function syncControls(){
+  document.querySelectorAll('[data-k]').forEach(el => {
+    const k = el.dataset.k; if (!(k in S)) return;
+    if (el.type === 'checkbox') el.checked = !!S[k]; else el.value = S[k];
+  });
+  document.querySelectorAll('output[data-for]').forEach(o => o.textContent = fmt(o.dataset.for, S[o.dataset.for]));
+  document.querySelectorAll('.preset').forEach(b => b.classList.toggle('on', b.dataset.id === S.preset));
+  updateMeterTh();
+}
+document.querySelectorAll('[data-k]').forEach(el => {
+  el.addEventListener('input', () => {
+    const k = el.dataset.k;
+    S[k] = el.type === 'checkbox' ? el.checked : (el.type === 'range' ? parseFloat(el.value) : el.value);
+    const o = document.querySelector(`output[data-for="${k}"]`); if (o) o.textContent = fmt(k, S[k]);
+    if (['idleStyle','idleAmt','idleSpd','talkStyle','talkAmt','talkSpd','swap','fadeMs','pop','popAmt','holdMs'].includes(k)){ S.preset = ''; document.querySelectorAll('.preset').forEach(b => b.classList.remove('on')); }
+    if (k === 'thresh') updateMeterTh();
+    save();
+  });
+});
+
+const presetsEl = $('#presets');
+PRESETS.forEach(p => {
+  const b = document.createElement('button'); b.className = 'preset'; b.dataset.id = p.id;
+  b.innerHTML = `<b>${p.name}</b><span>${p.desc}</span>`;
+  b.onclick = () => { Object.assign(S, p.v); S.preset = p.id; syncControls(); save(); kickPop(1.2); };
+  presetsEl.appendChild(b);
+});
+
+/* Abas */
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + b.dataset.tab));
+  if (b.dataset.tab === 'partes') listaPartes();
+  if (b.dataset.tab === 'rosto') renderRosto();
+});
+
+/* ---------- Áudio: microfone e arquivo ---------- */
+let ac = null, recDest = null, micAn = null, micStream = null, fileAn = null, fileEl = null;
+const tbuf = new Float32Array(1024);
+function ensureAC(){
+  if (!ac){ ac = new (window.AudioContext || window.webkitAudioContext)(); recDest = ac.createMediaStreamDestination(); }
+  if (ac.state === 'suspended') ac.resume();
+  return ac;
+}
+function rmsOf(an){ an.getFloatTimeDomainData(tbuf); let s = 0; for (let i = 0; i < tbuf.length; i++) s += tbuf[i]*tbuf[i]; return Math.sqrt(s / tbuf.length); }
+
+$('#micBtn').onclick = async () => {
+  const btn = $('#micBtn');
+  if (micStream){ micStream.getTracks().forEach(t => t.stop()); micStream = null; micAn = null; btn.textContent = 'Ligar microfone'; btn.classList.add('main'); return; }
+  try {
+    ensureAC();
+    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true}});
+    const src = ac.createMediaStreamSource(micStream);
+    micAn = ac.createAnalyser(); micAn.fftSize = 1024; src.connect(micAn); src.connect(recDest);
+    btn.textContent = 'Desligar microfone'; btn.classList.remove('main');
+  } catch(e){ btn.textContent = 'Microfone bloqueado: libere o acesso no navegador'; }
+};
+
+$('#audPick').onclick = () => $('#audFile').click();
+$('#audFile').onchange = () => {
+  const f = $('#audFile').files[0]; if (!f) return;
+  ensureAC();
+  if (fileEl){ fileEl.pause(); }
+  fileEl = new Audio(URL.createObjectURL(f));
+  const src = ac.createMediaElementSource(fileEl);
+  fileAn = ac.createAnalyser(); fileAn.fftSize = 1024;
+  src.connect(fileAn); fileAn.connect(ac.destination); src.connect(recDest);
+  fileEl.onended = () => { $('#audPlay').textContent = 'Tocar'; };
+  $('#audPlay').disabled = false; $('#audName').textContent = f.name;
+};
+$('#audPlay').onclick = () => {
+  if (!fileEl) return; ensureAC();
+  if (fileEl.paused){ fileEl.play(); $('#audPlay').textContent = 'Pausar'; }
+  else { fileEl.pause(); $('#audPlay').textContent = 'Tocar'; }
+};
+
+const meterFill = $('#meterFill'), meterTh = $('#meterTh');
+function updateMeterTh(){ meterTh.style.left = `calc(${Math.min(100, S.thresh*100)}% - 1px)`; }
+
+/* ---------- Texto que vira voz ---------- */
+let tts = {on:false, bump:0}, caption = {text:'', shown:0, until:0};
+const voiceSel = $('#voiceSel');
+function loadVoices(){
+  const vs = speechSynthesis.getVoices();
+  if (!vs.length) return;
+  const sorted = [...vs].sort((a,b) => (b.lang.startsWith('pt') - a.lang.startsWith('pt')) || a.name.localeCompare(b.name));
+  voiceSel.innerHTML = sorted.map(v => `<option value="${v.name}">${v.name} (${v.lang})</option>`).join('');
+  if (S.voice && sorted.some(v => v.name === S.voice)) voiceSel.value = S.voice;
+}
+if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+voiceSel.onchange = () => { S.voice = voiceSel.value; save(); };
+$('#ttsBtn').onclick = () => {
+  const text = $('#ttsText').value.trim(); if (!text || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = speechSynthesis.getVoices().find(v => v.name === voiceSel.value); if (v){ u.voice = v; u.lang = v.lang; } else u.lang = 'pt-BR';
+  u.rate = S.rate; u.pitch = S.pitch;
+  u.onstart = () => { tts.on = true; caption.text = text; caption.shown = 0; caption.until = Infinity; };
+  u.onboundary = e => { tts.bump = 1; if (e.charIndex != null) caption.shown = Math.max(caption.shown, e.charIndex + (e.charLength || 1)); };
+  u.onend = u.onerror = () => { tts.on = false; caption.shown = caption.text.length; caption.until = performance.now() + 1800; };
+  speechSynthesis.speak(u);
+};
+$('#ttsStop').onclick = () => { if ('speechSynthesis' in window) speechSynthesis.cancel(); tts.on = false; caption.until = 0; };
+
+/* ---------- Falar segurando ---------- */
+let manual = false;
+const holdBtn = $('#holdBtn');
+const setManual = v => { manual = v; holdBtn.classList.toggle('active', v); };
+holdBtn.addEventListener('pointerdown', e => { e.preventDefault(); holdBtn.setPointerCapture(e.pointerId); setManual(true); });
+['pointerup','pointercancel','lostpointercapture'].forEach(ev => holdBtn.addEventListener(ev, () => setManual(false)));
+
+/* ---------- Ações ---------- */
+const ease = p => p < .5 ? 2*p*p : 1 - Math.pow(-2*p + 2, 2) / 2;
+const backOut = p => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3*Math.pow(p-1,3) + c1*Math.pow(p-1,2); };
+const ACTIONS = [
+  {id:'pulo', e:'⬆️', name:'Pulo', dur:.75, f:(p,A) => ({ty:-95*A*Math.sin(p*Math.PI), sy:.06*A*Math.sin(p*Math.PI), sx:-.04*A*Math.sin(p*Math.PI)}), start:() => kickPop(-1.2), end:() => kickPop(-1.6)},
+  {id:'susto', e:'😱', name:'Susto', dur:.7, f:(p,A) => ({tx:(Math.random()-.5)*26*A*(1-p), ty:-28*A*Math.sin(Math.min(1,p*3)*Math.PI)*(1-p), sy:.08*A*(1-p)}), start:() => kickPop(2)},
+  {id:'sim', e:'🙂', name:'Sim', dur:.9, f:(p,A) => { const w = Math.abs(Math.sin(p*3*Math.PI))*(1-p); return {ty:12*A*w, rot:2*A*w, sy:-.035*A*w}; }},
+  {id:'nao', e:'🙅', name:'Não', dur:.9, f:(p,A) => { const w = Math.sin(p*6*Math.PI)*(1-p); return {tx:20*A*w, rot:2.5*A*w}; }},
+  {id:'tchau', e:'👋', name:'Tchau', dur:1.2, f:(p,A) => ({rot:7*A*Math.sin(p*8*Math.PI)*(1-p*.6), ty:-6*A*Math.abs(Math.sin(p*8*Math.PI))})},
+  {id:'girar', e:'🌀', name:'Girar', dur:.9, f:(p,A) => ({rot:360*ease(p), ty:-40*A*Math.sin(p*Math.PI)}), end:() => kickPop(-1)},
+  {id:'zoom', e:'🔍', name:'Zoom', dur:1.8, f:(p,A) => { const env = p < .2 ? ease(p/.2) : p > .8 ? 1 - ease((p-.8)/.2) : 1; return {cz:.32*A*env}; }},
+  {id:'tremor', e:'💥', name:'Tremor', dur:.6, f:(p,A) => ({cx:(Math.random()-.5)*30*A*(1-p), cy:(Math.random()-.5)*30*A*(1-p)})},
+  {id:'entrada', e:'🎬', name:'Entrada', dur:.8, f:(p,A) => ({ty:(1-backOut(p))*520})},
+];
+const active = [];
+function runAction(a){ a.start && a.start(); active.push({a, t0:performance.now()}); }
+const actEl = $('#actions');
+ACTIONS.forEach((a, i) => {
+  const b = document.createElement('button');
+  b.innerHTML = `<span class="e">${a.e}</span>${a.name}<small>tecla ${i+1}</small>`;
+  b.onclick = () => runAction(a); actEl.appendChild(b);
+});
+
+/* Teclado: espaço fala, números fazem ações */
+const typing = () => /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '') && document.activeElement.type !== 'range' && document.activeElement.type !== 'checkbox';
+addEventListener('keydown', e => {
+  if (typing()) return;
+  if (e.code === 'Space'){ e.preventDefault(); if (!e.repeat) setManual(true); }
+  const n = parseInt(e.key, 10); if (n >= 1 && n <= ACTIONS.length) runAction(ACTIONS[n-1]);
+});
+addEventListener('keyup', e => { if (e.code === 'Space') setManual(false); });
+
+/* ---------- Arrastar e redimensionar no palco ---------- */
+const pts = new Map(); let pinch0 = null, cartaoT;
+function toCanvas(e){ const r = cv.getBoundingClientRect(); return {x:(e.clientX - r.left) * W / r.width, y:(e.clientY - r.top) * H / r.height}; }
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, toCanvas(e)); if (pts.size === 2){ const [a,b] = [...pts.values()]; const c = rostoAberto() && camadaRosto(rostoSel); pinch0 = {d:Math.hypot(a.x-b.x, a.y-b.y), s:S.size, k:c ? +c.k || 1 : 1}; } });
+cv.addEventListener('pointermove', e => {
+  if (!pts.has(e.pointerId)) return;
+  const p = toCanvas(e), prev = pts.get(e.pointerId); pts.set(e.pointerId, p);
+  const c = rostoAberto() && camadaRosto(rostoSel), ref = images.idle || images.talk;
+  if (c && ref){ const sc = 560 / ref.h * S.size;
+    if (pts.size === 1){ c.x = r4((c.x ?? .5) + (p.x - prev.x) / (ref.w * sc)); c.y = r4((c.y ?? .5) + (p.y - prev.y) / (ref.h * sc)); }
+    else if (pts.size === 2 && pinch0){ const [a,b] = [...pts.values()]; c.k = r4(Math.max(.05, Math.min(4, pinch0.k * Math.hypot(a.x-b.x, a.y-b.y) / pinch0.d))); }
+    clearTimeout(cartaoT); cartaoT = setTimeout(renderRosto, 150); return; }
+  if (pts.size === 1){ S.x += p.x - prev.x; S.y += p.y - prev.y; }
+  else if (pts.size === 2 && pinch0){ const [a,b] = [...pts.values()]; S.size = Math.max(.2, Math.min(2.5, pinch0.s * Math.hypot(a.x-b.x, a.y-b.y) / pinch0.d)); syncControls(); }
+});
+const endPt = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch0 = null; save(); };
+cv.addEventListener('pointerup', endPt); cv.addEventListener('pointercancel', endPt);
+cv.addEventListener('wheel', e => { e.preventDefault(); S.size = Math.max(.2, Math.min(2.5, S.size * (e.deltaY < 0 ? 1.05 : 0.95))); syncControls(); save(); }, {passive:false});
+$('#centerBtn').onclick = () => { S.x = 640; S.y = 720; save(); };
+
+/* Fundo */
+$('#bgPick').onclick = () => $('#bgFile').click();
+$('#bgFile').onchange = async () => { const f = $('#bgFile').files[0]; if (!f) return; bgImage = await blobToImage(f); dbPut('bg', f); S.bgMode = 'imagem'; syncControls(); save(); };
+$('#bgClear').onclick = () => { bgImage = null; dbPut('bg', null); if (S.bgMode === 'imagem') S.bgMode = 'cor'; syncControls(); save(); };
+
+/* Tela cheia */
+$('#fsBtn').onclick = () => { const st = $('#stage'); if (document.fullscreenElement) document.exitFullscreen(); else (st.requestFullscreen || st.webkitRequestFullscreen)?.call(st); };
+
+/* ---------- Gravação ---------- */
+let rec = null, recStart = 0, chunks = [];
+$('#recBtn').onclick = () => {
+  if (rec){ rec.stop(); return; }
+  const tracks = [...cv.captureStream(30).getVideoTracks()];
+  if ($('#recAudio').checked){ ensureAC(); tracks.push(...recDest.stream.getAudioTracks()); }
+  const types = ['video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  const type = types.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+  try { rec = new MediaRecorder(new MediaStream(tracks), type ? {mimeType:type, videoBitsPerSecond:8e6} : {}); }
+  catch(e){ $('#recInfo').textContent = 'Este navegador não consegue gravar o palco. Tente pelo Chrome.'; rec = null; return; }
+  chunks = [];
+  rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  rec.onstop = () => {
+    const blob = new Blob(chunks, {type: rec.mimeType || 'video/webm'});
+    const ext = (rec.mimeType || '').includes('mp4') ? 'mp4' : 'webm';
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `palco-tamaki-${Date.now()}.${ext}`;
+    document.body.appendChild(a); a.click(); a.remove();
+    $('#recInfo').textContent = `Vídeo salvo em .${ext}.` + (ext === 'webm' ? ' Se o CapCut não abrir, converta para MP4.' : '');
+    rec = null; $('#recBtn').textContent = 'Começar a gravar'; $('#recDot').classList.remove('on');
+  };
+  rec.start(500); recStart = performance.now();
+  $('#recBtn').textContent = 'Parar e salvar'; $('#recDot').classList.add('on'); $('#recInfo').textContent = '';
+};
+
+/* ---------- Motor de animação ---------- */
+const spring = {x:0, v:0};
+function kickPop(f){ spring.v += f * 3.2 * (S.popAmt || 1); }
+
+let last = performance.now(), t = 0, ph = 0;
+let level = 0, lastLoud = -1e9, lastMouth = -1e9;
+let speaking = false, mouthOpen = false, talkAmt = 0, mix = 0;
+let flap = false, flapT = 0, blinkUntil = 0, nextBlink = performance.now() + 2500;
+const statusEl = $('#status');
+let lastStatus = '';
+
+function tick(now){
+  const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
+
+  // 1. nível de voz e fonte
+  let raw = 0, src = '';
+  const filePlaying = fileEl && !fileEl.paused;
+  if (manual){ raw = .55 + .3*Math.abs(Math.sin(t*9)); src = 'manual'; }
+  else if (tts.on){ tts.bump = Math.max(0, tts.bump - dt*4); raw = .45 + .35*tts.bump + .2*Math.abs(Math.sin(t*11*S.rate)); src = 'tts'; }
+  else if (filePlaying && fileAn){ raw = Math.min(1, rmsOf(fileAn) * S.gain * 3); src = 'arquivo'; }
+  else if (micAn){ raw = Math.min(1, rmsOf(micAn) * S.gain * 3); src = 'mic'; }
+  level += (raw - level) * Math.min(1, dt * 18);
+  meterFill.style.width = (raw * 100).toFixed(1) + '%';
+
+  // 2. boca aberta e sessão de fala
+  let loud;
+  if (src === 'tts') loud = ((t * 6.5 * S.rate) % 1) < .72;   // sílabas simuladas
+  else if (src === 'manual') loud = true;
+  else loud = raw > S.thresh;
+  if (loud){ lastMouth = now; lastLoud = now; }
+  mouthOpen = (src === 'tts') ? loud : (now - lastMouth < S.holdMs);
+  const wasSpeaking = speaking;
+  speaking = src === 'tts' || src === 'manual' || (now - lastLoud < S.holdMs + 350);
+  if (speaking && !wasSpeaking && S.pop) kickPop(1);
+  if (!speaking && wasSpeaking && S.pop) kickPop(-.35);
+  talkAmt += ((speaking ? 1 : 0) - talkAmt) * Math.min(1, dt * 10);
+  const fadeRate = S.swap === 'suave' ? dt / (S.fadeMs / 1000) : 1;
+  mix = mouthOpen ? Math.min(1, mix + fadeRate) : Math.max(0, mix - fadeRate);
+
+  // troca entre Falando e Falando 2
+  if (mouthOpen && (images.talk2 || temFalando2())){ flapT += dt*1000; if (flapT > S.flapMs){ flapT = 0; flap = !flap; } } else { flap = false; flapT = 0; }
+
+  // piscar
+  if (now > nextBlink){ blinkUntil = now + 120; nextBlink = now + (Math.random() < .2 ? 260 : S.blinkEvery * 1000 * (.6 + Math.random()*.8)); }
+  const blinking = now < blinkUntil;
+
+  // mola do pulinho elástico
+  spring.v += (-260 * spring.x - 13 * spring.v) * dt; spring.x += spring.v * dt;
+
+  // 3. transformações
+  let tx = 0, ty = 0, rot = 0, sx = 1, sy = 1, cz = 0, cx = 0, cy = 0;
+  const iA = S.idleAmt * (1 - .55*talkAmt), w = S.idleSpd * 2 * Math.PI * .32;
+  if (S.idleStyle === 'respirar'){ const b = Math.sin(t*w); sy += .02*iA*b; sx -= .01*iA*b; }
+  else if (S.idleStyle === 'flutuar'){ ty -= 12*iA*(Math.sin(t*w)*.5 + .5); rot += 1.3*iA*Math.sin(t*w*.5 + 1); sy += .008*iA*Math.sin(t*w); }
+  else if (S.idleStyle === 'balancar'){ rot += 3*iA*Math.sin(t*w); sy += .008*iA*Math.sin(t*w*2); }
+
+  const tA = S.talkAmt * talkAmt;
+  if (speaking) ph += dt * S.talkSpd * 7 * (.7 + .6*level);
+  const bw = Math.abs(Math.sin(ph));
+  switch (S.talkStyle){
+    case 'pulinho': ty -= 16*tA*bw; break;
+    case 'quicar': { ty -= 30*tA*bw; const g = Math.pow(1 - bw, 6); sy += tA*(.035*bw - .07*g); sx += tA*(-.02*bw + .05*g); break; }
+    case 'voz': ty -= 34*tA*level; sy += .05*tA*level; sx -= .025*tA*level; break;
+    case 'inclinar': rot += 4.5*tA*Math.sin(ph*.45); ty -= 6*tA*bw; break;
+    case 'tremer': tx += (Math.random()-.5)*7*tA*(.4+level); ty += (Math.random()-.5)*5*tA*(.4+level) - 4*tA*bw; break;
+  }
+  sy += spring.x * .5; sx -= spring.x * .28;
+
+  for (let i = active.length - 1; i >= 0; i--){
+    const it = active[i], p = (now - it.t0) / (it.a.dur * 1000);
+    if (p >= 1){ it.a.end && it.a.end(); active.splice(i, 1); continue; }
+    const d = it.a.f(p, S.actAmt);
+    tx += d.tx||0; ty += d.ty||0; rot += d.rot||0; sx += d.sx||0; sy += d.sy||0; cz += d.cz||0; cx += d.cx||0; cy += d.cy||0;
+  }
+
+  // 4. desenhar (com as partes que mexem)
+  PARTES.preparar(refPartes(), S.partes.filter(p => !p.png)); PARTES.atualizar(now, {fala: talkAmt, corpoY: ty});
+  SEP.passo(S.partes, imgParte, now, {fala: talkAmt, corpoY: ty});
+  render({tx, ty, rot, sx, sy, cz, cx, cy, blinking});
+
+  // status e legenda
+  const st = speaking ? 'Falando' : 'Parada';
+  if (st !== lastStatus){ statusEl.textContent = st; statusEl.classList.toggle('on', speaking); lastStatus = st; }
+  if (tts.on) caption.shown = Math.min(caption.text.length, Math.max(caption.shown, caption.shown + dt * 14 * S.rate));
+  if (rec) $('#recDot').textContent = 'Gravando ' + fmtTime((now - recStart)/1000);
+
+  requestAnimationFrame(tick);
+}
+const fmtTime = s => Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2,'0');
+
+function pick(k, fallback){ return images[k] || images[fallback] || null; }
+function poseFor(open, blinking){
+  if (open){
+    let base = (flap && images.talk2) ? images.talk2 : pick('talk', 'idle');
+    if (blinking && images.talkBlink && base !== images.talk2) base = images.talkBlink;
+    return base;
+  }
+  return (blinking && images.idleBlink) ? images.idleBlink : pick('idle', 'talk');
+}
+
+function drawBG(){
+  if (S.bgMode === 'verde'){ ctx.fillStyle = '#00ff00'; ctx.fillRect(0,0,W,H); return; }
+  ctx.fillStyle = S.bgColor; ctx.fillRect(0,0,W,H);
+  if (S.bgMode === 'imagem' && bgImage){
+    const s = Math.max(W / bgImage.w, H / bgImage.h), w = bgImage.w*s, h = bgImage.h*s;
+    ctx.drawImage(bgImage.src, (W-w)/2, (H-h)/2, w, h);
+  } else if (S.bgMode === 'cor'){
+    const g = ctx.createRadialGradient(W*.5, H*.35, 60, W*.5, H*.5, W*.7);
+    g.addColorStop(0, 'rgba(255,255,255,.10)'); g.addColorStop(1, 'rgba(0,0,0,.25)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  }
+}
+
+function render(m){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,W,H);
+  drawBG();
+  ctx.save();
+  // câmera
+  if (m.cz || m.cx || m.cy){
+    const z = 1 + m.cz, fx = S.x, fy = S.y - 300*S.size;
+    ctx.translate(fx + m.cx, fy + m.cy); ctx.scale(z, z); ctx.translate(-fx, -fy);
+  }
+  const ref = images.idle || images.talk;
+  if (ref){
+    const sc = 560 / ref.h * S.size;
+    ctx.translate(S.x + m.tx, S.y + m.ty);
+    ctx.rotate(m.rot * Math.PI / 180);
+    ctx.scale(m.sx, m.sy);
+    const drawImg = (im, a = 1) => { if (!im) return; ctx.globalAlpha = a; PARTES.pintar(ctx, im.src, -im.w*sc/2, -im.h*sc, im.w*sc, im.h*sc); ctx.globalAlpha = 1; };
+    SEP.pintar(ctx, S.partes, imgParte, 'atras', -ref.w*sc/2, -ref.h*sc, sc);
+    if (S.swap === 'suave' && mix > 0 && mix < 1){
+      drawImg(poseFor(false, m.blinking)); drawImg(poseFor(true, m.blinking), mix);
+    } else drawImg(poseFor(mix >= .5, m.blinking));
+    ctx.globalAlpha = 1; desenharRosto(sc, ref, mix >= .5, m.blinking);
+    SEP.pintar(ctx, S.partes, imgParte, 'frente', -ref.w*sc/2, -ref.h*sc, sc);
+  }
+  ctx.restore();
+  drawCaption();
+}
+
+function drawCaption(){
+  if (!S.caption || !caption.text || performance.now() > caption.until) return;
+  const txt = caption.text.slice(0, Math.ceil(caption.shown));
+  const bx = 90, bw = W - 180, bh = 140, by = H - bh - 30;
+  ctx.fillStyle = 'rgba(0,0,0,.88)'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx, by, bw, bh, 16) : ctx.rect(bx, by, bw, bh); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.font = '500 36px Fredoka, system-ui, sans-serif'; ctx.textBaseline = 'top';
+  const words = txt.split(' '), lines = []; let line = '';
+  for (const wd of words){ const tst = line ? line + ' ' + wd : wd; if (ctx.measureText(tst).width > bw - 60 && line){ lines.push(line); line = wd; } else line = tst; }
+  lines.push(line);
+  lines.slice(-2).forEach((l, i) => ctx.fillText(l, bx + 30, by + 26 + i*48));
+}
+
+/* ---------- Início ---------- */
+(async () => {
+  usePlaceholders();
+  salvarAtores(); listaAtores();
+  for (const s of SLOTS){ const b = await dbGet(chaveImg(ATORES.atual, s.k)); if (b) { try { images[s.k] = await blobToImage(b); } catch(e) {} } }
+  if (hasUserImages()) for (const s of SLOTS) if (images[s.k] && !images[s.k].user) delete images[s.k];
+  const bg = await dbGet('bg'); if (bg) { try { bgImage = await blobToImage(bg); } catch(e) {} }
+  renderSlots(); syncControls(); carregarPartesPNG(); carregarRostoPNG();
+  runAction(ACTIONS.find(a => a.id === 'entrada'));
+})();
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

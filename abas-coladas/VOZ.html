@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#120f24">
+<meta name="color-scheme" content="dark">
+<title>Editor de voz · Tamaki</title>
+<style>
+:root{--bg:#120f24;--pn:#1b1736;--pn2:#231e45;--ln:#2e2a55;--tx:#efe9f7;--mu:#a49cc9;--or:#ff9f45;--gold:#f2b632;--te:#5fd9cf;--er:#ff6b6b;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+main{max-width:760px;margin:0 auto;padding:12px 16px 40px;display:grid;gap:12px}
+h1{font-size:1.25rem;margin:4px 0 0;display:flex;align-items:center;gap:8px}
+h1 small{font-size:.8rem;color:var(--mu);font-weight:400}
+.card{background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:12px}
+.card>h2{font-size:1rem;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card>h2 span{color:var(--mu);font-size:.78rem;font-weight:400}
+.bt{background:var(--pn2);border:1px solid var(--ln);border-radius:10px;padding:0 14px;min-height:42px}
+.bt.pri{background:var(--or);border-color:var(--or);color:#24130a;font-weight:700}
+.bt.rec{color:var(--er)}
+.bt.rec.on{background:#c62828;border-color:#c62828;color:#fff}
+.bt:disabled{opacity:.5;cursor:default}
+label.bt{display:inline-grid;place-items:center}
+.btns{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 14px;align-items:end}
+.f{display:grid;gap:3px;font-size:.8rem;color:var(--mu)}
+.f b{display:flex;justify-content:space-between;font-weight:600}
+.f b i{font-style:normal;color:var(--tx)}
+.f input[type=range]{width:100%;accent-color:var(--or)}
+.f select,.f input[type=text],.f input[type=password],textarea{background:#0b0918;border:1px solid var(--ln);border-radius:10px;padding:8px;width:100%}
+textarea{min-height:120px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{background:var(--pn2);border:1px solid var(--ln);border-radius:999px;padding:7px 12px;color:var(--mu)}
+.chips button.on{border-color:var(--or);color:var(--tx);font-weight:700}
+.chips button.novo{border-style:dashed;color:var(--or)}
+.dica{color:var(--mu);font-size:.8rem;margin:8px 0 0}
+#msg{min-height:1.2em;color:var(--te)}
+#msg.erro{color:var(--er)}
+.nv{margin-top:10px;padding-top:10px;border-top:1px dashed var(--ln)}
+.medidor{height:8px;border-radius:99px;background:#0b0918;overflow:hidden;margin-top:8px}
+.medidor i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--te),var(--or));transition:width .08s}
+details>summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between}
+details>summary::after{content:"▾";color:var(--mu)}
+details[open]>summary::after{content:"▴"}
+details .g{margin-top:10px}
+.esc{display:none}
+code{background:#0b0918;padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+<main>
+  <h1>🎙 Editor de voz <small>crie vozes a partir de um exemplo</small></h1>
+  <section class="card" id="cVozes"></section>
+  <section class="card">
+    <h2>Nova fala <span id="vozUsada"></span></h2>
+    <textarea id="texto" placeholder="Escreva o que a voz vai falar. Uma frase por linha."></textarea>
+    <div class="btns">
+      <button class="bt pri" data-a="falar">▶ Gerar e ouvir</button>
+      <button class="bt" data-a="parar">■ Parar</button>
+      <button class="bt" data-a="baixar">⬇ Baixar (.wav)</button>
+    </div>
+    <div class="medidor"><i id="nivel"></i></div>
+    <p class="dica" id="msg"></p>
+  </section>
+  <section class="card"><details id="dAjustes"><summary>Ajustes da voz</summary><div id="ajustes"></div></details></section>
+  <section class="card"><details><summary>Motor de voz e chaves</summary><div id="motor"></div></details></section>
+</main>
+<input type="file" id="fEx" accept="audio/*,video/*" class="esc">
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const copia = o => JSON.parse(JSON.stringify(o));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const espera = ms => new Promise(r => setTimeout(r, ms));
+const lim = (x, a) => +Math.max(-a, Math.min(a, x)).toFixed(1);
+
+/* ---------- dados ---------- */
+const KEY = "editor-voz";
+const PRESET = {natural: {tom: 0, vel: 1, variar: .4, pausa: 1, calor: 2, clareza: 2, brilho: 1, sala: .05, vol: 1, comp: 1},
+  original: {tom: 0, vel: 1, variar: 0, pausa: 1, calor: 0, clareza: 0, brilho: 0, sala: 0, vol: 1, comp: 0}};
+const DEF = {motor: "browser", url: "http://127.0.0.1:8765", voice: "pf_dora", speed: 1.05, pause: .4,
+  azVoz: "pt-BR-FranciscaNeural", elVoz: "", elModelo: "eleven_multilingual_v2", elEst: .45, elSim: .8, elStyle: .15, navVoz: "",
+  ed: copia(PRESET.natural), vozes: [], ativa: "", texto: "Oi, gente! Aqui é a Tamaki. Vocês não vão acreditar no que aconteceu hoje..."};
+const BASE = ["motor", "url", "voice", "speed", "azVoz", "elVoz", "elModelo", "elEst", "elSim", "elStyle", "navVoz"];
+const lerLS = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) || f; } catch (e) { return f; } };
+let cfg = Object.assign(copia(DEF), lerLS(KEY, {})); cfg.ed = Object.assign(copia(PRESET.natural), cfg.ed); cfg.vozes = cfg.vozes || [];
+let chaves = lerLS("palco-chaves", {}); // as mesmas chaves do Palco
+let vozesAz = lerLS("palco-vozes-az", [{id: "pt-BR-FranciscaNeural", n: "Francisca (feminina)"}, {id: "pt-BR-ThalitaNeural", n: "Thalita (feminina)"}, {id: "pt-BR-AntonioNeural", n: "Antonio (masculina)"}]);
+let vozesEl = lerLS("palco-vozes-el", []);
+let tm; const salvar = () => { clearTimeout(tm); tm = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch (e) {} }, 250); };
+const guardarChaves = () => { try { localStorage.setItem("palco-chaves", JSON.stringify(chaves)); } catch (e) {} };
+const ativa = () => cfg.vozes.find(v => v.id == cfg.ativa);
+function aviso(t, erro){ const e = $("#msg"); e.textContent = t; e.classList.toggle("erro", !!erro); }
+// exemplos guardados no aparelho
+const idb = () => new Promise((ok, no) => { const r = indexedDB.open("editor-voz", 1); r.onupgradeneeded = () => r.result.createObjectStore("ex"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+const idbPut = async (k, v) => { try { const d = await idb(); await new Promise(ok => { const t = d.transaction("ex", "readwrite"); t.objectStore("ex").put(v, k); t.oncomplete = ok; t.onerror = ok; }); } catch (e) {} };
+const idbGet = async k => { try { const d = await idb(); return await new Promise(ok => { const r = d.transaction("ex").objectStore("ex").get(k); r.onsuccess = () => ok(r.result); r.onerror = () => ok(null); }); } catch (e) { return null; } };
+
+/* ---------- áudio ---------- */
+let ac, an, cadV, cur = null;
+function impulso(ctx){ const n = Math.floor(ctx.sampleRate * 1.4), b = ctx.createBuffer(2, n, ctx.sampleRate); for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3); } return b; }
+function cadeia(ctx){ // graves, clareza, brilho, compressor, sala e volume
+  const ent = ctx.createGain(), f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter(), f3 = ctx.createBiquadFilter(), cp = ctx.createDynamicsCompressor(), seco = ctx.createGain(), mol = ctx.createGain(), rv = ctx.createConvolver(), out = ctx.createGain();
+  f1.type = "lowshelf"; f1.frequency.value = 250; f2.type = "peaking"; f2.frequency.value = 3000; f2.Q.value = .9; f3.type = "highshelf"; f3.frequency.value = 7500; rv.buffer = impulso(ctx);
+  ent.connect(f1); f1.connect(f2); f2.connect(f3); f3.connect(cp); cp.connect(seco); seco.connect(out); cp.connect(rv); rv.connect(mol); mol.connect(out);
+  const ajustar = () => { const E = cfg.ed; f1.gain.value = +E.calor; f2.gain.value = +E.clareza; f3.gain.value = +E.brilho;
+    cp.threshold.value = E.comp ? -24 : 0; cp.ratio.value = E.comp ? 3.5 : 1; cp.knee.value = 12; cp.attack.value = .005; cp.release.value = .2;
+    seco.gain.value = 1 - E.sala * .5; mol.gain.value = +E.sala; out.gain.value = +E.vol; };
+  ajustar(); return {ent, out, ajustar};
+}
+function audio(){
+  if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); an = ac.createAnalyser(); an.fftSize = 512; an.connect(ac.destination); cadV = cadeia(ac); cadV.out.connect(an); medir(); }
+  if (ac.state == "suspended") ac.resume(); return ac;
+}
+function medir(){ const b = new Uint8Array(an.fftSize); (function f(){ an.getByteTimeDomainData(b); let s = 0; for (const v of b) s += ((v - 128) / 128) ** 2; $("#nivel").style.width = Math.min(100, Math.sqrt(s / b.length) * 400) + "%"; requestAnimationFrame(f); })(); }
+function esticar(x, a, sr){ // muda tom e velocidade sem voz de "esquilo" (WSOLA)
+  const N = sr > 32000 ? 2048 : 1024, Hs = N / 4, Ha = Hs / a, S = N / 8, w = new Float32Array(N);
+  for (let i = 0; i < N; i++) w[i] = .5 - .5 * Math.cos(2 * Math.PI * i / N);
+  const L = Math.ceil(x.length * a) + N, y = new Float32Array(L), nm = new Float32Array(L);
+  let pin = 0, pout = 0, prev = -1;
+  while (Math.round(pin) + N + S < x.length && pout + N < L) {
+    let st = Math.round(pin);
+    if (prev >= 0) { const ref = prev + Hs; let bv = -Infinity, bd = 0;
+      for (let d = -S; d <= S; d += 4) { const s0 = st + d; if (s0 < 0 || s0 + N > x.length || ref + N / 2 > x.length) continue; let c = 0; for (let i = 0; i < N / 2; i += 8) c += x[ref + i] * x[s0 + i]; if (c > bv) { bv = c; bd = d; } }
+      st = Math.max(0, st + bd); }
+    for (let i = 0; i < N; i++) { y[pout + i] += x[st + i] * w[i]; nm[pout + i] += w[i]; }
+    prev = st; pin += Ha; pout += Hs;
+  }
+  for (let i = 0; i < L; i++) if (nm[i] > 1e-3) y[i] /= nm[i];
+  return y.subarray(0, Math.min(L, Math.round(x.length * a)));
+}
+function processar(ab, st, vel){
+  if (Math.abs(st) < .01 && Math.abs(vel - 1) < .005) return ab;
+  const n = ab.length, x = new Float32Array(n), nc = ab.numberOfChannels;
+  for (let c = 0; c < nc; c++) { const d = ab.getChannelData(c); for (let i = 0; i < n; i++) x[i] += d[i] / nc; }
+  const f = Math.pow(2, st / 12), z = esticar(x, f / vel, ab.sampleRate), m = Math.max(1, Math.floor(z.length / f)), y = new Float32Array(m);
+  for (let i = 0; i < m; i++) { const p = i * f, j = Math.floor(p), r = p - j; y[i] = (z[j] || 0) * (1 - r) + (z[j + 1] || 0) * r; }
+  const out = audio().createBuffer(1, m, ab.sampleRate); out.copyToChannel(y, 0); return out;
+}
+function wav(ab){
+  const n = ab.length, ch = ab.numberOfChannels, sr = ab.sampleRate, dv = new DataView(new ArrayBuffer(44 + n * ch * 2)), w = (o, s) => [...s].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF"); dv.setUint32(4, 36 + n * ch * 2, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, ch, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr * ch * 2, true); dv.setUint16(32, ch * 2, true); dv.setUint16(34, 16, true); w(36, "data"); dv.setUint32(40, n * ch * 2, true);
+  let o = 44; const d = [...Array(ch)].map((_, c) => ab.getChannelData(c));
+  for (let i = 0; i < n; i++) for (let c = 0; c < ch; c++) { const v = Math.max(-1, Math.min(1, d[c][i])); dv.setInt16(o, v < 0 ? v * 32768 : v * 32767, true); o += 2; }
+  return new Blob([dv], {type: "audio/wav"});
+}
+function baixarArq(blob, nome){ const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nome; document.body.appendChild(a); a.click(); a.remove(); }
+
+/* ---------- motores ---------- */
+const escXml = s => String(s).replace(/[<>&'"]/g, c => ({"<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;"}[c]));
+const variar = () => { const k = +cfg.ed.variar || 0; return {st: (Math.random() - .5) * 1.2 * k, v: 1 + (Math.random() - .5) * .08 * k}; };
+async function azure(t, va){
+  if (!chaves.az) throw new Error("falta a chave do Azure (em Motor de voz e chaves)");
+  const st = +cfg.ed.tom + va.st, pct = Math.round((cfg.ed.vel * va.v - 1) * 100);
+  const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pt-BR"><voice name="${escXml(cfg.azVoz)}"><prosody pitch="${st >= 0 ? "+" : ""}${st.toFixed(1)}st" rate="${pct >= 0 ? "+" : ""}${pct}%">${escXml(t)}</prosody></voice></speak>`;
+  const r = await fetch(`https://${chaves.azReg || "brazilsouth"}.tts.speech.microsoft.com/cognitiveservices/v1`, {method: "POST", headers: {"Ocp-Apim-Subscription-Key": chaves.az, "Content-Type": "application/ssml+xml", "X-Microsoft-OutputFormat": "audio-24khz-96kbitrate-mono-mp3"}, body: ssml});
+  if (!r.ok) throw new Error("o Azure respondeu " + r.status + (r.status == 401 ? " (chave ou região errada)" : ""));
+  return r.blob();
+}
+async function eleven(t){
+  if (!chaves.el) throw new Error("falta a chave do ElevenLabs (em Motor de voz e chaves)"); if (!cfg.elVoz) throw new Error("escolha uma voz do ElevenLabs");
+  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(cfg.elVoz)}?output_format=mp3_44100_128`, {method: "POST", headers: {"xi-api-key": chaves.el, "Content-Type": "application/json"},
+    body: JSON.stringify({text: t, model_id: cfg.elModelo, voice_settings: {stability: +cfg.elEst, similarity_boost: +cfg.elSim, style: +cfg.elStyle, use_speaker_boost: true}})});
+  if (!r.ok) throw new Error("o ElevenLabs respondeu " + r.status + (r.status == 401 ? " (chave errada ou sem créditos)" : ""));
+  return r.blob();
+}
+async function obterAudio(t){ // AudioBuffer já com tom e velocidade; null para a voz do aparelho
+  const m = cfg.motor, E = cfg.ed, va = variar(); let blob, st = +E.tom + va.st, vel = E.vel * va.v;
+  if (m == "termux") { const r = await fetch(cfg.url + "/tts", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text: t, voice: cfg.voice, speed: cfg.speed * vel, pause: cfg.pause})}); if (!r.ok) throw new Error("o Termux respondeu " + r.status); blob = await r.blob(); vel = 1; }
+  else if (m == "azure") { blob = await azure(t, va); st = 0; vel = 1; }
+  else if (m == "eleven") blob = await eleven(t);
+  else return null;
+  return processar(await audio().decodeAudioData(await blob.arrayBuffer()), st, vel);
+}
+function msgErro(e){ const m = e && e.message || String(e); return /fetch|network|load failed/i.test(m) ? "não consegui conectar (" + ({termux: "o comando palco está ligado no Termux?", azure: "confira a internet e a região"}[cfg.motor] || "confira a internet") + ")" : m; }
+const vozesNav = () => window.speechSynthesis ? speechSynthesis.getVoices().filter(v => /^pt/i.test(v.lang)).sort((a, b) => (/BR/i.test(b.lang) ? 1 : 0) - (/BR/i.test(a.lang) ? 1 : 0)) : [];
+function vozNavegador(t){ return new Promise(ok => {
+  if (!window.speechSynthesis) return ok();
+  const u = new SpeechSynthesisUtterance(t); u.lang = "pt-BR";
+  const vs = speechSynthesis.getVoices(), v = vs.find(v => v.voiceURI == cfg.navVoz) || vs.find(v => /pt[-_]BR/i.test(v.lang)); if (v) u.voice = v;
+  u.rate = +cfg.ed.vel || 1; u.pitch = Math.max(.1, Math.min(2, Math.pow(2, (+cfg.ed.tom || 0) / 12)));
+  u.onend = u.onerror = () => ok(); speechSynthesis.speak(u);
+}); }
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => painelMotor();
+function pararAtual(){ if (cur) { const s = cur; cur = null; try { s.stop(); } catch (e) {} } if (window.speechSynthesis) speechSynthesis.cancel(); }
+let fila = [], ocupado = false, quieto = false; // quieto: não troca a mensagem (frase de teste)
+function tocarBuffer(ab){ return new Promise(ok => { const c = audio(); pararAtual(); const s = c.createBufferSource(); s.buffer = ab; s.connect(cadV.ent); cur = s; s.onended = () => { if (cur === s) cur = null; ok(); }; s.start(); }); }
+const linhas = t => (t || "").split(/\n+/).map(s => s.trim()).filter(Boolean);
+function falar(texto, q){ quieto = !!q; fila.push(...linhas(texto)); bomba(); }
+async function bomba(){ if (ocupado) return; ocupado = true;
+  while (fila.length) { const t = fila.shift(); if (!quieto) aviso("Gerando: " + t.slice(0, 60) + (t.length > 60 ? "…" : ""));
+    try { if (cfg.motor == "browser") await vozNavegador(t); else await tocarBuffer(await obterAudio(t)); if (!quieto) aviso(""); }
+    catch (e) { aviso("Erro: " + msgErro(e), 1); fila = []; }
+    if (fila.length) await espera(cfg.pause * 1000 * (+cfg.ed.pausa || 1)); }
+  ocupado = false; }
+function parar(){ fila = []; pararAtual(); }
+async function baixarFala(){
+  if (cfg.motor == "browser") return aviso("A voz do aparelho não pode ser baixada. Use o Kokoro, o Azure ou o ElevenLabs (em Motor de voz e chaves).", 1);
+  const ls = linhas(cfg.texto); if (!ls.length) return aviso("Escreva a fala primeiro.", 1);
+  try {
+    const ps = []; for (const [i, l] of ls.entries()) { aviso(`Gerando o áudio… ${i + 1}/${ls.length}`); ps.push(await obterAudio(l)); }
+    const sr = ps[0].sampleRate, gap = Math.round(sr * cfg.pause * (+cfg.ed.pausa || 1)), tot = ps.reduce((s, b) => s + b.length + gap, Math.round(sr * .3)) + sr;
+    const off = new OfflineAudioContext(1, tot, sr), cd = cadeia(off); cd.out.connect(off.destination);
+    let t0 = .15; for (const b of ps) { const s = off.createBufferSource(); s.buffer = b; s.connect(cd.ent); s.start(t0); t0 += (b.length + gap) / sr; }
+    const nome = "fala-" + ((ativa() || {}).nome || "voz").toLowerCase().replace(/[^a-z0-9]+/gi, "-") + ".wav";
+    baixarArq(wav(await off.startRendering()), nome); aviso("Áudio baixado: " + nome);
+  } catch (e) { aviso("Não consegui gerar: " + msgErro(e), 1); }
+}
+
+/* ---------- criar voz a partir de um exemplo ---------- */
+// "Clonar": o ElevenLabs treina uma voz igual à do exemplo (plano pago).
+// "Imitar": mede o tom e o timbre do exemplo e ajusta o motor atual para chegar perto dele (grátis).
+const REF = "Oi, gente! Aqui é a Tamaki. Hoje eu vou contar tudo o que aconteceu, então senta que lá vem história.";
+let nova = null, gravador = null, grIni = 0;
+async function reamostrar(ab, max){ // mono, 24 kHz, no máximo "max" segundos
+  const sr = 24000, n = Math.max(1, Math.min(Math.ceil(ab.duration * sr), max * sr));
+  const off = new OfflineAudioContext(1, n, sr), s = off.createBufferSource(); s.buffer = ab; s.connect(off.destination); s.start();
+  return off.startRendering();
+}
+function tomMedio(ab){ // frequência fundamental mediana (Hz) dos trechos com voz
+  const o = ab.getChannelData(0), sr = ab.sampleRate / 2, x = new Float32Array(Math.min(o.length >> 1, sr * 90));
+  for (let i = 0; i < x.length; i++) x[i] = (o[2 * i] + o[2 * i + 1]) / 2;
+  const N = 512, lo = Math.floor(sr / 450), hi = Math.ceil(sr / 70), fs = []; let eMax = 0;
+  const en = i => { let e = 0; for (let j = 0; j < N; j += 2) e += x[i + j] * x[i + j]; return e; };
+  for (let i = 0; i + N < x.length; i += N) eMax = Math.max(eMax, en(i));
+  for (let i = 0; i + N + hi < x.length; i += N) {
+    const e = en(i); if (e < eMax * .03) continue;
+    const cs = new Float32Array(hi + 1); let best = 0;
+    for (let l = lo; l <= hi; l++) { let c = 0; for (let j = 0; j < N; j += 2) c += x[i + j] * x[i + j + l]; cs[l] = c; if (c > best) best = c; }
+    if (best < e * .45) continue; // trecho sem voz (ruído, "s", "f")
+    for (let l = lo + 1; l < hi; l++) if (cs[l] >= best * .9 && cs[l] >= cs[l - 1] && cs[l] >= cs[l + 1]) { fs.push(sr / l); break; } // primeiro pico: evita errar a oitava
+  }
+  fs.sort((a, b) => a - b); return fs.length > 8 ? fs[fs.length >> 1] : 0;
+}
+async function bandas(ab){ // graves, clareza e brilho em dB, relativos à energia total
+  const med = async (tipo, f) => { const off = new OfflineAudioContext(1, ab.length, ab.sampleRate), s = off.createBufferSource(), b = off.createBiquadFilter();
+    b.type = tipo; b.frequency.value = f; if (tipo == "bandpass") b.Q.value = .8; s.buffer = ab; s.connect(b); b.connect(off.destination); s.start();
+    const d = (await off.startRendering()).getChannelData(0); let e = 1e-9; for (let i = 0; i < d.length; i++) e += d[i] * d[i]; return e; };
+  const [t, g, c, a] = await Promise.all([med("allpass", 1000), med("lowpass", 250), med("bandpass", 3000), med("highpass", 7000)]), db = v => 10 * Math.log10(v / t);
+  return {g: db(g), c: db(c), a: db(a)};
+}
+async function definirExemplo(blob){
+  if (!nova) return;
+  try { const ab = await reamostrar(await audio().decodeAudioData(await blob.arrayBuffer()), 180); nova.ab = ab; nova.dur = ab.duration; nova.blob = wav(ab); painelVozes();
+    aviso(ab.duration < 10 ? "Exemplo curto (" + Math.round(ab.duration) + " s). Funciona, mas com 30 s ou mais a voz fica mais parecida." : "Exemplo pronto (" + Math.round(ab.duration) + " s). Toque em OK para gerar a voz."); }
+  catch (e) { aviso("Não consegui ler esse áudio. Tente outro arquivo (mp3, wav, m4a, ogg).", 1); }
+}
+async function gravarExemplo(){
+  if (gravador) { gravador.stop(); return; }
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: false, noiseSuppression: true, autoGainControl: true}}), pd = [];
+    gravador = new MediaRecorder(st); gravador.ondataavailable = e => { if (e.data.size) pd.push(e.data); };
+    gravador.onstop = () => { st.getTracks().forEach(t => t.stop()); clearInterval(gravarExemplo.t); gravador = null; painelVozes(); definirExemplo(new Blob(pd, {type: pd[0] ? pd[0].type : "audio/webm"})); };
+    gravador.start(); grIni = Date.now(); painelVozes(); aviso("Gravando… Fale normalmente, com a voz que você quer. Toque em ■ para parar.");
+    gravarExemplo.t = setInterval(() => { const el = $("#grT"); if (el) el.textContent = Math.round((Date.now() - grIni) / 1000) + " s"; }, 500);
+  } catch (e) { gravador = null; aviso("Não consegui usar o microfone. Permita o microfone para este site ou escolha um arquivo de áudio.", 1); }
+}
+function tocarExemplo(ab){ const c = audio(); pararAtual(); const s = c.createBufferSource(); s.buffer = ab; s.connect(an); cur = s; s.onended = () => { if (cur === s) cur = null; }; s.start(); }
+async function ouvirExemplo(){
+  if (nova && nova.ab) return tocarExemplo(nova.ab);
+  const v = ativa(), b = v && await idbGet("ex:" + v.id); if (!b) return aviso("O exemplo desta voz não está guardado neste aparelho.", 1);
+  tocarExemplo(await audio().decodeAudioData(await b.arrayBuffer()));
+}
+async function clonarEleven(nome, blob){
+  const fd = new FormData(); fd.append("name", nome); fd.append("files", blob, "exemplo.wav"); fd.append("remove_background_noise", "true");
+  fd.append("description", "Voz criada no Editor de voz da Tamaki a partir de um exemplo"); fd.append("labels", JSON.stringify({language: "pt"}));
+  const r = await fetch("https://api.elevenlabs.io/v1/voices/add", {method: "POST", headers: {"xi-api-key": chaves.el}, body: fd});
+  if (!r.ok) { let d = ""; try { const j = await r.json(); d = j.detail && (j.detail.message || j.detail.status || (typeof j.detail == "string" ? j.detail : "")) || ""; } catch (e) {}
+    throw new Error(r.status == 401 && !/clon|subscri|plan/i.test(d) ? "a chave do ElevenLabs está errada" : /clon|subscri|plan|permission/i.test(d) || r.status == 403 ? "o seu plano do ElevenLabs não permite clonar voz (precisa do Starter ou maior). Use \"Imitar\", que é grátis" : "o ElevenLabs respondeu " + r.status + (d ? ": " + d : "")); }
+  return (await r.json()).voice_id;
+}
+const baseAtual = () => Object.fromEntries(BASE.map(k => [k, cfg[k]]));
+async function criarVoz(){
+  if (!nova || !nova.ab) return aviso("Coloque um exemplo de voz primeiro: escolha um áudio ou grave.", 1);
+  const nome = String(nova.nome || "").trim() || "Voz " + (cfg.vozes.length + 1), id = uid();
+  nova.ocupado = 1; painelVozes(); let v, dica = "";
+  try {
+    if (nova.modo == "clone") {
+      if (!chaves.el) throw new Error("coloque a chave do ElevenLabs");
+      aviso("1/2 Enviando o exemplo e treinando a voz no ElevenLabs…");
+      const vid = await clonarEleven(nome, nova.blob);
+      aviso("2/2 Voz treinada. Preparando…");
+      v = {id, nome, tipo: "clone", base: Object.assign(baseAtual(), {motor: "eleven", elVoz: vid, elModelo: "eleven_multilingual_v2"}), ed: copia(PRESET.original)};
+      vozesEl = vozesEl.filter(x => x.id != vid).concat([{id: vid, n: nome + " (criada aqui)"}]); try { localStorage.setItem("palco-vozes-el", JSON.stringify(vozesEl)); } catch (e) {}
+    } else {
+      aviso("1/3 Analisando o tom e o timbre do exemplo…"); await espera(30);
+      const f0 = tomMedio(nova.ab), bs = await bandas(nova.ab);
+      if (!f0) throw new Error("não achei voz no exemplo (muito baixo, muito ruído ou música por trás?)");
+      let f0b = 210, bb = null;
+      if (cfg.motor != "browser") {
+        aviso("2/3 Gerando a voz base para comparar…"); const ed = cfg.ed; cfg.ed = copia(PRESET.original); let ref;
+        try { ref = await obterAudio(REF); } finally { cfg.ed = ed; }
+        const r24 = await reamostrar(ref, 60); f0b = tomMedio(r24) || 210; bb = await bandas(r24);
+      }
+      aviso("3/3 Ajustando a voz…");
+      const ed = Object.assign(copia(PRESET.natural), {tom: lim(12 * Math.log2(f0 / f0b), 6)});
+      if (bb) Object.assign(ed, {calor: lim((bs.g - bb.g) * .8, 9), clareza: lim((bs.c - bb.c) * .8, 9), brilho: lim((bs.a - bb.a) * .8, 9)});
+      v = {id, nome, tipo: "imita", f0: Math.round(f0), base: baseAtual(), ed};
+      const dif = 12 * Math.log2(f0 / f0b);
+      if (Math.abs(dif) > 6) dica = " O exemplo é bem mais " + (dif < 0 ? "grave" : "agudo") + " que a voz base: escolha uma voz " + (dif < 0 ? "masculina" : "feminina") + " em Motor de voz e crie de novo.";
+      if (cfg.motor == "browser") dica += " Com a voz do aparelho só o tom é ajustado; com Kokoro, Azure ou ElevenLabs o timbre também.";
+    }
+    await idbPut("ex:" + id, nova.blob);
+    cfg.vozes.push(v); nova = null; usarVoz(id);
+    aviso("Voz \"" + nome + "\" pronta e escolhida! Escreva em Nova fala e toque em ▶ Gerar e ouvir." + dica);
+    falar("Oi! Essa é a minha voz nova. O que você achou?", 1);
+  } catch (e) { if (nova) { nova.ocupado = 0; painelVozes(); } aviso("Não consegui criar a voz: " + msgErro(e), 1); }
+}
+function usarVoz(id){
+  const v = cfg.vozes.find(x => x.id == id); cfg.ativa = v ? v.id : "";
+  if (v) { Object.assign(cfg, v.base); cfg.ed = Object.assign(copia(PRESET.natural), v.ed); if (cadV) cadV.ajustar(); }
+  salvar(); tudo();
+}
+async function apagarVoz(el){
+  const v = ativa(); if (!v) return;
+  if (!el.dataset.s) { el.dataset.s = 1; el.textContent = v.tipo == "clone" ? "Confirmar (apaga também no ElevenLabs)" : "Confirmar"; return; }
+  if (v.tipo == "clone" && chaves.el) { try { await fetch("https://api.elevenlabs.io/v1/voices/" + encodeURIComponent(v.base.elVoz), {method: "DELETE", headers: {"xi-api-key": chaves.el}}); } catch (e) {}
+    vozesEl = vozesEl.filter(x => x.id != v.base.elVoz); try { localStorage.setItem("palco-vozes-el", JSON.stringify(vozesEl)); } catch (e) {} }
+  idbPut("ex:" + v.id, null); cfg.vozes = cfg.vozes.filter(x => x != v); cfg.ativa = ""; salvar(); tudo(); aviso("Voz apagada.");
+}
+async function carregarVozes(){
+  try {
+    if (cfg.motor == "azure") { if (!chaves.az) return aviso("Coloque a chave do Azure primeiro.", 1);
+      const r = await fetch(`https://${chaves.azReg || "brazilsouth"}.tts.speech.microsoft.com/cognitiveservices/voices/list`, {headers: {"Ocp-Apim-Subscription-Key": chaves.az}}); if (!r.ok) throw new Error("o Azure respondeu " + r.status);
+      vozesAz = (await r.json()).filter(v => /^pt-BR/i.test(v.Locale)).map(v => ({id: v.ShortName, n: (v.LocalName || v.DisplayName) + (v.Gender == "Female" ? " (feminina)" : v.Gender == "Male" ? " (masculina)" : "")}));
+      localStorage.setItem("palco-vozes-az", JSON.stringify(vozesAz)); aviso(vozesAz.length + " vozes em português carregadas.");
+    } else if (cfg.motor == "eleven") { if (!chaves.el) return aviso("Coloque a chave do ElevenLabs primeiro.", 1);
+      const r = await fetch("https://api.elevenlabs.io/v1/voices", {headers: {"xi-api-key": chaves.el}}); if (!r.ok) throw new Error("o ElevenLabs respondeu " + r.status);
+      vozesEl = (await r.json()).voices.map(v => ({id: v.voice_id, n: v.name + (v.labels && v.labels.gender ? " (" + v.labels.gender + ")" : "")}));
+      localStorage.setItem("palco-vozes-el", JSON.stringify(vozesEl)); if (!cfg.elVoz && vozesEl[0]) cfg.elVoz = vozesEl[0].id; aviso(vozesEl.length + " vozes carregadas.");
+    }
+    salvar(); painelMotor();
+  } catch (e) { aviso("Não consegui carregar as vozes: " + msgErro(e), 1); }
+}
+
+/* ---------- telas ---------- */
+const opt = (a, v) => a.map(([k, n]) => `<option value="${esc(k)}"${k == v ? " selected" : ""}>${esc(n)}</option>`).join("");
+const rg = (at, k, rot, min, max, st, v) => `<label class="f"><b>${rot}<i>${v}</i></b><input type="range" data-${at}="${k}" min="${min}" max="${max}" step="${st}" value="${v}"></label>`;
+const sl = (at, k, rot, a, v) => `<label class="f"><b>${rot}</b><select data-${at}="${k}">${opt(a, v)}</select></label>`;
+const tx = (at, k, rot, v, ph) => `<label class="f"><b>${rot}</b><input type="text" data-${at}="${k}" value="${esc(v)}" placeholder="${esc(ph || "")}"></label>`;
+const senha = (k, rot) => `<label class="f"><b>${rot}</b><input type="password" data-ch="${k}" value="${esc(chaves[k] || "")}" autocomplete="off" placeholder="cole aqui"></label>`;
+const NOMEMOTOR = {azure: "Azure", eleven: "ElevenLabs", termux: "Kokoro no Termux", browser: "voz do aparelho"};
+function painelVozes(){
+  const at = ativa();
+  let c = `<h2>Minhas vozes <span>${cfg.vozes.length ? "toque numa voz para usar" : ""}</span></h2><div class="chips">${cfg.vozes.map(v => `<button data-voz="${v.id}" class="${at == v ? "on" : ""}" title="${v.tipo == "clone" ? "Clonada no ElevenLabs" : "Imitação com " + esc(NOMEMOTOR[v.base.motor])}">${v.tipo == "clone" ? "🧬" : "🎭"} ${esc(v.nome)}</button>`).join("")}${nova ? "" : '<button class="novo" data-a="novavoz">＋ Criar voz com um exemplo</button>'}</div>`;
+  if (nova) {
+    const ok = nova.ab && !nova.ocupado && !gravador;
+    c += `<div class="nv"><div class="g">${tx("nv", "nome", "Nome da voz", nova.nome, "Ex.: Tamaki")}${sl("nv", "modo", "Como gerar a voz", [["imita", "Imitar com o motor atual (grátis, aproximado)"], ["clone", "Clonar no ElevenLabs (fica igual, plano pago)"]], nova.modo)}
+      ${nova.modo == "clone" ? senha("el", "Chave do ElevenLabs") : ""}</div>
+      <div class="btns"><label class="bt" for="fEx">📁 Escolher áudio</label><button class="bt rec${gravador ? " on" : ""}" data-a="gravex">${gravador ? '■ Parar · <span id="grT">0 s</span>' : "🎙 Gravar exemplo"}</button>${nova.ab ? `<button class="bt" data-a="ouvirex">▶ Ouvir exemplo</button><span class="dica" style="margin:0">✓ exemplo de ${Math.round(nova.dur)} s</span>` : ""}</div>
+      <div class="btns"><button class="bt pri" data-a="criarvoz"${ok ? "" : " disabled"}>${nova.ocupado ? "Gerando…" : "OK · gerar e treinar a voz"}</button><button class="bt" data-a="cancelavoz"${nova.ocupado ? " disabled" : ""}>Cancelar</button></div>
+      <p class="dica">Exemplo bom: 30 s a 2 min, só a voz (sem música), em português, num lugar silencioso. "Imitar" usa o motor escolhido em Motor de voz (agora: ${esc(NOMEMOTOR[cfg.motor])}).</p></div>`;
+  } else if (at) c += `<div class="btns"><button class="bt" data-a="ouvirex">▶ Ouvir exemplo</button><button class="bt" data-a="renvoz">Renomear</button><button class="bt" data-a="apagavoz">Apagar voz</button><button class="bt" data-a="semvoz">Não usar</button></div>`;
+  else c += `<p class="dica">Coloque um exemplo de voz (áudio ou gravação), toque em OK e a voz fica pronta para a Nova fala. Crie quantas quiser.</p>`;
+  $("#cVozes").innerHTML = c;
+  const at2 = ativa(); $("#vozUsada").textContent = at2 ? "voz: " + at2.nome : "voz: " + NOMEMOTOR[cfg.motor];
+}
+function painelAjustes(){
+  const E = cfg.ed;
+  $("#ajustes").innerHTML = `<div class="g">${rg("ed", "tom", "Tom (semitons)", -6, 6, .1, E.tom)}${rg("ed", "vel", "Velocidade", .7, 1.4, .01, E.vel)}${rg("ed", "variar", "Variação natural", 0, 1, .01, E.variar)}${rg("ed", "pausa", "Pausas entre frases (×)", .3, 3, .05, E.pausa)}
+    ${rg("ed", "calor", "Graves / calor (dB)", -9, 9, .5, E.calor)}${rg("ed", "clareza", "Clareza (dB)", -9, 9, .5, E.clareza)}${rg("ed", "brilho", "Brilho (dB)", -9, 9, .5, E.brilho)}${rg("ed", "sala", "Ambiente (sala)", 0, .6, .01, E.sala)}${rg("ed", "vol", "Volume", .2, 2, .01, E.vol)}</div>
+    <div class="btns"><label class="chk" style="display:flex;gap:6px;align-items:center;color:var(--mu)"><input type="checkbox" data-ed="comp" ${E.comp ? "checked" : ""}> Voz mais cheia</label><button class="bt" data-preset="natural">Natural</button><button class="bt" data-preset="original">Sem efeito</button></div>
+    <p class="dica">${ativa() ? "Os ajustes ficam salvos na voz escolhida." : "Os ajustes valem para a voz que estiver tocando."} Na voz do aparelho só o tom e a velocidade funcionam.</p>`;
+}
+function painelMotor(){
+  const m = cfg.motor;
+  let c = `<div class="g">${sl("c", "motor", "Motor de voz", [["browser", "Voz do aparelho (grátis, sem instalar)"], ["termux", "Kokoro no Termux (grátis, no celular)"], ["azure", "Azure · vozes neurais"], ["eleven", "ElevenLabs · a mais natural"]], m)}`;
+  if (m == "azure") c += senha("az", "Chave do Azure") + tx("ch", "azReg", "Região do Azure", chaves.azReg || "brazilsouth") + sl("c", "azVoz", "Voz", vozesAz.map(v => [v.id, v.n]), cfg.azVoz);
+  else if (m == "eleven") c += senha("el", "Chave do ElevenLabs") + (vozesEl.length ? sl("c", "elVoz", "Voz", vozesEl.map(v => [v.id, v.n]), cfg.elVoz) : "")
+    + sl("c", "elModelo", "Modelo", [["eleven_multilingual_v2", "Multilíngue v2 (melhor)"], ["eleven_flash_v2_5", "Flash v2.5 (mais rápido)"]], cfg.elModelo)
+    + rg("c", "elEst", "Estabilidade", 0, 1, .01, cfg.elEst) + rg("c", "elSim", "Semelhança", 0, 1, .01, cfg.elSim) + rg("c", "elStyle", "Exagero / emoção", 0, 1, .01, cfg.elStyle);
+  else if (m == "termux") c += sl("c", "voice", "Voz do Kokoro", [["pf_dora", "Dora (feminina)"], ["pm_alex", "Alex (masculina)"], ["pm_santa", "Santa (masculina)"]], cfg.voice) + rg("c", "speed", "Velocidade do Kokoro", .6, 1.5, .05, cfg.speed) + tx("c", "url", "Endereço do Termux", cfg.url);
+  else c += sl("c", "navVoz", "Voz do aparelho", [["", "Automática (português)"], ...vozesNav().map(v => [v.voiceURI, v.name + " · " + v.lang])], cfg.navVoz);
+  c += rg("c", "pause", "Pausa entre frases (s)", 0, 1.5, .05, cfg.pause) + `</div><div class="btns">${m == "azure" || m == "eleven" ? '<button class="bt" data-a="vozes">Carregar vozes</button>' : ""}</div>
+    <p class="dica">${{azure: "Vozes neurais da Microsoft. O plano grátis dá 500 mil caracteres por mês.", eleven: "A voz mais natural e a única que clona de verdade (clonar precisa do plano Starter ou maior).", termux: "Precisa do comando <code>palco</code> ligado no Termux (a mesma instalação do Palco).", browser: "Funciona em qualquer lugar, mas não pode ser baixada e só aceita tom e velocidade."}[m]} As chaves ficam só neste aparelho.</p>`;
+  $("#motor").innerHTML = c;
+}
+function tudo(){ painelVozes(); painelAjustes(); painelMotor(); }
+
+/* ---------- eventos ---------- */
+function alvoDe(d){ if (d.nv) return [nova, d.nv]; if (d.ch) return [chaves, d.ch]; if (d.ed) return [cfg.ed, d.ed]; if (d.c) return [cfg, d.c]; return [null]; }
+function entrada(e){
+  const t = e.target, d = t.dataset; if (t.type == "file") return;
+  const [o, k] = alvoDe(d); if (!o) return;
+  const v = t.type == "checkbox" ? (t.checked ? 1 : 0) : t.type == "range" ? parseFloat(t.value) : t.value;
+  o[k] = v; const l = t.closest(".f") && t.closest(".f").querySelector("b i"); if (l) l.textContent = v;
+  if (d.nv) { if (k == "modo" && e.type == "change") painelVozes(); return; }
+  if (d.ch) { guardarChaves(); return; }
+  if (d.ed) { if (cadV) cadV.ajustar(); if (ativa()) ativa().ed = copia(cfg.ed); }
+  if (d.c && ativa()) { if (/^(motor|voice|azVoz|elVoz|navVoz)$/.test(k)) { cfg.ativa = ""; painelVozes(); } else ativa().base[k] = v; }
+  if (d.c == "motor" && e.type == "change") { painelMotor(); painelVozes(); }
+  salvar();
+}
+document.addEventListener("input", entrada); document.addEventListener("change", entrada);
+$("#texto").value = cfg.texto; $("#texto").oninput = e => { cfg.texto = e.target.value; salvar(); };
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.voz) return usarVoz(b.dataset.voz == cfg.ativa ? "" : b.dataset.voz);
+  if (b.dataset.preset) { cfg.ed = copia(PRESET[b.dataset.preset]); if (ativa()) ativa().ed = copia(cfg.ed); if (cadV) cadV.ajustar(); salvar(); painelAjustes(); return; }
+  const A = {
+    falar: () => { audio(); parar(); if (!linhas(cfg.texto).length) return aviso("Escreva a fala primeiro.", 1); falar(cfg.texto); },
+    parar, baixar: baixarFala, vozes: carregarVozes,
+    novavoz: () => { audio(); nova = {nome: "", modo: chaves.el ? "clone" : "imita"}; painelVozes(); },
+    cancelavoz: () => { if (gravador) gravador.stop(); nova = null; painelVozes(); aviso(""); },
+    gravex: gravarExemplo, ouvirex: ouvirExemplo, criarvoz: criarVoz, semvoz: () => usarVoz(""), apagavoz: () => apagarVoz(b),
+    renvoz: () => { const v = ativa(); if (!v) return; const n = (prompt("Novo nome da voz:", v.nome) || "").trim(); if (n) { v.nome = n; salvar(); painelVozes(); } }
+  };
+  if (A[b.dataset.a]) A[b.dataset.a]();
+});
+$("#fEx").onchange = e => { const f = e.target.files[0]; e.target.value = ""; if (f) definirExemplo(f); };
+document.addEventListener("pointerdown", () => { try { audio(); } catch (e) {} }, {passive: true, once: true});
+tudo();
+})();
+</script>
+</body>
+</html>
