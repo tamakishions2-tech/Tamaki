@@ -941,8 +941,13 @@ setInterval(() => { if (S.url) atualizar(); else procurar(); }, 4000);
   <div class="caixa">
     <h2 id="ptitulo">Atualizar o painel</h2>
     <p id="versao" class="dica"></p>
-    <label for="pacote">Cole a atualização</label>
-    <textarea id="pacote" spellcheck="false" placeholder="Cole aqui o texto inteiro que o Claude mandar (começa com uma chave)"></textarea>
+    <h3 style="margin-top:8px">Com o arquivo .html novo</h3>
+    <p class="dica">Escolha o arquivo que o Claude mandou. Ele troca só o painel: suas vozes, cartões, falas e emoções continuam.</p>
+    <div class="botoes"><button class="principal" id="escolherArq">📂 Escolher arquivo .html</button></div>
+    <input type="file" id="arqHtml" accept=".html,.htm,text/html" hidden>
+    <h3>Ou cole a atualização</h3>
+    <label for="pacote" class="dica" style="font-weight:400">Texto que começa com uma chave, ou o código .html inteiro</label>
+    <textarea id="pacote" spellcheck="false" placeholder="Cole aqui o que o Claude mandar"></textarea>
     <div class="botoes">
       <button class="principal" id="aplicar">Atualizar</button>
       <button id="fechar">Fechar</button>
@@ -983,7 +988,29 @@ function carregar() {
 function abrir() { $("painel").classList.add("aberto"); msg(""); $("pacote").focus(); }
 function fechar() { $("painel").classList.remove("aberto"); }
 
+// aceita o estudio-voz.html inteiro (o painel vem guardado dentro dele) ou só o painel
+function painelDoHtml(txt) {
+  if (/<textarea[^>]*id="original"/.test(txt)) { const t = new DOMParser().parseFromString(txt, "text/html").getElementById("original"); return t ? t.value : null; }
+  return /<meta name="tvz-versao"/.test(txt) ? txt : null;
+}
+function aplicarHtml(txt, nome) {
+  const novo = painelDoHtml(txt || "");
+  if (!novo) return msg(`${nome ? "“" + nome + "” não" : "Isso não"} é o Estúdio de voz. Escolha o arquivo estudio-voz.html que o Claude mandou.`);
+  const va = versaoDe(atual()), vn = versaoDe(novo);
+  if (vn === va && novo === atual()) return msg(`Você já está na versão ${va}. Nada mudou.`);
+  if (maisNova(va, vn) && !confirm(`Esse arquivo é da versão ${vn}, mais antiga que a sua (${va}). Usar mesmo assim?`)) return msg("Nada foi mudado.");
+  const anterior = LS.get("app") || "";
+  if (!LS.set("app", novo)) return msg("Não consegui salvar no aparelho. A memória do navegador pode estar cheia ou bloqueada.");
+  LS.set("anterior", anterior);
+  $("pacote").value = "";
+  carregar();
+  msg(`Pronto: da versão ${va} para a ${vn}. Se algo der errado, toque em “Voltar à versão anterior”.`);
+}
+$("escolherArq").onclick = () => $("arqHtml").click();
+$("arqHtml").onchange = async () => { const f = $("arqHtml").files[0]; $("arqHtml").value = ""; if (f) aplicarHtml(await f.text(), f.name); };
+
 function aplicar() {
+  if ($("pacote").value.trim().startsWith("<")) return aplicarHtml($("pacote").value);
   let pac;
   try { pac = JSON.parse($("pacote").value.trim()); }
   catch (e) { return msg("Não reconheci o texto. Copie a atualização inteira, da primeira à última chave."); }

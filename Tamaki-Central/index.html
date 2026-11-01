@@ -150,7 +150,7 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
   <p class="rot">Tags<small>Toque para ligar ou desligar. A primeira tag ligada dá a cor da aba.</small></p>
   <div class="chips" id="aTags"></div>
   <div class="row"><button class="bt" id="aNova">＋ Nova tag</button><button class="bt" id="aGer">🎨 Mudar tags e cores</button></div>
-  <div class="row hide" id="aExtra" style="margin-top:10px"><button class="bt" id="aCod">✎ Trocar o código</button><button class="bt" id="baixarAba">⬇ Baixar o código</button><button class="bt" id="remover">🗑 Apagar de vez</button></div>
+  <div class="row hide" id="aExtra" style="margin-top:10px"><button class="bt pri" id="aNovo">⬆ Atualizar com o .html novo</button><input type="file" id="aNovoArq" accept=".html,.htm,text/html" class="hide"><button class="bt" id="aCod">✎ Trocar o código</button><button class="bt" id="baixarAba">⬇ Baixar o código</button><button class="bt" id="remover">🗑 Apagar de vez</button></div>
   <div class="row" style="margin-top:14px"><button class="bt pri" id="aSalvar">✓ Salvar</button><button class="bt" id="aArq">🗄 Arquivar</button><button class="bt" id="aPadrao">↺ Nome original</button><button class="bt" id="aFechar">Cancelar</button></div>
 </dialog>
 
@@ -367,6 +367,14 @@ $("#editar").onclick = () => abrirAba(atual);
 $("#aFechar").onclick = () => $("#dAba").close();
 $("#aSalvar").onclick = () => { guardarAba(); salvaCfg(); $("#dAba").close(); aviso("Aba salva."); };
 $("#aPadrao").onclick = () => { const a = ABAS[editK]; $("#aNome").value = a.n0; $("#aIco").value = a.i0; };
+// atualizar a aba colada direto com o arquivo novo: mantém nome, ícone, tags e os dados que ela guardou
+$("#aNovo").onclick = () => $("#aNovoArq").click();
+$("#aNovoArq").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; const k = editK, a = ABAS[k]; if (!f || !a || !a.extra) return;
+  const novo = await f.text(); if (!/<(html|body|script|div)/i.test(novo)) return aviso("Esse arquivo não parece um .html.");
+  const velho = await cGet("x-" + a.extra.id); if (velho === novo) return aviso("Esse arquivo é igual ao que já está na aba.");
+  guardarAba(); salvaCfg(); await cPut("x-" + a.extra.id, novo); a.extra.tipo = "html"; a.extra.src = null; localStorage.setItem("central-extras", JSON.stringify(extras));
+  esqueceFrame(k); $("#dAba").close(); ir(k);
+  aviso(`“${a.n}” atualizada com ${f.name}. Os dados dela continuam.`, async () => { await cPut("x-" + a.extra.id, velho); esqueceFrame(k); ir(k); aviso("Voltou para a versão anterior."); }); };
 $("#aCod").onclick = () => { guardarAba(); salvaCfg(); $("#dAba").close(); abrirNicho(ABAS[editK].extra); };
 $("#aArq").onclick = () => { guardarAba(); const k = editK; $("#dAba").close(); ABAS[k].arq ? desarquivar(k) : arquivar(k); };
 function arquivar(k){ if (visiveis().length <= 1) return aviso("Deixe pelo menos uma aba na barra.");
