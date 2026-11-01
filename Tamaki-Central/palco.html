@@ -70,7 +70,8 @@ fieldset:disabled{opacity:.45}
 .btns .bt{min-height:38px}
 .fala{display:grid;grid-template-columns:1fr auto;gap:10px;height:100%}
 .fala textarea{height:100%;min-height:0;resize:none}
-.fala .lado{display:flex;flex-direction:column;gap:6px;min-width:150px}
+.fala .lado{display:flex;flex-direction:column;gap:6px;min-width:150px;overflow:auto}
+.vozfala select{font-size:.95rem;padding:10px}
 .dica{color:var(--mu);font-size:.78rem;margin:4px 0 0}
 .icones{display:flex;flex-wrap:wrap;gap:4px}
 .icones button,.icones label{width:38px;height:38px;display:grid;place-items:center;background:var(--pn2);border:1px solid var(--ln);border-radius:8px;font-size:1.15rem;cursor:pointer}
@@ -307,6 +308,31 @@ async function dizer(t){
   if (cfg.motor != "browser") { try { const ab = await obterAudio(t); if (ab) return await tocarBuffer(ab, t); } catch (e) { aviso(msgErro(e) + ". Usei a voz do aparelho."); } }
   await vozNavegador(t);
 }
+/* voz da fala: as vozes criadas na aba VOZ (Editor de voz) e as de cada motor, num lugar só */
+function minhasVozes(){ try { return (JSON.parse(localStorage.getItem("editor-voz")) || {}).vozes || []; } catch (e) { return []; } }
+function vozAtualFala(){ if (cfg.vozFala && minhasVozes().some(v => v.id == cfg.vozFala)) return "minha:" + cfg.vozFala;
+  const m = cfg.motor, V = cfg.voz; return m + ":" + (m == "termux" ? cfg.voice : m == "azure" ? V.azVoz : m == "eleven" ? V.elVoz : V.navVoz || ""); }
+function opcoesVoz(){ const at = vozAtualFala(), NM = {termux: "Kokoro", azure: "Azure", eleven: "ElevenLabs", browser: "aparelho"};
+  const op = (v, n) => `<option value="${esc(v)}"${v == at ? " selected" : ""}>${esc(n)}</option>`, g = (n, a) => a.length ? `<optgroup label="${esc(n)}">${a.join("")}</optgroup>` : "";
+  const minhas = minhasVozes().map(v => op("minha:" + v.id, v.nome + " · " + (v.tipo == "clone" ? "clonada" : NM[(v.base || {}).motor] || "")));
+  return g("Minhas vozes (aba VOZ)", minhas.length ? minhas : ['<option disabled>Nenhuma ainda: crie na aba VOZ</option>'])
+    + g("Voz do aparelho · grátis, sem internet", [op("browser:", "Automática (português)"), ...vozesNav().map(v => op("browser:" + v.voiceURI, v.name))])
+    + g("Kokoro no Termux", [["pf_dora", "Dora (feminina)"], ["pm_alex", "Alex (masculina)"], ["pm_santa", "Santa (masculina)"]].map(([i, n]) => op("termux:" + i, n)))
+    + g("Azure" + (chaves.az ? "" : " · precisa da chave (Voz › Motor)"), vozesAz.map(v => op("azure:" + v.id, v.n)))
+    + g("ElevenLabs" + (chaves.el ? "" : " · precisa da chave (Voz › Motor)"), vozesEl.map(v => op("eleven:" + v.id, v.n))); }
+function escolherVozFala(val){ const i = val.indexOf(":"), m = val.slice(0, i), id = val.slice(i + 1);
+  if (m == "minha") { const v = minhasVozes().find(x => x.id == id); if (!v) return; const b = v.base || {};
+    if (b.motor) cfg.motor = b.motor; for (const k of ["voice", "speed"]) if (b[k] != null) cfg[k] = b[k];
+    for (const k of ["azVoz", "elVoz", "elModelo", "elEst", "elSim", "elStyle", "navVoz"]) if (b[k] != null) cfg.voz[k] = b[k];
+    cfg.ed = Object.assign(copia(PRESET.natural), v.ed); cfg.vozFala = id; aviso("Voz \"" + v.nome + "\" escolhida. Toque em 🔊 Ouvir a voz para testar."); }
+  else { cfg.motor = m; cfg.vozFala = ""; if (m == "termux") cfg.voice = id; else if (m == "azure") cfg.voz.azVoz = id; else if (m == "eleven") cfg.voz.elVoz = id; else cfg.voz.navVoz = id;
+    aviso({browser: "Voz do aparelho escolhida.", termux: "Voz do Kokoro escolhida: ligue o comando palco no Termux.", azure: chaves.az ? "Voz do Azure escolhida." : "Falta a chave do Azure: coloque em Voz › Motor de voz.", eleven: chaves.el ? "Voz do ElevenLabs escolhida." : "Falta a chave do ElevenLabs: coloque em Voz › Motor de voz."}[m]); }
+  if (cadV) cadV.ajustar(); salvar(); }
+document.addEventListener("change", e => { if (e.target.matches && e.target.matches("[data-vozfala]")) escolherVozFala(e.target.value); });
+// a aba VOZ criou ou apagou uma voz: atualiza a lista sem mexer no texto
+const atualizarVozFala = () => { const s = document.querySelector("[data-vozfala]"); if (s) s.innerHTML = opcoesVoz(); };
+window.addEventListener("storage", e => { if (e.key == "editor-voz" || e.key == "palco-vozes-el" || e.key == "palco-vozes-az") atualizarVozFala(); });
+if (window.speechSynthesis) speechSynthesis.addEventListener("voiceschanged", atualizarVozFala);
 function ouvir(){ audio(); parar(); falar(FRASE); }
 function wav(ab){
   const n = ab.length, ch = ab.numberOfChannels, sr = ab.sampleRate, dv = new DataView(new ArrayBuffer(44 + n * ch * 2)), w = (o, s) => [...s].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
@@ -773,7 +799,7 @@ const PAINEIS = {
     return c;
   },
   fala: () => `<div class="fala"><textarea data-c="text" placeholder="O que a Tamaki vai falar. Uma frase por linha.">${esc(cfg.text)}</textarea>
-    <div class="lado"><button class="bt pri" data-a="falar">▶ Falar</button><button class="bt" data-a="audio">Tocar áudio…</button><button class="bt" data-a="testebal">Testar balão</button><p class="dica" id="msg">Cada linha vira uma fala no balão.</p></div></div>`,
+    <div class="lado"><label class="f vozfala"><b>🎙 Voz desta fala</b><select data-vozfala>${opcoesVoz()}</select></label><button class="bt" data-a="ouvir">🔊 Ouvir a voz</button><button class="bt pri" data-a="falar">▶ Falar</button><button class="bt" data-a="audio">Tocar áudio…</button><button class="bt" data-a="testebal">Testar balão</button><p class="dica" id="msg">Cada linha vira uma fala no balão.</p></div></div>`,
   efeitos: () => {
     const F = cfg.fx, bot = (k, n) => `<button class="bt" data-fx="${k}">${n}</button>`;
     let c = subs("e", subE, [["cam", "Câmera"], ["trans", "Transições"], ["intro", "Intros"], ["grav", "Ao gravar"]]);
