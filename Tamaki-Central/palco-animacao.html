@@ -108,6 +108,12 @@ textarea{resize:vertical;min-height:70px}
 .cam .info{display:flex;flex-direction:column;gap:6px;min-width:0}
 .cam .acts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
 .cam .acts button{padding:5px 10px;font-size:.85rem}
+.bocaopc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;margin:6px 0 10px}
+.bocaopc .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.bocaopc .chips button{padding:6px 12px;border-radius:999px}
+.bocaopc .chips button.on{outline:2px solid #f2b544}
+.somagora{display:inline-block;min-width:2.2em;text-align:center;font-weight:800;font-size:1.2rem;padding:2px 10px;border-radius:10px;background:var(--surface2)}
+.cam .som{display:flex;gap:6px}.cam .som select{flex:1;min-width:0}
 .cam .ed{grid-column:1/-1;border-top:1px solid var(--line);padding-top:4px}
 .actions{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .actions button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -371,7 +377,8 @@ const DEFAULTS = {
   blinkEvery:4, size:1, x:640, y:720,
   bgMode:'cor', bgColor:'#2a2440',
   gain:3, thresh:0.14, rate:1, pitch:1.1, voice:'',
-  caption:true, actAmt:1, preset:'classico', partes:[], rosto:[]
+  caption:true, actAmt:1, preset:'classico', partes:[], rosto:[],
+  humorBoca:'', bocaJuntas:true, formaMs:90, tampa:{on:false, x:.5, y:.36, w:.07, h:.025, cor:'#d9967a'}
 };
 /* Vários atores: cada um com poses, movimentos e partes próprios */
 let ATORES = {lista:[{id:'principal', nome:'Tamaki'}], atual:'principal'};
@@ -795,11 +802,78 @@ const rostoAberto = () => $('#pane-rosto').classList.contains('on');
 const camadaRosto = id => S.rosto.find(c => c.id === id) || null;
 const temFalando2 = () => S.rosto.some(c => c.vis !== false && c.quando === 'falando2' && rostoImgs[c.id]);
 async function carregarRostoPNG(){ for (const c of S.rosto) if (!rostoImgs[c.id]) { const b = await dbGet('rosto-' + c.id); if (b) { try { rostoImgs[c.id] = await blobToImage(b); } catch(e) {} } } renderRosto(); }
-function encaixe(c, im){ // mesma proporção da Parada: ocupa a tela inteira dela; senão, entra no meio do rosto
+function bbDe(im){ // onde está o desenho dentro da PNG (sem a parte transparente), de 0 a 1
+  if (im.bb) return im.bb;
+  const L = 160, cw = L, ch = Math.max(1, Math.round(L * im.h / im.w)), cv2 = document.createElement('canvas'); cv2.width = cw; cv2.height = ch;
+  const g = cv2.getContext('2d', {willReadFrequently: true}); g.drawImage(im.src, 0, 0, cw, ch); const d = g.getImageData(0, 0, cw, ch).data;
+  let x0 = cw, y0 = ch, x1 = -1, y1 = -1;
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) if (d[(y * cw + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  return im.bb = x1 < 0 ? [0, 0, 1, 1] : [x0 / cw, y0 / ch, (x1 + 1) / cw, (y1 + 1) / ch];
+}
+const ALVO_ROSTO = {boca: [.47, .395, .07], olhos: [.5, .29, .3], sobr: [.5, .25, .3], boch: [.5, .34, .3], outros: [.5, .3, .2]}; // centro e largura no corpo
+function encaixe(c, im){
   const ref = images.idle || images.talk; if (!ref) return;
+  // mesmo tamanho de PNG de uma camada que já existe no setor: foi desenhada no mesmo quadro, então vai junto com ela
+  const irma = S.rosto.find(x => x !== c && x.setor === c.setor && x.x != null && rostoImgs[x.id] && rostoImgs[x.id].w === im.w && rostoImgs[x.id].h === im.h);
+  if (irma) return Object.assign(c, {x: irma.x, y: irma.y, k: irma.k, r: irma.r || 0});
+  const bb = bbDe(im), bw = bb[2] - bb[0], bh = bb[3] - bb[1];
+  if (bw > .3 || bh > .3) { // desenho grande dentro da PNG: é um close (a boca ocupa a imagem toda) e não a tela da Parada
+    const [ax, ay, aw] = ALVO_ROSTO[c.setor] || ALVO_ROSTO.outros, k = aw * ref.w / (bw * im.w);
+    return Object.assign(c, {k: r4(k), r: 0, x: r4(ax - ((bb[0] + bb[2]) / 2 - .5) * im.w * k / ref.w), y: r4(ay - ((bb[1] + bb[3]) / 2 - .5) * im.h * k / ref.h)});
+  }
   if (Math.abs(im.w / im.h - ref.w / ref.h) < .01) Object.assign(c, {x:.5, y:.5, k:r4(ref.w / im.w)});
   else if (c.x == null) Object.assign(c, {x:.5, y:.3, k:1});
 }
+/* bocas por som: cada boca diz qual som ela faz; a boca muda conforme a voz */
+const SONS = [['', 'Pelo “Quando”'], ['M', 'Fechada (M, B, P e silêncio)'], ['A', 'A (bem aberta)'], ['E', 'E (aberta, larga)'], ['I', 'I (sorriso, dentes)'], ['O', 'O (redonda)'], ['U', 'U (biquinho)'], ['S', 'Dentes (S, F, T, CH)']];
+const HUMORES_BOCA = [['', '😐 Normal'], ['feliz', '😄 Feliz'], ['brava', '😠 Brava'], ['triste', '😢 Triste']];
+const RESERVA = {A: ['A', 'E', 'O'], E: ['E', 'A', 'I'], I: ['I', 'E', 'S', 'A'], O: ['O', 'U', 'A'], U: ['U', 'O', 'A'], S: ['S', 'I', 'E', 'A'], M: ['M']};
+const somDe = c => c.som || (c.quando === 'calada' ? 'M' : c.quando === 'falando' || c.quando === 'falando2' ? 'A' : null);
+const modoSons = () => S.rosto.some(c => c.setor === 'boca' && c.vis !== false && c.som && rostoImgs[c.id]);
+let forma = 'M', formaT = 0; const formaHist = [];
+function escolherBoca(abre){
+  const L = S.rosto.filter(c => c.setor === 'boca' && c.vis !== false && rostoImgs[c.id] && somDe(c)), alvo = abre ? forma : 'M';
+  for (const h of [...new Set([S.humorBoca || '', ''])]) for (const so of RESERVA[alvo]) { const cs = L.filter(c => somDe(c) === so && (c.humor || '') === h); if (cs.length) return cs[(flap ? 1 : 0) % cs.length]; }
+  for (const so of RESERVA[alvo]) { const cs = L.filter(c => somDe(c) === so); if (cs.length) return cs[0]; }
+  return abre ? L.find(c => somDe(c) !== 'M') || null : null;
+}
+let fbuf = new Float32Array(512);
+const VOGAIS = {A: [820, 1400], E: [500, 2100], I: [330, 2600], O: [560, 980], U: [370, 820]};
+function formaDoSom(an){ // olha onde está a energia da voz (as "formantes") e acha a vogal mais parecida
+  if (!an || !ac) return 'A';
+  if (fbuf.length !== an.frequencyBinCount) fbuf = new Float32Array(an.frequencyBinCount);
+  an.getFloatFrequencyData(fbuf); const hz = ac.sampleRate / an.fftSize;
+  const banda = (lo, hi) => { let e = 0, c = 0; for (let i = Math.max(1, Math.floor(lo / hz)); i <= Math.min(fbuf.length - 1, Math.ceil(hi / hz)); i++) { const q = Math.pow(10, fbuf[i] / 10); e += q; c += q * i * hz; } return [e, e ? c / e : 0]; };
+  const [eT] = banda(150, 8000), [eS] = banda(4000, 8000), [, f1] = banda(250, 1000), [, f2] = banda(900, 3200);
+  if (!(eT > 0) || !f1 || !f2) return forma === 'M' ? 'A' : forma;
+  if (eS / eT > .35) return 'S';
+  let melhor = 'A', bd = 1e9; for (const k in VOGAIS) { const [a, b] = VOGAIS[k], d = Math.log(f1 / a) ** 2 + .7 * Math.log(f2 / b) ** 2; if (d < bd) { bd = d; melhor = k; } }
+  return melhor;
+}
+function letraForma(ch){ const l = (ch || '').normalize('NFD').charAt(0).toLowerCase();
+  return 'a' === l ? 'A' : 'e' === l ? 'E' : 'iy'.includes(l) && l ? 'I' : 'o' === l ? 'O' : 'u' === l ? 'U' : 'szfvxctdjgç'.includes(l) && l ? 'S' : null; }
+function formaTexto(){ const tx = caption.text || '', i = Math.floor(caption.shown); for (let j = i; j < Math.min(tx.length, i + 4); j++) { const f = letraForma(tx[j]); if (f) return f; } return 'A'; }
+function atualizarForma(now, src, aberta){
+  if (!aberta) { forma = 'M'; formaHist.length = 0; return; }
+  const f = src === 'tts' ? formaTexto() : src === 'manual' ? 'AOEAI'[Math.floor(now / 160) % 5] : formaDoSom(src === 'arquivo' ? fileAn : micAn);
+  formaHist.push(f); if (formaHist.length > 4) formaHist.shift();
+  const cont = {}; formaHist.forEach(x => cont[x] = (cont[x] || 0) + 1); const maior = Object.keys(cont).sort((a, b) => cont[b] - cont[a])[0]; // a mais repetida: não fica tremendo
+  if (maior !== forma && (now - formaT > (S.formaMs || 90) || forma === 'M')) { forma = maior; formaT = now; }
+}
+// todas as bocas desenhadas no mesmo quadro andam juntas
+function irmasBoca(c){ const im = rostoImgs[c.id]; return c.setor === 'boca' && S.bocaJuntas !== false && im ? S.rosto.filter(x => x !== c && x.setor === 'boca' && rostoImgs[x.id] && rostoImgs[x.id].w === im.w && rostoImgs[x.id].h === im.h) : []; }
+function mudarJunto(c, k, v){ const pad = k === 'k' ? 1 : k === 'r' ? 0 : .5, velho = +(c[k] ?? pad); c[k] = v;
+  for (const x of irmasBoca(c)) { const o = +(x[k] ?? pad); x[k] = r4(k === 'k' ? o * (velho ? v / velho : 1) : o + (v - velho)); } }
+// tampa: cobre a boca que já vem desenhada no corpo, com a cor da pele
+function centroBoca(){ const ref = images.idle || images.talk, c = S.rosto.find(x => x.setor === 'boca' && somDe(x) === 'M' && rostoImgs[x.id]) || S.rosto.find(x => x.setor === 'boca' && rostoImgs[x.id]); if (!ref || !c) return null;
+  const im = rostoImgs[c.id], bb = bbDe(im), k = +c.k || 1, w = im.w * k / ref.w, h = im.h * k / ref.h;
+  return {x: r4((c.x ?? .5) + ((bb[0] + bb[2]) / 2 - .5) * w), y: r4((c.y ?? .5) + ((bb[1] + bb[3]) / 2 - .5) * h), w: r4((bb[2] - bb[0]) * w * 1.15), h: r4((bb[3] - bb[1]) * h * 1.2)}; }
+function corDaPele(){ const ref = images.idle || images.talk, T = S.tampa; if (!ref) return;
+  const W2 = 240, H2 = Math.round(240 * ref.h / ref.w), c2 = document.createElement('canvas'); c2.width = W2; c2.height = H2; const g = c2.getContext('2d', {willReadFrequently: true}); g.drawImage(ref.src, 0, 0, W2, H2);
+  const d = g.getImageData(0, 0, W2, H2).data, cols = [], cx = T.x * W2, cy = T.y * H2, rx = Math.max(2, T.w * W2 / 2), ry = Math.max(2, T.h * H2 / 2);
+  for (let a = 0; a < 72; a++) { const an = a / 72 * 2 * Math.PI; for (const f of [1.25, 1.5, 1.8]) { const x = Math.round(cx + Math.cos(an) * rx * f), y = Math.round(cy + Math.sin(an) * ry * f); if (x < 0 || y < 0 || x >= W2 || y >= H2) continue; const i = (y * W2 + x) * 4; if (d[i + 3] > 200) cols.push([d[i], d[i + 1], d[i + 2]]); } }
+  if (!cols.length) return; cols.sort((p, q) => (p[0] + p[1] + p[2]) - (q[0] + q[1] + q[2])); const m = cols[Math.floor(cols.length * .6)];
+  T.cor = '#' + m.map(v => v.toString(16).padStart(2, '0')).join(''); }
 async function novasCamadas(setor, files){
   const S0 = SETORES.find(x => x.k === setor);
   for (const f of files){ if (!/^image\//.test(f.type)) continue;
@@ -811,16 +885,31 @@ async function trocarCamada(c, f){ if (rostoImgs[c.id] && rostoImgs[c.id].url) U
 function cartao(c){
   const im = rostoImgs[c.id], on = c.id === rostoSel, linha = (k, rot, min, max, st) => `<div class="row"><label>${rot}</label><input type="range" data-rc="${k}" min="${min}" max="${max}" step="${st}" value="${c[k] ?? 0}"><output>${(+(c[k] ?? 0)).toFixed(2).replace(/\.?0+$/, '') || '0'}</output></div>`;
   return `<div class="cam${on ? ' on' : ''}${c.vis === false ? ' off' : ''}" data-rid="${c.id}"><div class="thumb" data-ra="sel" title="Posicionar no palco">${im ? `<img src="${im.url}" alt="">` : '<span class="sub">…</span>'}</div>
-    <div class="info"><input type="text" data-rc="nome" value="${escH(c.nome)}" aria-label="Nome da camada"><select data-rc="quando" aria-label="Quando aparece">${QUANDO.map(([v, n]) => `<option value="${v}"${v === c.quando ? ' selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="info"><input type="text" data-rc="nome" value="${escH(c.nome)}" aria-label="Nome da camada">${c.setor === 'boca' ? `<div class="som"><select data-rc="som" aria-label="Que som esta boca faz">${SONS.map(([v, n]) => `<option value="${v}"${v === (c.som || '') ? ' selected' : ''}>${v ? '🔤 ' : ''}${n}</option>`).join('')}</select><select data-rc="humor" aria-label="Humor desta boca">${HUMORES_BOCA.map(([v, n]) => `<option value="${v}"${v === (c.humor || '') ? ' selected' : ''}>${n}</option>`).join('')}</select></div>` : ''}${c.setor === 'boca' && c.som ? '' : `<select data-rc="quando" aria-label="Quando aparece">${QUANDO.map(([v, n]) => `<option value="${v}"${v === c.quando ? ' selected' : ''}>${n}</option>`).join('')}</select>`}</div>
     <div class="acts"><button class="btn" data-ra="vis">${c.vis === false ? '🙈 Mostrar' : '👁️ Esconder'}</button><button class="btn" data-ra="sobe" title="Mais para a frente">▲</button><button class="btn" data-ra="desce" title="Mais para trás">▼</button><button class="btn" data-ra="troca">Trocar</button><button class="btn" data-ra="del">Remover</button><button class="btn${on ? ' main' : ''}" data-ra="sel">${on ? '✋ Arraste no palco' : '✋ Posicionar'}</button></div>
     ${on ? `<div class="ed">${linha('x', 'Horizontal', -.5, 1.5, .001)}${linha('y', 'Vertical', -.5, 1.5, .001)}${linha('k', 'Tamanho', .05, 4, .005)}${linha('r', 'Girar', -180, 180, 1)}<div class="btns"><button class="btn" data-ra="encaixar">Encaixar na Parada</button><button class="btn" data-ra="pronto">Pronto</button></div></div>` : ''}</div>`;
 }
 function renderRosto(){
   const el = $('#rostoSetores'); if (!el) return;
   el.innerHTML = SETORES.map(st => { const L = S.rosto.filter(c => c.setor === st.k);
-    return `<div class="setor"><div class="setor-cab"><h2>${st.nome}</h2><button class="btn main" data-radd="${st.k}">+ Camada</button></div>${L.map(cartao).join('') || '<p class="hint">Nenhuma camada. Toque em + Camada (pode escolher várias PNGs de uma vez).</p>'}</div>`; }).join('');
+    return `<div class="setor"><div class="setor-cab"><h2>${st.nome}</h2><button class="btn main" data-radd="${st.k}">+ Camada</button></div>${st.k === 'boca' ? opcoesBoca(L) : ''}${L.map(cartao).join('') || '<p class="hint">Nenhuma camada. Toque em + Camada (pode escolher várias PNGs de uma vez).</p>'}</div>`; }).join('');
+}
+function opcoesBoca(L){
+  if (!L.length) return '<p class="hint">Dica: mande todas as bocas desenhadas no mesmo quadro (mesmo tamanho de PNG). Elas entram juntas no rosto e você posiciona uma vez só.</p>';
+  const T = S.tampa, tl = (k, rot, min, max, st) => `<div class="row"><label>${rot}</label><input type="range" data-tp="${k}" min="${min}" max="${max}" step="${st}" value="${T[k]}"><output>${(+T[k]).toFixed(3)}</output></div>`;
+  return `<div class="bocaopc">
+    <p class="hint" style="margin:0 0 4px">🔤 <b>Bocas por som:</b> em cada boca, escolha que som ela faz (Fechada, A, E, I, O, U, Dentes). Quando tocar a voz, aparece a boca do som. Som agora: <span class="somagora" id="somAgora">—</span></p>
+    <div class="chips" role="group" aria-label="Humor da boca agora">${HUMORES_BOCA.map(([v, n]) => `<button class="btn${(S.humorBoca || '') === v ? ' on' : ''}" data-bh="${v}">${n}</button>`).join('')}</div>
+    <p class="hint" style="margin:0 0 6px">O humor escolhe entre as bocas marcadas com ele (ex.: as de sorriso para Feliz). Sem boca daquele humor, usa a Normal.</p>
+    <label class="row" style="gap:8px"><input type="checkbox" data-bj ${S.bocaJuntas !== false ? 'checked' : ''}> Mover todas as bocas juntas (as de mesmo tamanho de PNG)</label>
+    <label class="row" style="gap:8px"><input type="checkbox" data-tpon ${T.on ? 'checked' : ''}> 🩹 Esconder a boca que já está desenhada no corpo</label>
+    ${T.on ? `${tl('x', 'Horizontal', 0, 1, .001)}${tl('y', 'Vertical', 0, 1, .001)}${tl('w', 'Largura', .005, .3, .001)}${tl('h', 'Altura', .005, .2, .001)}
+      <div class="row"><label>Cor da pele</label><input type="color" data-tp="cor" value="${T.cor}"><button class="btn" data-tpa="cor">Pegar do desenho</button><button class="btn" data-tpa="lugar">Pôr embaixo da boca fechada</button></div>` : ''}
+  </div>`;
 }
 $('#rostoSetores').addEventListener('click', e => {
+  const bh = e.target.closest('[data-bh]'); if (bh){ S.humorBoca = bh.dataset.bh; save(); renderRosto(); return; }
+  const tpa = e.target.closest('[data-tpa]'); if (tpa){ if (tpa.dataset.tpa === 'lugar'){ const c = centroBoca(); if (c) Object.assign(S.tampa, c); } corDaPele(); save(); renderRosto(); return; }
   const add = e.target.closest('[data-radd]'); if (add){ const f = $('#rostoFile'); f.dataset.setor = add.dataset.radd; f.dataset.troca = ''; f.click(); return; }
   const b = e.target.closest('[data-ra]'), card = e.target.closest('[data-rid]'); if (!b || !card) return;
   const c = camadaRosto(card.dataset.rid); if (!c) return; const a = b.dataset.ra, irmas = S.rosto.filter(x => x.setor === c.setor);
@@ -833,8 +922,15 @@ $('#rostoSetores').addEventListener('click', e => {
   else if (a === 'sobe' || a === 'desce'){ const i = irmas.indexOf(c), j = i + (a === 'sobe' ? 1 : -1); if (j < 0 || j >= irmas.length) return; const A = S.rosto.indexOf(c), B = S.rosto.indexOf(irmas[j]); [S.rosto[A], S.rosto[B]] = [S.rosto[B], S.rosto[A]]; }
   save(); renderRosto();
 });
+$('#rostoSetores').addEventListener('change', e => {
+  if (e.target.matches('[data-bj]')){ S.bocaJuntas = e.target.checked; save(); return; }
+  if (e.target.matches('[data-tpon]')){ S.tampa.on = e.target.checked; if (S.tampa.on){ const c = centroBoca(); if (c) Object.assign(S.tampa, c); corDaPele(); } save(); renderRosto(); return; }
+  if (e.target.dataset.rc === 'som') renderRosto();
+});
 $('#rostoSetores').addEventListener('input', e => {
+  const tp = e.target.dataset.tp; if (tp){ S.tampa[tp] = e.target.type === 'range' ? parseFloat(e.target.value) : e.target.value; const o = e.target.parentElement.querySelector('output'); if (o) o.textContent = (+S.tampa[tp]).toFixed(3); save(); return; }
   const k = e.target.dataset.rc, card = e.target.closest('[data-rid]'); if (!k || !card) return; const c = camadaRosto(card.dataset.rid); if (!c) return;
+  if (e.target.type === 'range' && 'xykr'.includes(k)) mudarJunto(c, k, parseFloat(e.target.value)); else
   c[k] = e.target.type === 'range' ? parseFloat(e.target.value) : e.target.value;
   const o = e.target.parentElement.querySelector('output'); if (o) o.textContent = (+c[k]).toFixed(2).replace(/\.?0+$/, '') || '0';
   save();
@@ -842,16 +938,19 @@ $('#rostoSetores').addEventListener('input', e => {
 $('#rostoFile').onchange = () => { const f = $('#rostoFile'), fs = [...f.files], troca = f.dataset.troca; f.value = ''; if (!fs.length) return;
   if (troca){ const c = camadaRosto(troca); if (c) trocarCamada(c, fs[0]); } else novasCamadas(f.dataset.setor, fs); };
 function desenharRosto(sc, ref, abre, blinking){ // dentro da mesma transformação do corpo: acompanha tudo que ela faz
-  const f2 = temFalando2(), selec = [];
-  for (const k of ORDEM_ROSTO) for (const c of S.rosto) {
+  const f2 = temFalando2(), selec = [], sons = modoSons(), bocaVez = sons ? escolherBoca(abre) : null;
+  for (const k of ORDEM_ROSTO) {
+    if (k === 'boca' && S.tampa && S.tampa.on){ const T = S.tampa; ctx.save(); ctx.fillStyle = T.cor; ctx.filter = `blur(${Math.max(1, T.h * ref.h * sc * .18).toFixed(1)}px)`; ctx.beginPath();
+      ctx.ellipse(-ref.w * sc / 2 + T.x * ref.w * sc, -ref.h * sc + T.y * ref.h * sc, T.w * ref.w * sc / 2, T.h * ref.h * sc / 2, 0, 0, 2 * Math.PI); ctx.fill(); ctx.restore(); }
+    for (const c of S.rosto) {
     if (c.setor !== k || c.vis === false) continue; const im = rostoImgs[c.id]; if (!im) continue;
-    const q = c.quando, ve = q === 'sempre' || (q === 'calada' && !abre) || (q === 'falando' && abre && !(flap && f2)) || (q === 'falando2' && abre && flap) || (q === 'aberto' && !blinking) || (q === 'piscando' && blinking);
+    const q = c.quando, ve = sons && k === 'boca' && somDe(c) ? c === bocaVez : q === 'sempre' || (q === 'calada' && !abre) || (q === 'falando' && abre && !(flap && f2)) || (q === 'falando2' && abre && flap) || (q === 'aberto' && !blinking) || (q === 'piscando' && blinking);
     const w = im.w * sc * (+c.k || 1), h = im.h * sc * (+c.k || 1), cx = -ref.w * sc / 2 + (c.x ?? .5) * ref.w * sc, cy = -ref.h * sc + (c.y ?? .5) * ref.h * sc;
-    if (c.id === rostoSel && rostoAberto() && !rec) selec.push([cx, cy, w, h, c.r]);
+    if (c.id === rostoSel && rostoAberto() && !rec) { const bb = bbDe(im); selec.push([cx + ((bb[0] + bb[2]) / 2 - .5) * w, cy + ((bb[1] + bb[3]) / 2 - .5) * h, (bb[2] - bb[0]) * w + 8, (bb[3] - bb[1]) * h + 8, c.r, cx, cy]); }
     if (!ve) continue;
     ctx.save(); ctx.translate(cx, cy); if (c.r) ctx.rotate(c.r * Math.PI / 180); ctx.drawImage(im.src, -w / 2, -h / 2, w, h); ctx.restore();
-  }
-  for (const [cx, cy, w, h, r] of selec){ ctx.save(); ctx.translate(cx, cy); if (r) ctx.rotate(r * Math.PI / 180); ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = '#f2b544'; ctx.strokeRect(-w / 2, -h / 2, w, h); ctx.restore(); }
+  } }
+  for (const [bx, by, w, h, r, cx, cy] of selec){ ctx.save(); ctx.translate(cx, cy); if (r) ctx.rotate(r * Math.PI / 180); ctx.translate(bx - cx, by - cy); ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = '#f2b544'; ctx.strokeRect(-w / 2, -h / 2, w, h); ctx.restore(); }
 }
 
 /* ---------- Atores ---------- */
@@ -1075,8 +1174,8 @@ cv.addEventListener('pointermove', e => {
   const p = toCanvas(e), prev = pts.get(e.pointerId); pts.set(e.pointerId, p);
   const c = rostoAberto() && camadaRosto(rostoSel), ref = images.idle || images.talk;
   if (c && ref){ const sc = 560 / ref.h * S.size;
-    if (pts.size === 1){ c.x = r4((c.x ?? .5) + (p.x - prev.x) / (ref.w * sc)); c.y = r4((c.y ?? .5) + (p.y - prev.y) / (ref.h * sc)); }
-    else if (pts.size === 2 && pinch0){ const [a,b] = [...pts.values()]; c.k = r4(Math.max(.05, Math.min(4, pinch0.k * Math.hypot(a.x-b.x, a.y-b.y) / pinch0.d))); }
+    if (pts.size === 1){ mudarJunto(c, 'x', r4((c.x ?? .5) + (p.x - prev.x) / (ref.w * sc))); mudarJunto(c, 'y', r4((c.y ?? .5) + (p.y - prev.y) / (ref.h * sc))); }
+    else if (pts.size === 2 && pinch0){ const [a,b] = [...pts.values()]; mudarJunto(c, 'k', r4(Math.max(.01, Math.min(4, pinch0.k * Math.hypot(a.x-b.x, a.y-b.y) / pinch0.d)))); }
     clearTimeout(cartaoT); cartaoT = setTimeout(renderRosto, 150); return; }
   if (pts.size === 1){ S.x += p.x - prev.x; S.y += p.y - prev.y; }
   else if (pts.size === 2 && pinch0){ const [a,b] = [...pts.values()]; S.size = Math.max(.2, Math.min(2.5, pinch0.s * Math.hypot(a.x-b.x, a.y-b.y) / pinch0.d)); syncControls(); }
@@ -1157,8 +1256,10 @@ function tick(now){
   const fadeRate = S.swap === 'suave' ? dt / (S.fadeMs / 1000) : 1;
   mix = mouthOpen ? Math.min(1, mix + fadeRate) : Math.max(0, mix - fadeRate);
 
+  atualizarForma(now, src, mouthOpen);
+  if (rostoAberto() && Math.floor(now / 120) !== Math.floor((now - dt * 1000) / 120)) { const el = $('#somAgora'); if (el) el.textContent = mouthOpen ? (forma === 'S' ? 'Dentes' : forma) : 'Fechada'; }
   // troca entre Falando e Falando 2
-  if (mouthOpen && (images.talk2 || temFalando2())){ flapT += dt*1000; if (flapT > S.flapMs){ flapT = 0; flap = !flap; } } else { flap = false; flapT = 0; }
+  if (mouthOpen && (images.talk2 || temFalando2() || modoSons())){ flapT += dt*1000; if (flapT > S.flapMs){ flapT = 0; flap = !flap; } } else { flap = false; flapT = 0; }
 
   // piscar
   if (now > nextBlink){ blinkUntil = now + 120; nextBlink = now + (Math.random() < .2 ? 260 : S.blinkEvery * 1000 * (.6 + Math.random()*.8)); }
