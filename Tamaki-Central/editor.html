@@ -2313,6 +2313,8 @@ function aiCurrent(L){
     if(c.filter!=='none'){o.filtro=c.filter;if(c.fk!==1)o.intensidade=aiR(c.fk);}
     if(c.fx!=='none')o.efeito=c.fx;
     if(c.fit!=='contain')o.encaixe=c.fit;
+    if(c.crop&&(c.crop.l||c.crop.r||c.crop.t||c.crop.b))o.recorte={esquerda:aiR(c.crop.l*100)/100,direita:aiR(c.crop.r*100)/100,topo:aiR(c.crop.t*100)/100,baixo:aiR(c.crop.b*100)/100};
+    if(c.tf&&(c.tf.x||c.tf.y||(c.tf.s??1)!==1)){o.enquadre={x:aiR(c.tf.x*100)/100,y:aiR(c.tf.y*100)/100,zoom:aiR((c.tf.s??1)*100)/100};if(c.kf&&c.kf.length>1)o.enquadre.zoomFim=aiR(c.kf[c.kf.length-1].s*100)/100;}
     const aj={};for(const [k,v] of Object.entries(c.adj||{}))if(v)aj[k]=v;if(Object.keys(aj).length)o.ajuste=aj;
     const an=anim(c.anim);if(an)o.animacao=an;
     if(c.afx!=='none')o.efeitoAudio=c.afx;if(c.nr)o.reduzirRuido=true;
@@ -2402,6 +2404,16 @@ async function aiApply(txt){
     if(c.filtro){it.filter=aiKey(FILTERS,c.filtro,x=>x.n,warn,what+' filtro');if(c.intensidade!=null){const k=Number(c.intensidade);it.fk=clamp(k>1?k/100:k,0,1);}}
     if(c.efeito)it.fx=aiKey(FX,c.efeito,x=>x,warn,what+' efeito');
     if(c.encaixe)it.fit=/preench|cover/.test(aiNorm(c.encaixe))?'cover':'contain';
+    if(c.recorte&&typeof c.recorte==='object'){ // corta as bordas do vídeo (0 a 0,45 de cada lado; 20 = 20%)
+      const f=v=>{let x=Number(v)||0;if(x>1)x/=100;return clamp(x,0,.45);};
+      it.crop={...it.crop,l:f(c.recorte.esquerda),r:f(c.recorte.direita),t:f(c.recorte.topo),b:f(c.recorte.baixo)};
+    }
+    if(c.enquadre&&typeof c.enquadre==='object'){ // posição e zoom do vídeo no quadro; zoomFim faz o zoom andar durante o clipe
+      const q=c.enquadre,n=(v,d,a,b)=>clamp(Number(v??d)||d,a,b);
+      it.tf={x:n(q.x,0,-2,2),y:n(q.y,0,-2,2),s:n(q.zoom,1,.05,10),r:0};
+      if(q.zoomFim!=null||q.xFim!=null||q.yFim!=null){const d=Math.max(.2,(it.out-it.in)/(it.speed||1));
+        it.kf=[{t:0,x:it.tf.x,y:it.tf.y,s:it.tf.s,r:0,op:it.op??1},{t:d,x:n(q.xFim,it.tf.x,-2,2),y:n(q.yFim,it.tf.y,-2,2),s:n(q.zoomFim,it.tf.s,.05,10),r:0,op:it.op??1}];}
+    }
     if(c.ajuste&&typeof c.ajuste==='object')for(const [k,v] of Object.entries(c.ajuste)){
       const p=ADJ_P.find(q=>q[0]===k||aiNorm(q[1])===aiNorm(k));
       if(p)it.adj[p[0]]=clamp(Number(v)||0,p[2],p[3]);else warn.push(`${what} ajuste: “${k}” não existe.`);
