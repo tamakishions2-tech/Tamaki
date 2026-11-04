@@ -150,8 +150,15 @@ dialog textarea{width:100%;min-height:40vh;background:#0d0d0d;color:var(--tx);bo
   <p class="rot">Tags<small>Toque para ligar ou desligar. A primeira tag ligada dá a cor da aba.</small></p>
   <div class="chips" id="aTags"></div>
   <div class="row"><button class="bt" id="aNova">＋ Nova tag</button><button class="bt" id="aGer">🎨 Mudar tags e cores</button></div>
-  <div class="row hide" id="aExtra" style="margin-top:10px"><button class="bt pri" id="aNovo">⬆ Atualizar com o .html novo</button><input type="file" id="aNovoArq" accept=".html,.htm,text/html" class="hide"><button class="bt" id="aCod">✎ Trocar o código</button><button class="bt" id="baixarAba">⬇ Baixar o código</button><button class="bt" id="remover">🗑 Apagar de vez</button></div>
+  <div class="row hide" id="aExtra" style="margin-top:10px"><button class="bt pri" id="aNovo">⬆ Atualizar com o .html novo</button><input type="file" id="aNovoArq" accept=".html,.htm,text/html" class="hide"><button class="bt" id="aCod">✎ Trocar o código</button><button class="bt" id="baixarAba">⬇ Baixar o código</button><button class="bt" id="remover">🗑 Apagar de vez</button><p class="mute" id="aOrig" style="width:100%;margin:6px 0 0;font-size:.82rem;opacity:.8"></p></div>
   <div class="row" style="margin-top:14px"><button class="bt pri" id="aSalvar">✓ Salvar</button><button class="bt" id="aArq">🗄 Arquivar</button><button class="bt" id="aPadrao">↺ Nome original</button><button class="bt" id="aFechar">Cancelar</button></div>
+</dialog>
+
+<dialog id="dCod">
+  <h2 id="codTit" style="margin:0 0 6px;font-family:var(--fonte)">✎ Código da aba</h2>
+  <p class="mute" style="margin:0 0 8px">Cole o código .html novo. Ele fica guardado só neste aparelho; o arquivo do site continua igual.</p>
+  <textarea id="codTxt" spellcheck="false" style="width:100%;height:46vh;font-family:monospace;font-size:12px;border-radius:10px;padding:8px"></textarea>
+  <div class="row" style="margin-top:10px"><button class="bt pri" id="codSalvar">✓ Usar este código</button><button class="bt" id="codColar">📋 Colar</button><button class="bt" id="codFechar">Cancelar</button></div>
 </dialog>
 
 <dialog id="dArq">
@@ -277,7 +284,12 @@ const cfgDe = k => CFG[k] || (CFG[k] = {});
 const salvaCfg = () => { gravaJ("central-abacfg", CFG); montarAbas(); };
 const visiveis = () => Object.keys(ABAS).filter(k => !ABAS[k].arq);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
-async function srcDe(k){ const a = ABAS[k]; if (a.src) return a.src; const h = await cGet("x-" + a.extra.id); return URL.createObjectURL(new Blob([h || "<p style='font-family:sans-serif;color:#fff'>Código desta aba não encontrado neste aparelho.</p>"], {type: "text/html"})); }
+// abas do site também podem rodar com um código guardado neste aparelho (menu da aba › Atualizar / Trocar o código)
+const baseDe = a => { const u = new URL(a.src, location.href); return u.pathname.endsWith("/") ? u.href : new URL(".", u).href; };
+const comBase = (h, a) => /<base\s/i.test(h) ? h : /<head[^>]*>/i.test(h) ? h.replace(/<head[^>]*>/i, m => m + `<base href="${baseDe(a)}">`) : `<base href="${baseDe(a)}">` + h;
+async function codigoDe(k){ const a = ABAS[k]; if (!a) return null; if (a.extra) return await cGet("x-" + a.extra.id);
+  const h = await cGet("o-" + k); if (h) return h; try { const r = await fetch(a.src, {cache: "no-store"}); return r.ok ? await r.text() : null; } catch (e) { return null; } }
+async function srcDe(k){ const a = ABAS[k]; if (a.src) { const h = await cGet("o-" + k); return h ? URL.createObjectURL(new Blob([comBase(h, a)], {type: "text/html"})) : a.src; } const h = await cGet("x-" + a.extra.id); return URL.createObjectURL(new Blob([h || "<p style='font-family:sans-serif;color:#fff'>Código desta aba não encontrado neste aparelho.</p>"], {type: "text/html"})); }
 const frames = {}, prontos = {};
 let atual = "";
 const esqueceFrame = k => { if (frames[k]) { frames[k].remove(); delete frames[k]; delete prontos[k]; } };
@@ -337,12 +349,15 @@ $("#nSalvar").onclick = async () => {
   esqueceFrame("x-" + x.id); montarAbas(); $("#dNicho").close(); ir("x-" + x.id);
 };
 // Baixa (ou compartilha) o código de uma aba colada, para mandar ao Claude ou guardar no repositório.
-$("#baixarAba").onclick = async () => { const a = ABAS[editK]; if (!a || !a.extra) return;
-  const h = await cGet("x-" + a.extra.id); if (!h) return alert("Código desta aba não encontrado neste aparelho.");
+$("#baixarAba").onclick = async () => { const a = ABAS[editK]; if (!a || (!a.extra && !a.src)) return;
+  const h = await codigoDe(editK); if (!h) return alert("Código desta aba não encontrado neste aparelho.");
   const nome = a.n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() + ".html", f = new File([h], nome, {type: "text/html"});
   try { if (navigator.canShare && navigator.canShare({files: [f]})) return await navigator.share({files: [f], title: a.n}); } catch (e) { return; }
   const l = document.createElement("a"); l.href = URL.createObjectURL(f); l.download = nome; l.click(); };
-$("#remover").onclick = () => apagarExtra(editK, () => $("#dAba").close());
+$("#remover").onclick = async () => { const k = editK, a = ABAS[k]; if (a && a.extra) return apagarExtra(k, () => $("#dAba").close());
+  if (!a || !a.src || !confirm(`Voltar a aba ${a.n} para o arquivo original do site? O código guardado neste aparelho sai. (Os dados dela continuam.)`)) return;
+  const velho = await cGet("o-" + k); await cPut("o-" + k, null); delete cfgDe(k).codEm; salvaCfg(); esqueceFrame(k); $("#dAba").close(); ir(k);
+  aviso(`“${a.n}” voltou para o original.`, async () => { await cPut("o-" + k, velho); esqueceFrame(k); ir(k); }); };
 async function apagarExtra(k, depois){ const a = ABAS[k]; if (!a || !a.extra) return;
   if (!confirm("Apagar de vez a aba " + a.n + "? O código dela sai deste aparelho. (Os dados que ela guardou continuam.)")) return;
   extras = extras.filter(x => x != a.extra); localStorage.setItem("central-extras", JSON.stringify(extras)); await cPut("x-" + a.extra.id, null); delete CFG[k]; gravaJ("central-abacfg", CFG);
@@ -357,7 +372,10 @@ function chipsAba(){ $("#aTags").innerHTML = TAGS.length ? TAGS.map(t => { const
 $("#aTags").onclick = e => { const b = e.target.closest("[data-t]"); if (!b) return; const id = b.dataset.t, i = selTags.indexOf(id); i >= 0 ? selTags.splice(i, 1) : selTags.push(id); chipsAba(); };
 function abrirAba(k){ const a = ABAS[k]; if (!a) return; fecharMenu(); editK = k;
   $("#abaTit").textContent = "Editar aba: " + a.n; $("#aNome").value = a.n; $("#aIco").value = a.i; selTags = ((CFG[k] || {}).tags || []).filter(id => TAGS.some(t => t.id == id)); chipsAba();
-  $("#aExtra").classList.toggle("hide", !a.extra); $("#baixarAba").classList.toggle("hide", !a.extra || a.extra.tipo != "html"); $("#aPadrao").classList.toggle("hide", !!a.extra);
+  const temCod = !!a.extra || !!a.src; $("#aExtra").classList.toggle("hide", !temCod); $("#baixarAba").classList.toggle("hide", !!a.extra && a.extra.tipo != "html"); $("#aPadrao").classList.toggle("hide", !!a.extra);
+  $("#remover").textContent = a.extra ? "🗑 Apagar de vez" : "↺ Voltar ao original"; $("#remover").classList.add("hide"); $("#aOrig").textContent = "";
+  if (a.extra) $("#remover").classList.remove("hide");
+  else if (a.src) cGet("o-" + k).then(h => { if (editK != k) return; const c = cfgDe(k); $("#remover").classList.toggle("hide", !h); $("#aOrig").textContent = h ? "Esta aba está usando o código guardado neste aparelho" + (c.codEm ? " (desde " + new Date(c.codEm).toLocaleString("pt-BR") + ")" : "") + ". ↺ Voltar ao original usa de novo o arquivo do site." : "Esta aba usa o arquivo do site. Atualizar ou trocar o código guarda a versão nova só neste aparelho."; });
   $("#aArq").textContent = a.arq ? "📤 Tirar do arquivo" : "🗄 Arquivar"; $("#dAba").showModal(); }
 function guardarAba(){ const k = editK, a = ABAS[k], n = $("#aNome").value.trim() || a.n, i = $("#aIco").value.trim() || a.i, c = cfgDe(k);
   if (a.extra) { a.extra.n = n; a.extra.i = i; localStorage.setItem("central-extras", JSON.stringify(extras)); }
@@ -369,13 +387,21 @@ $("#aSalvar").onclick = () => { guardarAba(); salvaCfg(); $("#dAba").close(); av
 $("#aPadrao").onclick = () => { const a = ABAS[editK]; $("#aNome").value = a.n0; $("#aIco").value = a.i0; };
 // atualizar a aba colada direto com o arquivo novo: mantém nome, ícone, tags e os dados que ela guardou
 $("#aNovo").onclick = () => $("#aNovoArq").click();
-$("#aNovoArq").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; const k = editK, a = ABAS[k]; if (!f || !a || !a.extra) return;
+$("#aNovoArq").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; const k = editK, a = ABAS[k]; if (!f || !a || (!a.extra && !a.src)) return;
   const novo = await f.text(); if (!/<(html|body|script|div)/i.test(novo)) return aviso("Esse arquivo não parece um .html.");
+  if (!a.extra) return trocarCodigoSite(k, novo, f.name);
   const velho = await cGet("x-" + a.extra.id); if (velho === novo) return aviso("Esse arquivo é igual ao que já está na aba.");
   guardarAba(); salvaCfg(); await cPut("x-" + a.extra.id, novo); a.extra.tipo = "html"; a.extra.src = null; localStorage.setItem("central-extras", JSON.stringify(extras));
   esqueceFrame(k); $("#dAba").close(); ir(k);
   aviso(`“${a.n}” atualizada com ${f.name}. Os dados dela continuam.`, async () => { await cPut("x-" + a.extra.id, velho); esqueceFrame(k); ir(k); aviso("Voltou para a versão anterior."); }); };
-$("#aCod").onclick = () => { guardarAba(); salvaCfg(); $("#dAba").close(); abrirNicho(ABAS[editK].extra); };
+$("#aCod").onclick = async () => { const k = editK, a = ABAS[k]; guardarAba(); salvaCfg(); $("#dAba").close(); if (a.extra) return abrirNicho(a.extra);
+  $("#codTit").textContent = "✎ Código da aba " + a.n; $("#codTxt").value = "Carregando o código…"; $("#dCod").showModal(); $("#codTxt").value = (await codigoDe(k)) || "";
+  $("#codSalvar").onclick = () => { const v = $("#codTxt").value; if (!/<(html|body|script|div)/i.test(v)) return aviso("Isso não parece um código .html."); $("#dCod").close(); trocarCodigoSite(k, v, "o código colado"); }; };
+$("#codFechar").onclick = () => $("#dCod").close();
+$("#codColar").onclick = async () => { try { $("#codTxt").value = await navigator.clipboard.readText(); } catch (e) { aviso("Não consegui colar sozinho: toque e segure no campo para colar."); } };
+async function trocarCodigoSite(k, novo, de){ const a = ABAS[k], velho = await cGet("o-" + k); if (velho === novo) return aviso("Esse código é igual ao que já está na aba.");
+  await cPut("o-" + k, novo); cfgDe(k).codEm = Date.now(); salvaCfg(); esqueceFrame(k); $("#dAba").close(); ir(k);
+  aviso(`“${a.n}” agora usa ${de}. Os dados dela continuam.`, async () => { await cPut("o-" + k, velho || null); esqueceFrame(k); ir(k); aviso("Voltou para a versão anterior."); }); }
 $("#aArq").onclick = () => { guardarAba(); const k = editK; $("#dAba").close(); ABAS[k].arq ? desarquivar(k) : arquivar(k); };
 function arquivar(k){ if (visiveis().length <= 1) return aviso("Deixe pelo menos uma aba na barra.");
   const n = ABAS[k].n; cfgDe(k).arq = true; salvaCfg(); esqueceFrame(k); if (k == atual) ir(visiveis()[0]);
