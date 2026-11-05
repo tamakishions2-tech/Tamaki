@@ -92,9 +92,9 @@
     <h1>🎮 Meus jogos</h1>
     <button class="btn" id="open">＋ Adicionar</button>
   </div>
-  <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip" multiple hidden>
+  <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip,.cue,.chd,.pbp,.iso,.img" multiple hidden>
   <input type="file" id="coverFile" accept="image/*" hidden>
-  <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive ou GBA).</p></div>
+  <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive, GBA ou PlayStation 1).</p></div>
   <div id="grid"></div>
   <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar. Toque no ⋮ de um jogo para trocar a capa, exportar ou remover.</p>
   <p style="font-size:.75rem">versão 8</p>
@@ -142,7 +142,13 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-const CORES = { md: "segaMD", gen: "segaMD", smd: "segaMD", bin: "segaMD", gba: "gba" };
+const CORES = { md: "segaMD", gen: "segaMD", smd: "segaMD", bin: "segaMD", gba: "gba",
+  cue: "psx", chd: "psx", pbp: "psx", iso: "psx", img: "psx" };
+// sistema guardado na biblioteca -> núcleo do EmulatorJS
+const CORE_DE = { md: "segaMD", gba: "gba", ps1: "psx" };
+const SYS_DE = { segaMD: "md", gba: "gba", psx: "ps1" };
+// .bin pode ser Mega Drive (pequeno) ou CD de PS1 (grande)
+const coreDe = (ext, size) => ext === "bin" && size > 16 * 1048576 ? "psx" : CORES[ext];
 const SAFE = new URLSearchParams(location.search).has("safe");
 if (SAFE) $("safeBtn").textContent = "Voltar ao modo normal";
 
@@ -200,7 +206,7 @@ refreshVolUI();
 
 /* ---------- controles ---------- */
 // índices do RetroPad
-const IDX = { B:0, Y:1, SELECT:2, START:3, UP:4, DOWN:5, LEFT:6, RIGHT:7, A:8, X:9, L:10, R:11 };
+const IDX = { B:0, Y:1, SELECT:2, START:3, UP:4, DOWN:5, LEFT:6, RIGHT:7, A:8, X:9, L:10, R:11, L2:12, R2:13 };
 const DEFS = {
   md: [
     { id:"dpad", type:"dpad" },
@@ -217,6 +223,19 @@ const DEFS = {
     { id:"r", label:"R", btn:IDX.R, type:"pill" },
     { id:"start", label:"START", btn:IDX.START, type:"pill" },
     { id:"select", label:"SELECT", btn:IDX.SELECT, type:"pill" }
+  ],
+  ps1: [
+    { id:"dpad", type:"dpad" },
+    { id:"x", label:"✕", btn:IDX.B, type:"round" },
+    { id:"o", label:"○", btn:IDX.A, type:"round" },
+    { id:"q", label:"□", btn:IDX.Y, type:"round" },
+    { id:"t", label:"△", btn:IDX.X, type:"round" },
+    { id:"l1", label:"L1", btn:IDX.L, type:"pill" },
+    { id:"l2", label:"L2", btn:IDX.L2, type:"pill" },
+    { id:"r1", label:"R1", btn:IDX.R, type:"pill" },
+    { id:"r2", label:"R2", btn:IDX.R2, type:"pill" },
+    { id:"start", label:"START", btn:IDX.START, type:"pill" },
+    { id:"select", label:"SELECT", btn:IDX.SELECT, type:"pill" }
   ]
 };
 const DEFAULTS = {
@@ -227,6 +246,10 @@ const DEFAULTS = {
   gba: {
     l: { dpad:[14,68], a:[90,62], b:[79,74], l:[9,18], r:[91,18], start:[56,90], select:[44,90] },
     p: { dpad:[22,82], a:[88,82], b:[74,90], l:[12,68], r:[88,68], start:[58,96], select:[42,96] }
+  },
+  ps1: {
+    l: { dpad:[14,68], x:[82,80], o:[91,68], q:[73,68], t:[82,56], l1:[9,18], l2:[9,30], r1:[91,18], r2:[91,30], start:[56,92], select:[44,92] },
+    p: { dpad:[22,80], x:[75,90], o:[89,82], q:[61,82], t:[75,74], l1:[10,64], l2:[10,72], r1:[90,64], r2:[90,72], start:[58,97], select:[42,97] }
   }
 };
 const BASE = { dpad:[150,150], round:[68,68], pill:[84,34] };
@@ -534,7 +557,7 @@ function probeImage(url) {
   return new Promise((res) => { const i = new Image(); i.onload = () => res(true); i.onerror = () => res(false); i.src = url; });
 }
 async function findCover(g) {
-  const dir = g.sys === "gba" ? "Nintendo - Game Boy Advance" : "Sega - Mega Drive - Genesis";
+  const dir = g.sys === "gba" ? "Nintendo - Game Boy Advance" : g.sys === "ps1" ? "Sony - PlayStation" : "Sega - Mega Drive - Genesis";
   const base = baseOf(g.entry);
   const set = new Set([base, base.replace(/\s*\((Rev|Beta|Proto|Unl)[^)]*\)/gi, "").trim()]);
   [...set].forEach((n) => ["USA", "World", "Europe", "Japan"].forEach((r) => set.add(n.replace(/\([^)]*\)/, "(" + r + ")"))));
@@ -577,7 +600,7 @@ async function renderLib() {
       im.onerror = () => { im.remove(); cv.prepend(placeholder(g)); };
       cv.appendChild(im);
     } else cv.appendChild(placeholder(g));
-    const bd = document.createElement("span"); bd.className = "bd"; bd.textContent = g.sys === "gba" ? "GBA" : "MEGA DRIVE";
+    const bd = document.createElement("span"); bd.className = "bd"; bd.textContent = g.sys === "gba" ? "GBA" : g.sys === "ps1" ? "PS1" : "MEGA DRIVE";
     cv.appendChild(bd);
     const kb = document.createElement("button"); kb.className = "kb"; kb.textContent = "⋮";
     kb.onclick = (e) => { e.stopPropagation(); gameMenu(g); };
@@ -594,11 +617,12 @@ async function addFiles(files) {
     let ext = extOf(f.name), entry = f.name;
     if (ext === "zip") {
       const names = await namesInZip(f);
-      entry = names.find((n) => CORES[extOf(n)]) || "";
+      entry = names.find((n) => /\.(cue|chd|pbp|m3u)$/i.test(n)) || names.find((n) => CORES[extOf(n)]) || ""; // CD de PS1: o .cue manda
       ext = entry ? extOf(entry) : "";
     }
-    if (!CORES[ext]) { skipped.push(f.name); continue; }
-    const sys = CORES[ext] === "gba" ? "gba" : "md";
+    const core = coreDe(ext, f.size);
+    if (!core) { skipped.push(f.name); continue; }
+    const sys = SYS_DE[core] || "md";
     const id = sys + "|" + f.name + "|" + f.size;
     try {
       const old = await lGet(id);
@@ -664,11 +688,11 @@ $("file").onchange = async () => { const fs = [...$("file").files]; $("file").va
 async function playGame(id) {
   const g = await lGet(id), f = await fGet(id);
   if (!g || !f) { toast("Não achei o arquivo desse jogo"); return; }
-  startGame(f, g.sys === "gba" ? "gba" : "segaMD", g.fname);
+  startGame(f, CORE_DE[g.sys] || "segaMD", g.fname);
 }
 
 function startGame(f, core, fname) {
-  SYS = core === "gba" ? "gba" : "md";
+  SYS = SYS_DE[core] || "md";
   GAME = baseOf(fname);
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
 
