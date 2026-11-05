@@ -97,7 +97,7 @@
   <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive, GBA, Nintendo DS ou PlayStation 1).</p></div>
   <div id="grid"></div>
   <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar. Toque no ⋮ de um jogo para trocar a capa, exportar ou remover.</p>
-  <p style="font-size:.75rem">versão 12</p>
+  <p style="font-size:.75rem">versão 13</p>
 </div>
 
 <div id="wrap"><div id="game"></div></div>
@@ -158,6 +158,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
 let toastT;
+function toastLongo(msg) { toast(msg); clearTimeout(toastT); toastT = setTimeout(() => ($("toast").style.display = "none"), 7000); }
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.style.display = "block";
   clearTimeout(toastT); toastT = setTimeout(() => (t.style.display = "none"), 2000);
@@ -628,7 +629,7 @@ async function renderLib() {
 }
 
 async function addFiles(files) {
-  const added = [], skipped = [];
+  const added = [], skipped = []; let avisou = false;
   for (const f of files) {
     let ext = extOf(f.name), entry = f.name;
     if (ext === "zip") {
@@ -639,6 +640,7 @@ async function addFiles(files) {
     let core = coreDe(ext, f.size);
     if (ext === "rar" || ext === "7z") core = await sistemaDoPacote(f); // o próprio emulador abre o .rar/.7z na hora de jogar
     if (!core) { skipped.push(f.name); continue; }
+    if (core === "psx" && ["iso", "bin", "img"].includes(ext)) { const cd = await consoleDoCD(f); if (AVISO_CD[cd]) { skipped.push(f.name); toastLongo(AVISO_CD[cd]); avisou = true; continue; } }
     const sys = SYS_DE[core] || "md";
     const id = sys + "|" + f.name + "|" + f.size;
     try {
@@ -651,7 +653,7 @@ async function addFiles(files) {
   }
   await renderLib();
   if (added.length) toast(added.length + " jogo(s) adicionado(s). Buscando capas…");
-  else if (skipped.length) toast("Não consegui adicionar: " + skipped[0]);
+  else if (skipped.length && !avisou) toast("Não consegui adicionar: " + skipped[0]);
   let found = 0;
   for (const id of added) { if (await fetchCoverFor(id)) found++; }
   if (added.length) toast(found + " de " + added.length + " capa(s) encontrada(s)");
@@ -676,6 +678,34 @@ function sistemaDoPacote(f) {
   });
 }
 
+// CD de PlayStation: lê o SYSTEM.CNF para saber se é de PS1, PS2 ou PSP (todos podem vir em .iso)
+async function consoleDoCD(f) {
+  try {
+    for (const [tam, des] of [[2048, 0], [2352, 24], [2352, 16]]) {
+      const ler = async (setor, n) => new Uint8Array(await f.slice(setor * tam + des, setor * tam + des + n).arrayBuffer());
+      const pvd = await ler(16, 2048);
+      if (String.fromCharCode(...pvd.slice(1, 6)) !== "CD001") continue;
+      const dv = new DataView(pvd.buffer), raiz = dv.getUint32(156 + 2, true), rtam = Math.min(dv.getUint32(156 + 10, true), 16384);
+      const dir = [];
+      for (let k = 0; k < Math.ceil(rtam / 2048); k++) dir.push(...await ler(raiz + k, 2048));
+      let cnf = null, psp = false;
+      for (let i = 0; i < dir.length;) {
+        const len = dir[i]; if (!len) { i = (Math.floor(i / 2048) + 1) * 2048; continue; }
+        const nl = dir[i + 32], nome = String.fromCharCode(...dir.slice(i + 33, i + 33 + nl)).toUpperCase();
+        if (nome.startsWith("PSP_GAME")) psp = true;
+        if (nome.startsWith("SYSTEM.CNF")) { const d = new DataView(new Uint8Array(dir.slice(i, i + 34)).buffer); cnf = [d.getUint32(2, true), d.getUint32(10, true)]; }
+        i += len;
+      }
+      if (psp) return "psp";
+      if (cnf) { const t = String.fromCharCode(...await ler(cnf[0], Math.min(cnf[1], 512))); return /BOOT2/i.test(t) ? "ps2" : "ps1"; }
+      return "ps1";
+    }
+  } catch (e) {}
+  return null;
+}
+const AVISO_CD = { ps2: "Este jogo é de PlayStation 2. O emulador roda jogos de PS1, mas não de PS2: para PS2 use um app de Android (NetherSX2 ou ARMSX2).",
+  psp: "Este jogo é de PSP. O emulador ainda não roda PSP." };
+
 // o que tem no arquivo: ajuda a descobrir por que um jogo não abre
 async function tipoDoArquivo(f) {
   const b = new Uint8Array(await f.slice(0, 16).arrayBuffer()), t = String.fromCharCode(...b);
@@ -692,7 +722,8 @@ async function tipoDoArquivo(f) {
 }
 async function detalhes(g) {
   const f = await fGet(g.id); if (!f) { toast("Arquivo não encontrado"); return; }
-  const tipo = await tipoDoArquivo(f), dentro = /zip/i.test(tipo) ? (await namesInZip(f)).slice(0, 6).join(", ") : "";
+  let tipo = await tipoDoArquivo(f); if (/ISO|CD/.test(tipo)) { const cd = await consoleDoCD(f); if (cd) tipo += " de " + { ps1: "PS1", ps2: "PS2 (não roda aqui)", psp: "PSP (não roda aqui)" }[cd]; }
+  const dentro = /zip/i.test(tipo) ? (await namesInZip(f)).slice(0, 6).join(", ") : "";
   const mb = (f.size / 1048576).toFixed(1) + " MB", cons = { md: "Mega Drive", gba: "GBA", ps1: "PlayStation 1", nds: "Nintendo DS" }[g.sys] || g.sys;
   choose("📄 " + g.fname, [
     { label: "Console: " + cons + " · " + mb, disabled: true },
@@ -751,6 +782,7 @@ $("file").onchange = async () => { const fs = [...$("file").files]; $("file").va
 async function playGame(id) {
   const g = await lGet(id), f = await fGet(id);
   if (!g || !f) { toast("Não achei o arquivo desse jogo"); return; }
+  if (g.sys === "ps1" && /\.(iso|bin|img)$/i.test(g.fname)) { const cd = await consoleDoCD(f); if (AVISO_CD[cd]) { choose(AVISO_CD[cd], [{ label: "🗑️ Tirar da biblioteca", fn: async () => { await lDel(g.id); renderLib(); } }]); return; } }
   startGame(f, CORE_DE[g.sys] || "segaMD", g.fname);
 }
 
