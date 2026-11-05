@@ -97,7 +97,7 @@
   <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive, GBA, Nintendo DS ou PlayStation 1).</p></div>
   <div id="grid"></div>
   <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar. Toque no ⋮ de um jogo para trocar a capa, exportar ou remover.</p>
-  <p style="font-size:.75rem">versão 11</p>
+  <p style="font-size:.75rem">versão 12</p>
 </div>
 
 <div id="wrap"><div id="game"></div></div>
@@ -676,12 +676,39 @@ function sistemaDoPacote(f) {
   });
 }
 
+// o que tem no arquivo: ajuda a descobrir por que um jogo não abre
+async function tipoDoArquivo(f) {
+  const b = new Uint8Array(await f.slice(0, 16).arrayBuffer()), t = String.fromCharCode(...b);
+  if (t.startsWith("Rar!\x1a\x07\x01")) return "RAR5 (pode não abrir: descompacte e use .zip)";
+  if (t.startsWith("Rar!")) return "RAR";
+  if (t.startsWith("PK")) return "ZIP";
+  if (b[0] === 0x37 && b[1] === 0x7a && b[2] === 0xbc) return "7z";
+  if (t.startsWith("MComprHD")) return "CHD";
+  if (t.startsWith("\0PBP")) return "PBP";
+  if (b[0] === 0 && b.slice(1, 11).every((x) => x === 255) && b[11] === 0) return "CD (bin/img)";
+  const iso = new Uint8Array(await f.slice(32769, 32774).arrayBuffer());
+  if (String.fromCharCode(...iso) === "CD001") return "ISO";
+  return "outro";
+}
+async function detalhes(g) {
+  const f = await fGet(g.id); if (!f) { toast("Arquivo não encontrado"); return; }
+  const tipo = await tipoDoArquivo(f), dentro = /zip/i.test(tipo) ? (await namesInZip(f)).slice(0, 6).join(", ") : "";
+  const mb = (f.size / 1048576).toFixed(1) + " MB", cons = { md: "Mega Drive", gba: "GBA", ps1: "PlayStation 1", nds: "Nintendo DS" }[g.sys] || g.sys;
+  choose("📄 " + g.fname, [
+    { label: "Console: " + cons + " · " + mb, disabled: true },
+    { label: "Tipo: " + tipo, disabled: true },
+    ...(dentro ? [{ label: "Dentro: " + dentro, disabled: true }] : []),
+    { label: "Versão do emulador: " + (document.body.textContent.match(/versão \d+/) || ["?"])[0], disabled: true }
+  ]);
+}
+
 function gameMenu(g) {
   choose(g.name, [
     { label: "▶️ Jogar", pri: true, fn: () => playGame(g.id) },
     { label: "🔍 Buscar capa online", fn: async () => { toast("Buscando capa…"); toast((await fetchCoverFor(g.id)) ? "Capa encontrada" : "Não achei a capa. Escolha uma do tablet."); } },
     { label: "🖼️ Escolher capa do tablet", fn: () => { coverTarget = g.id; $("coverFile").click(); } },
     { label: "📤 Exportar arquivo do jogo", keep: true, fn: () => exportGame(g) },
+    { label: "ℹ️ Detalhes do arquivo", keep: true, fn: () => detalhes(g) },
     { label: "🗑️ Remover da biblioteca", keep: true, fn: () => confirmDelete(g) }
   ]);
 }
