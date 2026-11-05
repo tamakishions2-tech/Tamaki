@@ -92,12 +92,12 @@
     <h1>🎮 Meus jogos</h1>
     <button class="btn" id="open">＋ Adicionar</button>
   </div>
-  <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip,.cue,.chd,.pbp,.iso,.img" multiple hidden>
+  <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip,.cue,.chd,.pbp,.iso,.img,.rar,.7z" multiple hidden>
   <input type="file" id="coverFile" accept="image/*" hidden>
   <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive, GBA ou PlayStation 1).</p></div>
   <div id="grid"></div>
   <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar. Toque no ⋮ de um jogo para trocar a capa, exportar ou remover.</p>
-  <p style="font-size:.75rem">versão 8</p>
+  <p style="font-size:.75rem">versão 9</p>
 </div>
 
 <div id="wrap"><div id="game"></div></div>
@@ -620,7 +620,8 @@ async function addFiles(files) {
       entry = names.find((n) => /\.(cue|chd|pbp|m3u)$/i.test(n)) || names.find((n) => CORES[extOf(n)]) || ""; // CD de PS1: o .cue manda
       ext = entry ? extOf(entry) : "";
     }
-    const core = coreDe(ext, f.size);
+    let core = coreDe(ext, f.size);
+    if (ext === "rar" || ext === "7z") core = await sistemaDoPacote(f); // o próprio emulador abre o .rar/.7z na hora de jogar
     if (!core) { skipped.push(f.name); continue; }
     const sys = SYS_DE[core] || "md";
     const id = sys + "|" + f.name + "|" + f.size;
@@ -638,6 +639,23 @@ async function addFiles(files) {
   let found = 0;
   for (const id of added) { if (await fetchCoverFor(id)) found++; }
   if (added.length) toast(found + " de " + added.length + " capa(s) encontrada(s)");
+}
+
+// .rar e .7z: não dá para olhar dentro aqui, então o console vem do nome, do tamanho ou da pessoa
+function sistemaDoPacote(f) {
+  const n = f.name;
+  if (/ps1|psx|playstation/i.test(n)) return Promise.resolve("psx");
+  if (/\bgba\b|game ?boy/i.test(n)) return Promise.resolve("gba");
+  if (/genesis|mega ?drive|\bmd\b/i.test(n)) return Promise.resolve("segaMD");
+  if (f.size > 40 * 1048576) return Promise.resolve("psx");
+  return new Promise((ok) => {
+    choose("De qual console é “" + n + "”?", [
+      { label: "🎮 PlayStation 1", pri: true, fn: () => ok("psx") },
+      { label: "🟪 Game Boy Advance", fn: () => ok("gba") },
+      { label: "🔵 Mega Drive", fn: () => ok("segaMD") }
+    ]);
+    const c = $("chBtns").lastElementChild; if (c) { const fn = c.onclick; c.onclick = () => { fn(); ok(null); }; }
+  });
 }
 
 function gameMenu(g) {
