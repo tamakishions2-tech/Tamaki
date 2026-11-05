@@ -97,7 +97,7 @@
   <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive, GBA, Nintendo DS ou PlayStation 1).</p></div>
   <div id="grid"></div>
   <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar. Toque no ⋮ de um jogo para trocar a capa, exportar ou remover.</p>
-  <p style="font-size:.75rem">versão 10</p>
+  <p style="font-size:.75rem">versão 11</p>
 </div>
 
 <div id="wrap"><div id="game"></div></div>
@@ -741,7 +741,8 @@ function startGame(f, core, fname) {
 
   window.EJS_player = "#game";
   window.EJS_core = core;
-  window.EJS_gameUrl = URL.createObjectURL(f);
+  // vai como arquivo com nome: o núcleo precisa da extensão (.bin, .iso, .chd…) para reconhecer o jogo
+  window.EJS_gameUrl = f instanceof File && f.name === fname ? f : new File([f], fname, { type: f.type || "application/octet-stream" });
   window.EJS_gameName = GAME;
   window.EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
   window.EJS_startOnLoaded = true;
