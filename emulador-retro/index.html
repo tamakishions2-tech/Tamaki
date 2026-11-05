@@ -92,12 +92,12 @@
     <h1>🎮 Meus jogos</h1>
     <button class="btn" id="open">＋ Adicionar</button>
   </div>
-  <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip,.cue,.chd,.pbp,.iso,.img,.rar,.7z" multiple hidden>
+  <input type="file" id="file" accept=".md,.gen,.smd,.bin,.gba,.zip,.cue,.chd,.pbp,.iso,.img,.rar,.7z,.nds" multiple hidden>
   <input type="file" id="coverFile" accept="image/*" hidden>
-  <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive, GBA ou PlayStation 1).</p></div>
+  <div id="empty"><p>Sua biblioteca está vazia.<br>Toque em <b>＋ Adicionar</b> e escolha os arquivos dos seus jogos (Mega Drive, GBA, Nintendo DS ou PlayStation 1).</p></div>
   <div id="grid"></div>
   <p style="font-size:.8rem">Use apenas ROMs que você tem direito de usar. Toque no ⋮ de um jogo para trocar a capa, exportar ou remover.</p>
-  <p style="font-size:.75rem">versão 9</p>
+  <p style="font-size:.75rem">versão 10</p>
 </div>
 
 <div id="wrap"><div id="game"></div></div>
@@ -143,10 +143,10 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const CORES = { md: "segaMD", gen: "segaMD", smd: "segaMD", bin: "segaMD", gba: "gba",
-  cue: "psx", chd: "psx", pbp: "psx", iso: "psx", img: "psx" };
+  cue: "psx", chd: "psx", pbp: "psx", iso: "psx", img: "psx", nds: "nds" };
 // sistema guardado na biblioteca -> núcleo do EmulatorJS
-const CORE_DE = { md: "segaMD", gba: "gba", ps1: "psx" };
-const SYS_DE = { segaMD: "md", gba: "gba", psx: "ps1" };
+const CORE_DE = { md: "segaMD", gba: "gba", ps1: "psx", nds: "nds" };
+const SYS_DE = { segaMD: "md", gba: "gba", psx: "ps1", nds: "nds" };
 // .bin pode ser Mega Drive (pequeno) ou CD de PS1 (grande)
 const coreDe = (ext, size) => ext === "bin" && size > 16 * 1048576 ? "psx" : CORES[ext];
 const SAFE = new URLSearchParams(location.search).has("safe");
@@ -224,6 +224,17 @@ const DEFS = {
     { id:"start", label:"START", btn:IDX.START, type:"pill" },
     { id:"select", label:"SELECT", btn:IDX.SELECT, type:"pill" }
   ],
+  nds: [
+    { id:"dpad", type:"dpad" },
+    { id:"a", label:"A", btn:IDX.A, type:"round" },
+    { id:"b", label:"B", btn:IDX.B, type:"round" },
+    { id:"x", label:"X", btn:IDX.X, type:"round" },
+    { id:"y", label:"Y", btn:IDX.Y, type:"round" },
+    { id:"l", label:"L", btn:IDX.L, type:"pill" },
+    { id:"r", label:"R", btn:IDX.R, type:"pill" },
+    { id:"start", label:"START", btn:IDX.START, type:"pill" },
+    { id:"select", label:"SELECT", btn:IDX.SELECT, type:"pill" }
+  ],
   ps1: [
     { id:"dpad", type:"dpad" },
     { id:"x", label:"✕", btn:IDX.B, type:"round" },
@@ -246,6 +257,11 @@ const DEFAULTS = {
   gba: {
     l: { dpad:[14,68], a:[90,62], b:[79,74], l:[9,18], r:[91,18], start:[56,90], select:[44,90] },
     p: { dpad:[22,82], a:[88,82], b:[74,90], l:[12,68], r:[88,68], start:[58,96], select:[42,96] }
+  },
+  // DS: as duas telas ficam no meio; os botões vão para as bordas para não tampar a tela de toque
+  nds: {
+    l: { dpad:[11,62], a:[93,62], b:[86,74], x:[86,50], y:[79,62], l:[8,14], r:[92,14], start:[93,90], select:[80,90] },
+    p: { dpad:[16,88], a:[90,88], b:[80,95], x:[80,81], y:[70,88], l:[8,4], r:[92,4], start:[60,97], select:[40,97] }
   },
   ps1: {
     l: { dpad:[14,68], x:[82,80], o:[91,68], q:[73,68], t:[82,56], l1:[9,18], l2:[9,30], r1:[91,18], r2:[91,30], start:[56,92], select:[44,92] },
@@ -557,7 +573,7 @@ function probeImage(url) {
   return new Promise((res) => { const i = new Image(); i.onload = () => res(true); i.onerror = () => res(false); i.src = url; });
 }
 async function findCover(g) {
-  const dir = g.sys === "gba" ? "Nintendo - Game Boy Advance" : g.sys === "ps1" ? "Sony - PlayStation" : "Sega - Mega Drive - Genesis";
+  const dir = g.sys === "gba" ? "Nintendo - Game Boy Advance" : g.sys === "ps1" ? "Sony - PlayStation" : g.sys === "nds" ? "Nintendo - Nintendo DS" : "Sega - Mega Drive - Genesis";
   const base = baseOf(g.entry);
   const set = new Set([base, base.replace(/\s*\((Rev|Beta|Proto|Unl)[^)]*\)/gi, "").trim()]);
   [...set].forEach((n) => ["USA", "World", "Europe", "Japan"].forEach((r) => set.add(n.replace(/\([^)]*\)/, "(" + r + ")"))));
@@ -600,7 +616,7 @@ async function renderLib() {
       im.onerror = () => { im.remove(); cv.prepend(placeholder(g)); };
       cv.appendChild(im);
     } else cv.appendChild(placeholder(g));
-    const bd = document.createElement("span"); bd.className = "bd"; bd.textContent = g.sys === "gba" ? "GBA" : g.sys === "ps1" ? "PS1" : "MEGA DRIVE";
+    const bd = document.createElement("span"); bd.className = "bd"; bd.textContent = g.sys === "gba" ? "GBA" : g.sys === "ps1" ? "PS1" : g.sys === "nds" ? "DS" : "MEGA DRIVE";
     cv.appendChild(bd);
     const kb = document.createElement("button"); kb.className = "kb"; kb.textContent = "⋮";
     kb.onclick = (e) => { e.stopPropagation(); gameMenu(g); };
@@ -617,7 +633,7 @@ async function addFiles(files) {
     let ext = extOf(f.name), entry = f.name;
     if (ext === "zip") {
       const names = await namesInZip(f);
-      entry = names.find((n) => /\.(cue|chd|pbp|m3u)$/i.test(n)) || names.find((n) => CORES[extOf(n)]) || ""; // CD de PS1: o .cue manda
+      entry = names.find((n) => /\.(cue|chd|pbp|m3u|nds)$/i.test(n)) || names.find((n) => CORES[extOf(n)]) || ""; // CD de PS1: o .cue manda
       ext = entry ? extOf(entry) : "";
     }
     let core = coreDe(ext, f.size);
@@ -645,6 +661,7 @@ async function addFiles(files) {
 function sistemaDoPacote(f) {
   const n = f.name;
   if (/ps1|psx|playstation/i.test(n)) return Promise.resolve("psx");
+  if (/\bnds\b|nintendo ds|\(ds\)|\[ds\]/i.test(n)) return Promise.resolve("nds");
   if (/\bgba\b|game ?boy/i.test(n)) return Promise.resolve("gba");
   if (/genesis|mega ?drive|\bmd\b/i.test(n)) return Promise.resolve("segaMD");
   if (f.size > 40 * 1048576) return Promise.resolve("psx");
@@ -652,6 +669,7 @@ function sistemaDoPacote(f) {
     choose("De qual console é “" + n + "”?", [
       { label: "🎮 PlayStation 1", pri: true, fn: () => ok("psx") },
       { label: "🟪 Game Boy Advance", fn: () => ok("gba") },
+      { label: "🟦 Nintendo DS", fn: () => ok("nds") },
       { label: "🔵 Mega Drive", fn: () => ok("segaMD") }
     ]);
     const c = $("chBtns").lastElementChild; if (c) { const fn = c.onclick; c.onclick = () => { fn(); ok(null); }; }
